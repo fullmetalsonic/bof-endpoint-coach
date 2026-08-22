@@ -7,7 +7,7 @@ function formatClock(value) {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
-export function Header({ t, locale, screen, setScreen, setLocale, now }) {
+export function Header({ t, locale, screen, setScreen, setLocale, now, operatorName, onEditOperator }) {
   const navigation = [
     ["dashboard", "dashboard"],
     ["history", "heatHistory"],
@@ -31,7 +31,7 @@ export function Header({ t, locale, screen, setScreen, setLocale, now }) {
         <div className="header-tools">
           <span className="header-clock"><CalendarBlank /> {formatClock(now)}</span>
           <button className="language-button" type="button" onClick={() => setLocale(locale === "ko" ? "en" : "ko")}><Translate /> {t("language")}</button>
-          <span className="team-label"><UserCircle /> {locale === "ko" ? "설비기술팀" : "Process team"}</span>
+          <button className="operator-button" type="button" onClick={onEditOperator}><UserCircle /> {operatorName || (locale === "ko" ? "작업자 설정" : "Set operator")}</button>
         </div>
       </header>
       <div className="demo-banner">{t("demoBanner")}</div>

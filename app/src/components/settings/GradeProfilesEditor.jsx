@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "@phosphor-icons/react";
+import { Plus, Trash } from "@phosphor-icons/react";
 
 const blankTargets = {
   C: { min: null, max: null, unit: "%", decimals: 3 },
@@ -10,7 +10,7 @@ const blankTargets = {
   S: { min: null, max: null, unit: "%", decimals: 3 },
 };
 
-export function GradeProfilesEditor({ draft, setDraft, locale, t }) {
+export function GradeProfilesEditor({ draft, setDraft, locale, t, usedGradeCodes }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [initialCount] = useState(draft.gradeProfiles.length);
   const grade = draft.gradeProfiles[selectedIndex] ?? draft.gradeProfiles[0];
@@ -46,10 +46,16 @@ export function GradeProfilesEditor({ draft, setDraft, locale, t }) {
     setSelectedIndex(nextIndex);
   }
 
+  function removeGrade() {
+    if (draft.gradeProfiles.length <= 1 || usedGradeCodes.has(grade.code)) return;
+    setDraft((previous) => ({ ...previous, gradeProfiles: previous.gradeProfiles.filter((_, index) => index !== selectedIndex) }));
+    setSelectedIndex((previous) => Math.max(0, previous - 1));
+  }
+
   return <>
     <div className="profile-toolbar">
       <select aria-label={t("gradeProfile")} value={selectedIndex} onChange={(event) => setSelectedIndex(Number(event.target.value))}>{draft.gradeProfiles.map((item, index) => <option key={`${item.code}-${index}`} value={index}>{item.code} · {locale === "ko" ? item.nameKo : item.nameEn}</option>)}</select>
-      <button type="button" className="secondary-button" onClick={addGrade}><Plus /> {t("addGrade")}</button>
+      <div className="profile-actions"><button type="button" className="secondary-button" onClick={addGrade}><Plus /> {t("addGrade")}</button><button type="button" className="secondary-button danger-link" disabled={draft.gradeProfiles.length <= 1 || usedGradeCodes.has(grade.code)} onClick={removeGrade} title={usedGradeCodes.has(grade.code) ? (locale === "ko" ? "차지에서 사용 중인 강종입니다." : "This grade is referenced by a heat.") : ""}><Trash /> {locale === "ko" ? "강종 삭제" : "Delete grade"}</button></div>
     </div>
     <h2>{locale === "ko" ? grade.nameKo : grade.nameEn} <small>{grade.code}</small></h2>
     <div className="settings-form-grid identity-grid">

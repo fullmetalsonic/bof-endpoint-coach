@@ -1,6 +1,6 @@
 import { Truck, Flask, ClipboardText, CheckSquare, Wind, Drop } from "@phosphor-icons/react";
 
-export function ActionBar({ t, onAction }) {
+export function ActionBar({ t, onAction, availability }) {
   const actions = [
     ["material", "materialEvent", Truck],
     ["sample", "sampleEvent", Flask],
@@ -11,7 +11,7 @@ export function ActionBar({ t, onAction }) {
   ];
   return (
     <div className="action-bar">
-      {actions.map(([id, key, Icon], index) => <button key={id} type="button" onClick={() => onAction(id)}><span>{index + 1}</span><Icon weight="regular" /><strong>{t(key)}</strong></button>)}
+      {actions.map(([id, key, Icon], index) => <button key={id} type="button" disabled={!availability[id]} onClick={() => onAction(id)}><span>{index + 1}</span><Icon weight="regular" /><strong>{t(key)}</strong></button>)}
     </div>
   );
 }

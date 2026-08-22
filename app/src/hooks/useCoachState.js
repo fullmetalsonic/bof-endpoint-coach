@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createDemoState } from "../data/demoState.js";
+import { createDemoState, createEmptyState } from "../data/demoState.js";
 import { normalizeCoachState } from "../data/stateMigration.js";
-import { clearState, loadState, saveState } from "../storage/indexedDb.js";
+import { advanceHeat, applyHeatEvent, archiveHeat, canDeleteHeat, cancelHeat, createHeatFromForm } from "../domain/heatOperations.js";
+import { clearRecoveryState, clearState, loadRecoveryState, loadState, saveRecoveryState, saveState } from "../storage/indexedDb.js";
 
 function withLog(state, type, payload = {}) {
   const at = new Date().toISOString();
@@ -11,19 +12,19 @@ function withLog(state, type, payload = {}) {
   };
 }
 
-function optionalNumber(value) {
-  return value === "" || value === null || value === undefined ? null : Number(value);
-}
-
 export function useCoachState() {
   const [state, setState] = useState(null);
+  const [recovery, setRecovery] = useState(null);
   const [saveStatus, setSaveStatus] = useState("loading");
   const loaded = useRef(false);
 
   useEffect(() => {
-    loadState()
-      .then((saved) => setState(normalizeCoachState(saved ?? createDemoState())))
-      .catch(() => setState(createDemoState()))
+    Promise.all([loadState(), loadRecoveryState()])
+      .then(([saved, savedRecovery]) => {
+        setState(normalizeCoachState(saved ?? createEmptyState()));
+        setRecovery(savedRecovery);
+      })
+      .catch(() => setState(createEmptyState()))
       .finally(() => {
         loaded.current = true;
         setSaveStatus("saved");
@@ -49,54 +50,19 @@ export function useCoachState() {
 
   const selectHeat = useCallback((heatId) => setState((previous) => ({ ...previous, currentHeatId: heatId })), []);
 
-  const updateCurrentHeat = useCallback((updater, logType = "heat_updated") => {
+  const addEvent = useCallback((type, form) => {
     setState((previous) => {
-      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? updater(heat) : heat);
-      return withLog({ ...previous, heats }, logType, { heatId: previous.currentHeatId });
+      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? applyHeatEvent(heat, type, form, previous.operatorProfile) : heat);
+      return withLog({ ...previous, heats }, `event_${type}`, { heatId: previous.currentHeatId, operator: previous.operatorProfile?.displayName ?? "" });
     });
   }, []);
 
-  const addEvent = useCallback((type, form) => {
-    updateCurrentHeat((heat) => {
-      const event = {
-        id: `EV-${crypto.randomUUID()}`,
-        type,
-        occurredAt: form.occurredAt,
-        recordedAt: new Date().toISOString(),
-        summaryKo: form.summaryKo,
-        summaryEn: form.summaryEn,
-        payload: form,
-      };
-      let next = { ...heat, events: [...(heat.events ?? []), event] };
-      if (type === "checkpoint") {
-        next = { ...next, process: { ...heat.process, cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3), lanceHeightM: Number(form.lanceHeightM), oxygenFlowNm3PerMinute: Number(form.oxygenFlowNm3PerMinute), remainingMinutes: Number(form.remainingMinutes), plannedValuesIncluded: false } };
-      }
-      if (type === "reblow") {
-        next = { ...next, process: { ...heat.process, cumulativeOxygenNm3: Number(heat.process.cumulativeOxygenNm3) + Number(form.additionalOxygenNm3), remainingMinutes: Number(form.durationMinutes) } };
-      }
-      if (type === "material" && form.materialCategory === "flux") {
-        next = { ...next, initial: { ...heat.initial, fluxKg: Number(heat.initial.fluxKg ?? 0) + Number(form.amountKg) } };
-      }
-      if (type === "sample") {
-        next = { ...next, samples: [...(heat.samples ?? []), { id: form.sampleId, sampledAt: form.occurredAt, stage: heat.stage, method: "Pending", adopted: false, values: {}, processSnapshot: { cumulativeOxygenNm3: Number(heat.process.cumulativeOxygenNm3), oxygenFlowNm3PerMinute: Number(heat.process.oxygenFlowNm3PerMinute), lanceHeightM: Number(heat.process.lanceHeightM) } }] };
-      }
-      if (type === "analysis") {
-        const sampleId = form.sampleId || heat.samples.at(-1)?.id || `S-${Date.now()}`;
-        const exists = heat.samples.some((sample) => sample.id === sampleId);
-        const values = Object.fromEntries(Object.entries(form.values).filter(([, value]) => value !== "").map(([key, value]) => [key, Number(value)]));
-        next = {
-          ...next,
-          samples: exists
-            ? heat.samples.map((sample) => ({ ...sample, adopted: sample.id === sampleId, ...(sample.id === sampleId ? { method: form.method || "OES", values, sampledAt: form.occurredAt, processSnapshot: { cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3), oxygenFlowNm3PerMinute: Number(heat.process.oxygenFlowNm3PerMinute), lanceHeightM: Number(heat.process.lanceHeightM) } } : {}) }))
-            : [...heat.samples.map((sample) => ({ ...sample, adopted: false })), { id: sampleId, sampledAt: form.occurredAt, stage: heat.stage, method: form.method || "OES", adopted: true, values, processSnapshot: { cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3), oxygenFlowNm3PerMinute: Number(heat.process.oxygenFlowNm3PerMinute), lanceHeightM: Number(heat.process.lanceHeightM) } }],
-        };
-      }
-      if (type === "tap") {
-        next = { ...next, status: "completed", stage: "G7", stageLabelKo: "출강 완료", stageLabelEn: "Tap complete", tappedAt: form.occurredAt };
-      }
-      return next;
-    }, `event_${type}`);
-  }, [updateCurrentHeat]);
+  const advanceCurrentStage = useCallback((form) => {
+    setState((previous) => {
+      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? advanceHeat(heat, form, previous.operatorProfile) : heat);
+      return withLog({ ...previous, heats }, "stage_advanced", { heatId: previous.currentHeatId, to: heats.find((heat) => heat.id === previous.currentHeatId)?.stage });
+    });
+  }, []);
 
   const updateSettings = useCallback((settings) => setState((previous) => withLog({ ...previous, settings }, "settings_updated", {
     settingsVersion: settings.version,
@@ -106,60 +72,54 @@ export function useCoachState() {
 
   const createHeat = useCallback((form) => {
     setState((previous) => {
-      const startedAt = form.startedAt;
-      const expectedTapAt = new Date(new Date(startedAt).getTime() + Number(form.expectedDurationMinutes) * 60000).toISOString();
-      const heat = {
-        id: form.id.trim(),
-        gradeCode: form.gradeCode,
-        equipmentProfileId: form.equipmentProfileId,
-        coefficientProfileId: form.coefficientProfileId,
-        status: "in_progress",
-        stage: "G0",
-        stageLabelKo: "장입",
-        stageLabelEn: "Charge",
-        startedAt,
-        expectedTapAt,
-        initial: {
-          hotMetalKg: Number(form.hotMetalKg),
-          hotMetalC: Number(form.hotMetalC),
-          hotMetalSi: optionalNumber(form.hotMetalSi),
-          hotMetalMn: optionalNumber(form.hotMetalMn),
-          hotMetalP: optionalNumber(form.hotMetalP),
-          hotMetalTemperatureC: Number(form.hotMetalTemperatureC),
-          scrapKg: Number(form.scrapKg),
-          scrapC: Number(form.scrapC),
-          fluxKg: Number(form.fluxKg),
-          plannedTotalOxygenNm3: Number(form.plannedTotalOxygenNm3),
-        },
-        process: {
-          cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3),
-          lanceHeightM: Number(form.lanceHeightM),
-          oxygenFlowNm3PerMinute: Number(form.oxygenFlowNm3PerMinute),
-          remainingMinutes: Number(form.expectedDurationMinutes),
-          plannedValuesIncluded: false,
-        },
-        samples: [],
-        events: [{
-          id: `EV-${crypto.randomUUID()}`,
-          type: "charge",
-          occurredAt: startedAt,
-          recordedAt: new Date().toISOString(),
-          summaryKo: "차지 생성 및 초기값 입력",
-          summaryEn: "Heat created with initial inputs",
-        }],
-      };
+      const heat = createHeatFromForm(form, previous.operatorProfile);
       return withLog({ ...previous, heats: [...previous.heats, heat], currentHeatId: heat.id }, "heat_created", { heatId: heat.id });
     });
   }, []);
 
-  const replaceState = useCallback((nextState) => setState(withLog(nextState, "backup_restored")), []);
+  const replaceState = useCallback((nextState) => setState(withLog(normalizeCoachState(nextState), "backup_restored")), []);
 
-  const resetDemo = useCallback(async () => {
+  const resetWorkspace = useCallback(async (mode = "empty") => {
+    if (state) {
+      await saveRecoveryState(state);
+      setRecovery({ state, savedAt: new Date().toISOString() });
+    }
     await clearState();
-    setState(createDemoState());
+    const profile = state?.operatorProfile ?? { displayName: "" };
+    setState(mode === "demo" ? createDemoState(profile) : createEmptyState({ operatorProfile: profile, onboardingCompleted: true }));
+  }, [state]);
+
+  const restoreRecovery = useCallback(async () => {
+    if (!recovery?.state) return;
+    setState(withLog(normalizeCoachState(recovery.state), "recovery_restored"));
+    await clearRecoveryState();
+    setRecovery(null);
+  }, [recovery]);
+
+  const completeOnboarding = useCallback(({ displayName, mode }) => {
+    const operatorProfile = { displayName: displayName.trim() };
+    setState((previous) => mode === "demo" ? createDemoState(operatorProfile) : createEmptyState({ locale: previous?.locale ?? "ko", operatorProfile, onboardingCompleted: true }));
   }, []);
+
+  const updateOperator = useCallback((displayName) => setState((previous) => withLog({ ...previous, operatorProfile: { displayName: displayName.trim() }, onboardingCompleted: true }, "operator_updated")), []);
+
+  const deleteHeat = useCallback((heatId) => setState((previous) => {
+    const target = previous.heats.find((heat) => heat.id === heatId);
+    if (!target || !canDeleteHeat(target)) return previous;
+    const heats = previous.heats.filter((heat) => heat.id !== heatId);
+    const currentHeatId = previous.currentHeatId === heatId ? heats[0]?.id ?? null : previous.currentHeatId;
+    return withLog({ ...previous, heats, currentHeatId }, "heat_deleted", { heatId });
+  }), []);
+
+  const changeHeatLifecycle = useCallback((heatId, action, reason = "") => setState((previous) => {
+    const heats = previous.heats.map((heat) => {
+      if (heat.id !== heatId) return heat;
+      return action === "cancel" ? cancelHeat(heat, reason, previous.operatorProfile) : archiveHeat(heat, previous.operatorProfile);
+    });
+    return withLog({ ...previous, heats }, action === "cancel" ? "heat_cancelled" : "heat_archived", { heatId, reason });
+  }), []);
 
   const setLocale = useCallback((locale) => setState((previous) => ({ ...previous, locale })), []);
 
-  return { state, currentHeat, saveStatus, selectHeat, addEvent, createHeat, updateSettings, recordOperation, replaceState, resetDemo, setLocale };
+  return { state, currentHeat, recovery, saveStatus, selectHeat, addEvent, advanceCurrentStage, createHeat, updateSettings, recordOperation, replaceState, resetWorkspace, restoreRecovery, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, setLocale };
 }

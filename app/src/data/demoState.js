@@ -1,54 +1,31 @@
-import { createLiteratureCoefficientProfile } from "../calculation/coefficientProfile.js";
+import { createReferenceSettings } from "./referenceSettings.js";
 
-export const APP_VERSION = "0.2.0";
-export const BACKUP_SCHEMA_VERSION = "0.1.0";
+export const APP_VERSION = "0.2.1";
+export const BACKUP_SCHEMA_VERSION = "0.2.0";
+export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", BACKUP_SCHEMA_VERSION];
 
-export function createDemoState() {
-  const now = new Date();
-  const atMinutes = (offset) => new Date(now.getTime() + offset * 60000).toISOString();
+export function createEmptyState({ locale = "ko", operatorProfile = { displayName: "" }, onboardingCompleted = false } = {}) {
   return {
     schemaVersion: BACKUP_SCHEMA_VERSION,
-    locale: "ko",
+    locale,
+    operatorProfile: { displayName: operatorProfile?.displayName?.trim() ?? "" },
+    onboardingCompleted,
+    currentHeatId: null,
+    settings: createReferenceSettings(),
+    heats: [],
+    operationLog: [],
+    lastSavedAt: null,
+  };
+}
+
+export function createDemoState(operatorProfile = { displayName: "" }) {
+  const now = new Date();
+  const atMinutes = (offset) => new Date(now.getTime() + offset * 60000).toISOString();
+  const state = createEmptyState({ operatorProfile, onboardingCompleted: true });
+  const stageHistory = (entries) => entries.map(([from, to, offset]) => ({ id: `STAGE-DEMO-${to}-${Math.abs(offset)}`, from, to, occurredAt: atMinutes(offset), recordedAt: atMinutes(offset), recordedBy: { displayName: "DEMO" }, note: "" }));
+  return {
+    ...state,
     currentHeatId: "DEMO-260822-01",
-    settings: {
-      status: "demo",
-      gradeProfiles: [
-        {
-          code: "DEMO-LC",
-          nameKo: "가상 저탄소강",
-          nameEn: "Synthetic low-carbon steel",
-          targets: {
-            C: { min: 0.04, max: 0.08, unit: "%", decimals: 3 },
-            temperature: { min: 1650, max: 1700, unit: "°C", decimals: 0 },
-            P: { min: 0.01, max: 0.02, unit: "%", decimals: 3 },
-            Mn: { min: 1.2, max: 1.6, unit: "%", decimals: 2 },
-            Si: { max: 0.25, unit: "%", decimals: 2 },
-            S: { max: 0.01, unit: "%", decimals: 3 },
-          },
-        },
-      ],
-      materials: [
-        { code: "LIME-DEMO", nameKo: "가상 석회", nameEn: "Synthetic lime", category: "flux", unit: "kg", composition: { CaO: 90 } },
-        { code: "COOL-DEMO", nameKo: "가상 냉각재", nameEn: "Synthetic coolant", category: "coolant", unit: "kg", composition: {} },
-        { code: "FEMN-DEMO", nameKo: "가상 FeMn", nameEn: "Synthetic FeMn", category: "alloy", unit: "kg", composition: { Mn: 75 } },
-      ],
-      equipmentProfiles: [
-        {
-          id: "BOF-DEMO-A",
-          nameKo: "가상 전로 A",
-          nameEn: "Synthetic BOF A",
-          blowingType: "combined",
-          nominalCapacityT: 260,
-          lanceProfile: "LANCE-DEMO-06",
-          bottomGas: "N2/Ar",
-          status: "demo",
-        },
-      ],
-      coefficientProfiles: [createLiteratureCoefficientProfile()],
-      gates: ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"],
-      unitPolicy: { mass: "kg", oxygen: "Nm³", temperature: "°C", chemistry: "%" },
-      version: "DEMO-REF-001",
-    },
     heats: [
       {
         id: "DEMO-260822-01",
@@ -91,6 +68,7 @@ export function createDemoState() {
           { id: "EV-DEMO-02", type: "blow_start", occurredAt: atMinutes(-34), summaryKo: "취련 시작", summaryEn: "Blow started" },
           { id: "EV-DEMO-03", type: "checkpoint", occurredAt: atMinutes(-0.15), summaryKo: "누적 산소 12,990 Nm³", summaryEn: "Cumulative oxygen 12,990 Nm³" },
         ],
+        stageHistory: stageHistory([[null, "G0", -42], ["G0", "G1", -34], ["G1", "G2", -29], ["G2", "G3", -25], ["G3", "G4", -18], ["G4", "G5", -10], ["G5", "G6", -2]]),
       },
       {
         id: "DEMO-260822-02",
@@ -110,9 +88,9 @@ export function createDemoState() {
           { id: "S-DEMO-11", sampledAt: atMinutes(-4), stage: "G3", method: "OES", adopted: true, processSnapshot: { cumulativeOxygenNm3: 8800 }, values: { C: 1.65, Si: 0.3, Mn: 1.62, P: 0.031, S: 0.006, temperature: 1540 } },
         ],
         events: [{ id: "EV-DEMO-11", type: "blow_start", occurredAt: atMinutes(-13), summaryKo: "취련 시작", summaryEn: "Blow started" }],
+        stageHistory: stageHistory([[null, "G0", -17], ["G0", "G1", -13], ["G1", "G2", -8], ["G2", "G3", -2]]),
       },
     ],
     operationLog: [{ id: "LOG-DEMO-001", type: "demo_initialized", at: now.toISOString() }],
-    lastSavedAt: null,
   };
 }

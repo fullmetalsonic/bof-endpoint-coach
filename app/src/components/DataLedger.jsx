@@ -1,4 +1,4 @@
-import { ArrowClockwise, CheckCircle, WarningCircle } from "@phosphor-icons/react";
+import { CheckCircle, WarningCircle } from "@phosphor-icons/react";
 import { getOpenChecks } from "../domain/operationalGuidance.js";
 
 function formatTime(value) {
@@ -14,19 +14,21 @@ function relativeAge(value, now, locale) {
 }
 
 export function DataLedger({ heat, calculation, rows, saveStatus, t, locale }) {
-  const latest = [...heat.samples].sort((a, b) => new Date(b.sampledAt) - new Date(a.sampledAt))[0];
-  const latestProcessEvent = [...heat.events].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))[0];
+  const latestAnalysis = [...heat.samples].sort((a, b) => new Date(b.analyzedAt ?? b.sampledAt) - new Date(a.analyzedAt ?? a.sampledAt))[0];
+  const latestProcessEvent = [...(heat.events ?? []), ...(heat.stageHistory ?? [])].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))[0];
+  const latestAnalysisAt = latestAnalysis?.analyzedAt ?? latestAnalysis?.sampledAt;
   const checks = getOpenChecks(heat, rows, locale);
   return (
     <aside className="data-ledger">
       <h2>{t("dataLedger")}</h2>
       <section className="ledger-card">
-        <div className="ledger-heading"><strong>{t("freshness")}</strong><ArrowClockwise /></div>
+        <div className="ledger-heading"><strong>{t("freshness")}</strong></div>
         <dl>
           <div><dt>{t("processData")}</dt><dd>{formatTime(latestProcessEvent?.occurredAt)} <em>({relativeAge(latestProcessEvent?.occurredAt, calculation.calculatedAt, locale)})</em></dd></div>
-          <div><dt>{t("sampleResult")}</dt><dd>{formatTime(latest?.sampledAt)} <em>({relativeAge(latest?.sampledAt, calculation.calculatedAt, locale)})</em></dd></div>
+          <div><dt>{t("sampleResult")}</dt><dd>{formatTime(latestAnalysisAt)} <em>({relativeAge(latestAnalysisAt, calculation.calculatedAt, locale)})</em></dd></div>
           <div><dt>{t("calculation")}</dt><dd>{formatTime(calculation.calculatedAt)} <em>({locale === "ko" ? "현재" : "now"})</em></dd></div>
-          <div><dt>{t("equipmentState")}</dt><dd>{saveStatus === "saved" ? t("saved") : saveStatus}</dd></div>
+          <div><dt>{locale === "ko" ? "로컬 저장" : "Local storage"}</dt><dd>{saveStatus === "saved" ? t("saved") : saveStatus}</dd></div>
+          <div><dt>{locale === "ko" ? "외부 연동" : "External link"}</dt><dd>{locale === "ko" ? "미연동 · 수동 입력" : "Not connected · manual"}</dd></div>
         </dl>
       </section>
       <section className="ledger-card">

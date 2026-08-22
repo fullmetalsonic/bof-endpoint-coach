@@ -4,14 +4,16 @@ import { APP_VERSION, BACKUP_SCHEMA_VERSION, createDemoState } from "../src/data
 import { createBackupBlob, restoreBackup } from "../src/reports/backup.js";
 
 describe("backup package", () => {
-  it("keeps the v0.1 backup schema compatible while the app advances to v0.2", () => {
-    expect(APP_VERSION).toBe("0.2.0");
-    expect(BACKUP_SCHEMA_VERSION).toBe("0.1.0");
+  it("uses the v0.2 backup schema while the app advances to v0.2.1", () => {
+    expect(APP_VERSION).toBe("0.2.1");
+    expect(BACKUP_SCHEMA_VERSION).toBe("0.2.0");
     expect(createDemoState().schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
   });
 
   it("creates the required CSV package and restores the same heat data", async () => {
     const source = createDemoState();
+    source.heats[0].samples[0].analyzedAt = "2026-08-22T01:05:00.000Z";
+    source.heats[0].samples[0].analysisProcessSnapshot = { cumulativeOxygenNm3: 4100 };
     source.operationLog.push({ id: "LOG-BACKUP-TEST", type: "backup_exported", at: new Date().toISOString(), filename: "test.zip" });
     const blob = await createBackupBlob(source);
     const archive = await blob.arrayBuffer();
@@ -25,13 +27,26 @@ describe("backup package", () => {
     expect(restored.settings.coefficientProfiles[0].literatureValues.postCombustionRatioBase).toBe(0.15);
     expect(restored.heats[0].samples.at(-1).processSnapshot.cumulativeOxygenNm3).toBe(12970);
     expect(restored.operationLog.some((entry) => entry.type === "backup_exported")).toBe(true);
+    expect(restored.heats[0].stageHistory).toHaveLength(source.heats[0].stageHistory.length);
+    expect(restored.operatorProfile).toEqual(source.operatorProfile);
+    expect(restored.heats[0].samples[0].analyzedAt).toBe("2026-08-22T01:05:00.000Z");
+    expect(restored.heats[0].samples[0].analysisProcessSnapshot.cumulativeOxygenNm3).toBe(4100);
+  });
+
+  it("continues to restore a v0.1 manifest and migrates it to the current schema", async () => {
+    const source = createDemoState();
+    source.schemaVersion = "0.1.0";
+    const blob = await createBackupBlob(source);
+    const restored = await restoreBackup(await blob.arrayBuffer());
+    expect(restored.schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
+    expect(restored.heats[0].id).toBe(source.heats[0].id);
   });
 
   it("rejects a backup with an unsupported manifest schema", async () => {
     const blob = await createBackupBlob(createDemoState());
     const zip = await JSZip.loadAsync(await blob.arrayBuffer());
     const manifest = await zip.file("manifest.csv").async("text");
-    zip.file("manifest.csv", manifest.replaceAll("0.1.0", "9.9.9"));
+    zip.file("manifest.csv", manifest.replaceAll(BACKUP_SCHEMA_VERSION, "9.9.9"));
     const tampered = await zip.generateAsync({ type: "arraybuffer" });
     await expect(restoreBackup(tampered)).rejects.toThrow("unsupported_schema_version");
   });

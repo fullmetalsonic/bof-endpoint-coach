@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Plus } from "@phosphor-icons/react";
+import { Plus, Trash } from "@phosphor-icons/react";
 
 const compositionKeys = ["C", "Si", "Mn", "P", "S", "CaO"];
 
-export function MaterialsEditor({ draft, setDraft, locale, t }) {
+export function MaterialsEditor({ draft, setDraft, locale, t, usedMaterialCodes }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [initialCount] = useState(draft.materials.length);
   const material = draft.materials[selectedIndex] ?? draft.materials[0];
@@ -38,12 +38,18 @@ export function MaterialsEditor({ draft, setDraft, locale, t }) {
     setSelectedIndex(nextIndex);
   }
 
+  function removeMaterial() {
+    if (draft.materials.length <= 1 || usedMaterialCodes.has(material.code)) return;
+    setDraft((previous) => ({ ...previous, materials: previous.materials.filter((_, index) => index !== selectedIndex) }));
+    setSelectedIndex((previous) => Math.max(0, previous - 1));
+  }
+
   if (!material) return <button type="button" className="secondary-button" onClick={addMaterial}><Plus /> {t("addMaterial")}</button>;
 
   return <>
     <div className="profile-toolbar">
       <select aria-label={t("materialProfile")} value={selectedIndex} onChange={(event) => setSelectedIndex(Number(event.target.value))}>{draft.materials.map((item, index) => <option key={`${item.code}-${index}`} value={index}>{item.code} · {locale === "ko" ? item.nameKo : item.nameEn}</option>)}</select>
-      <button type="button" className="secondary-button" onClick={addMaterial}><Plus /> {t("addMaterial")}</button>
+      <div className="profile-actions"><button type="button" className="secondary-button" onClick={addMaterial}><Plus /> {t("addMaterial")}</button><button type="button" className="secondary-button danger-link" disabled={draft.materials.length <= 1 || usedMaterialCodes.has(material.code)} onClick={removeMaterial} title={usedMaterialCodes.has(material.code) ? (locale === "ko" ? "차지 이력에서 사용 중인 재료입니다." : "This material is referenced by a heat event.") : ""}><Trash /> {locale === "ko" ? "재료 삭제" : "Delete material"}</button></div>
     </div>
     <h2>{locale === "ko" ? material.nameKo : material.nameEn} <small>{material.code}</small></h2>
     <div className="settings-form-grid identity-grid">

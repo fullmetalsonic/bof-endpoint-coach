@@ -12,14 +12,17 @@
 
 ## 한국어
 
-### v0.2.0에서 할 수 있는 것
+### v0.2.1에서 할 수 있는 것
 
 - C 종점 참고 예상: C·Si·Mn·P·Fe 산화 산소수지와 PCR·슬래그 FeO 문헌 시나리오 계산
 - 온도 종점 참고 예상: 원소별 반응열과 용강·슬래그·배가스 엔탈피, 열손실 문헌 시나리오 계산
 - 채택 샘플의 당시 누적 산소 스냅샷이 있으면 문헌 모델의 이후 변화량을 실제 C·온도에 더하는 샘플 앵커 계산
 - 문헌 원본값을 보존하면서 `현장 승인값 → 사용자 수정값 → 문헌 기본값` 순서로 계산
-- 여러 진행 차지를 탭으로 전환하고, G0 신규 차지부터 G7 출강까지 수동 입력
+- 첫 실행에서 작업자 이름을 정하고 `빈 작업으로 시작` 또는 선택형 DEMO 체험
+- 여러 진행 차지를 탭으로 전환하고, 실제 시각을 기록하며 G0 장입부터 G8 후처리까지 수동 전환
+- G5에서 C·온도가 입력된 채택 샘플을 확인한 뒤 G6로 이동하고, G6 출강 기록 후 G7→G8 완료 처리
 - 자재 투입, 샘플 채취, 분석 결과, 누적 산소·산소 유량·랜스 높이 체크포인트, 재취련, 출강 기록
+- 초기·DEMO 차지 삭제, 진행 차지 취소, 완료 차지 보관과 확인 절차가 있는 작업공간 초기화·직전 상태 복구
 - 강종을 계속 추가하고 C·온도·P·Mn·Si·S 목표 범위를 직접 설정
 - 재료를 추가하고 분류, 기본 단위, C·Si·Mn·P·S·CaO 함량을 관리
 - kg·t·g 입력을 kg로 환산해 계산·백업에 보존
@@ -30,12 +33,13 @@
 
 ### 바로 사용하기
 
-1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.2.0.html`을 받습니다.
+1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.2.1.html`을 받습니다.
 2. 회사 공용 PC의 Edge 또는 Chrome에서 파일을 엽니다. 서버 설치와 인터넷 연결은 필요하지 않습니다.
-3. `기준 정보`에서 강종·재료·설비·계수를 검토합니다.
-4. 상단 `신규 차지`에서 G0 초기값을 입력합니다.
-5. 하단 6개 버튼으로 실제 발생 시각과 값을 계속 기록합니다.
-6. 교대·브라우저 초기화 전에 `분석 · 리포트`에서 CSV 백업 ZIP을 저장합니다.
+3. 작업자 이름을 입력하고 `빈 작업으로 시작`을 선택합니다. 합성 데이터를 보려면 `DEMO로 체험`을 선택합니다.
+4. `기준 정보`에서 강종·재료·설비·계수를 검토합니다.
+5. `신규 차지`에서 G0를 만든 뒤 화면의 단계 전환 버튼과 하단 입력 버튼으로 실제 시각·값을 기록합니다.
+6. G6에서 출강을 기록하고 G7 후처리 입력이 끝나면 G8로 전환합니다.
+7. 교대·브라우저 초기화 전에 `분석 · 리포트`에서 CSV 백업 ZIP을 저장합니다.
 
 단계별 조작은 [한영 사용 설명서](docs/user-guide.md)에서 확인할 수 있습니다.
 
@@ -46,16 +50,16 @@
 | 구역 | 역할 |
 | --- | --- |
 | 상단 차지 탭·요약 | 동시에 진행 중인 차지를 전환하고 강종, 단계, 경과시간, 산소, 다음 행동을 확인 |
-| 좌측 G0~G8 | 장입부터 후처리까지 현재 공정 게이트를 표시 |
+| 좌측 G0~G8 | 장입부터 후처리까지 실제로 입력된 단계 전환 시각을 표시 |
 | 중앙 다음 행동 | 현재 게이트와 C·온도 예상 상태에 맞춘 확인 항목을 표시 |
 | 품질 막대 | 실측·기준 종점 예상·문헌 저/고 시나리오·목표 최소/최대를 같은 축에서 비교 |
 | 최근 분석 표 | 채취 시각과 C·Si·Mn·P·S·온도 분석을 확인 |
-| 우측 Data Ledger | 입력 최신성, 미완료 확인, 계산식·계수·설비 버전을 표시 |
+| 우측 Data Ledger | 입력 최신성, 로컬 저장 상태, 외부 연동 여부, 미완료 확인, 계산식·계수·설비 버전을 표시 |
 | 하단 입력 버튼 | 자재·샘플·분석·체크포인트·재취련·출강 이벤트를 기록 |
 
 ![강종 목표와 기준 정보 설정](docs/screenshots/settings-ko.png)
 
-강종·재료 설정은 계속 추가할 수 있습니다. 코드 중복, 빈 코드, 최소값이 최대값보다 큰 경우에는 저장을 막습니다. 재료 조성은 백업 이력에 보존되지만 합금 수율 계산에는 아직 사용하지 않습니다. `flux` 분류의 투입 중량만 열수지 입력에 반영됩니다.
+강종·재료 설정은 계속 추가할 수 있고 사용되지 않은 항목은 삭제할 수 있습니다. 차지나 이벤트에서 참조 중인 항목과 마지막 남은 항목은 삭제를 막습니다. 코드 중복, 빈 코드, 최소값이 최대값보다 큰 경우에도 저장을 막습니다. 재료 조성은 백업 이력에 보존되지만 합금 수율 계산에는 아직 사용하지 않습니다. `flux` 분류의 투입 중량만 열수지 입력에 반영됩니다.
 
 ### 계산 경계
 
@@ -98,17 +102,19 @@ npm run build:single
 npm run test:sites
 ```
 
-`npm run build:single`은 `app/package.json`의 버전에 맞춰 루트의 `release/BOF_Endpoint_Coach_v0.2.0.html`을 생성합니다.
+`npm run build:single`은 `app/package.json`의 버전에 맞춰 루트의 `release/BOF_Endpoint_Coach_v0.2.1.html`을 생성합니다.
 
-검증된 v0.2.0 기준:
+검증된 v0.2.1 기준:
 
 - ESLint: PASS
-- Vitest: 11개 파일, 30개 테스트 PASS
+- Vitest: 14개 파일, 48개 테스트 PASS
 - 일반 Vite 빌드: PASS
 - 단일 오프라인 HTML 빌드: PASS
 - 오프라인 호스팅/라우팅: 4개 테스트 PASS
-- 실제 브라우저 주요 흐름·한영 전환·1920×1080 화면: PASS
-- 새 브라우저 세션 콘솔 오류·경고: 0건
+- 실제 브라우저 작업자 설정→빈 시작→G0~G8→보관·삭제→초기화·복구 흐름: PASS
+- 서버 없는 단일 HTML 직접 실행·새로고침 후 IndexedDB 보존: PASS
+- 한영 전환·1920×1080 화면·가로 넘침 없음: PASS
+- 브라우저 페이지 오류·Vite 오류 오버레이: 0건
 - 실제 BOF 종점 예측 정확도: **검증 전**
 
 소스 구조와 결정 이력은 [문서 색인](docs/README.md)과 [누적 이력 관리](docs/governance/누적이력관리.md)에 기록합니다.
@@ -125,10 +131,11 @@ The current source uses synthetic DEMO heats and public-literature scenarios. It
 
 ### Quick start
 
-1. Download `BOF_Endpoint_Coach_v0.2.0.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
+1. Download `BOF_Endpoint_Coach_v0.2.1.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
 2. Open it in Microsoft Edge or Google Chrome on a desktop PC. No server or internet connection is required.
-3. Review reference profiles, create a heat, and record actual events with the six bottom action buttons.
-4. Export a CSV ZIP backup before browser reset, workstation handover, or shift change.
+3. Enter an operator display name and choose an empty workspace or optional synthetic DEMO.
+4. Review reference profiles, create a heat, record actual events, and advance manually from G0 through G8.
+5. Export a CSV ZIP backup before browser reset, workstation handover, or shift change.
 
 See the [bilingual user guide](docs/user-guide.md) for the complete operating sequence.
 

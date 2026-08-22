@@ -1,5 +1,6 @@
 import { getStageGuidance } from "../domain/operationalGuidance.js";
 import { Plus } from "@phosphor-icons/react";
+import { isActiveHeat } from "../domain/processStages.js";
 
 function formatTime(value) {
   if (!value) return "–";
@@ -10,7 +11,8 @@ export function HeatSummaryBar({ heat, heats, settings, locale, t, selectHeat, c
   const grade = settings.gradeProfiles.find((item) => item.code === heat.gradeCode);
   const target = grade?.targets?.C;
   const guidance = getStageGuidance(heat.stage, locale);
-  const elapsedMinutes = Math.max(0, Math.floor((new Date(calculation.calculatedAt) - new Date(heat.startedAt)) / 60000));
+  const elapsedEnd = heat.completedAt ?? heat.cancelledAt ?? calculation.calculatedAt;
+  const elapsedMinutes = Math.max(0, Math.floor((new Date(elapsedEnd) - new Date(heat.startedAt)) / 60000));
   const summary = [
     [t("heatNo"), heat.id],
     [t("grade"), locale === "ko" ? grade?.nameKo : grade?.nameEn],
@@ -24,8 +26,8 @@ export function HeatSummaryBar({ heat, heats, settings, locale, t, selectHeat, c
   return (
     <section className="heat-context" aria-label={t("activeHeats")}>
       <div className="heat-tabs">
-        <span>{t("activeHeats")} {heats.filter((item) => item.status === "in_progress").length}</span>
-        {heats.filter((item) => item.status === "in_progress").map((item) => (
+        <span>{t("activeHeats")} {heats.filter(isActiveHeat).length}</span>
+        {heats.filter(isActiveHeat).map((item) => (
           <button key={item.id} type="button" className={item.id === heat.id ? "selected" : ""} onClick={() => selectHeat(item.id)}>{item.id} · {item.stage}</button>
         ))}
         <button className="add-heat" type="button" onClick={onNewHeat}><Plus /> {t("newHeat")}</button>

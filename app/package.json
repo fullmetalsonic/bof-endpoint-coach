@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "build:readme-html": "node scripts/prepare-readme-html.mjs",
     "build:single": "vite build --config vite.single.config.mjs && node scripts/prepare-standalone.mjs",
     "check": "npm run lint && npm run test && npm run build && npm run build:single && npm run test:sites",
-    "lint": "eslint src tests vite.config.mjs vite.single.config.mjs",
+    "lint": "eslint src tests scripts vite.config.mjs vite.single.config.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

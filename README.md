@@ -59,7 +59,7 @@
 
 ### 계산 경계
 
-공개 구현의 샘플 앵커 골격은 다음과 같습니다.
+공개 구현의 계산식 버전은 `BOF-REF-CALC 0.2.0`입니다. 샘플 앵커 골격은 다음과 같습니다.
 
 ```text
 C_end = C_sample + C_literature(O_plan) - C_literature(O_sample)
@@ -134,6 +134,7 @@ See the [bilingual user guide](docs/user-guide.md) for the complete operating se
 
 ### Current limitations
 
+- The public calculation formula version is `BOF-REF-CALC 0.2.0`.
 - Endpoint accuracy has not been validated against plant heats.
 - Literature originals are preserved; calculation priority is site-approved override, user override, then literature original. An unapproved override is used but clearly labeled.
 - Literature low/high outputs are sensitivity scenarios, not statistically validated confidence intervals.

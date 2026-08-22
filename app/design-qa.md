@@ -56,3 +56,51 @@
 ## Final result
 
 passed
+
+---
+
+# Design QA — GitHub형 README 메일 본문 수정
+
+## Comparison setup
+
+- Source visual truth: `D:\Codex\취련 코치\.codex-remote-attachments\01a02829-911d-7c30-b89f-b4b8e9e13c08\21ca6ba7-ef1d-4db6-b886-9bd0218c11ff\1-Photo-1.jpg` through `5-Photo-5.jpg`
+- Implementation preview: `D:\Codex\취련 코치\release\BOF_Endpoint_Coach_EMAIL_PREVIEW_v0.1.0.html`
+- Implementation screenshot: `D:\Codex\취련 코치\work\email-qa\implementation-email-preview-1280x960.png`
+- Full-page screenshot: `D:\Codex\취련 코치\work\email-qa\implementation-email-preview-full-1280.png`
+- Mobile-width screenshot: `D:\Codex\취련 코치\work\email-qa\implementation-email-preview-720x960.png`
+- Combined comparison: `D:\Codex\취련 코치\work\email-qa\reference-vs-email-preview-1280x960.png`
+- Source and implementation viewport: 1280 × 960 CSS px; device density differences were normalized by drawing both captures into equal 1280 × 960 comparison regions.
+- Additional responsive viewport: 720 × 960 CSS px.
+- State: README opening section with Korean dashboard visible, followed by all Korean/English sections and three inline screenshots.
+
+## Full-view and focused evidence
+
+- The combined first-view comparison confirms the same information order and hierarchy: H1 title, Korean/English links, product summary, safety blockquote, and dashboard screenshot above the Korean feature section.
+- The full-page capture confirms that the feature list, quick start, role table, settings screenshot, calculation boundary, security, development verification, English screenshot, and English limitations remain present in README order.
+- A separate focused crop was unnecessary because the 1280 × 960 first-view comparison keeps the title, paragraph styling, blockquote, and dashboard screenshot readable at 1:1 viewport size.
+
+## Comparison history
+
+### Pass 1 — blocked
+
+- P1 typography/content: the generic `a` tag styling expression also matched the opening `article` tag, turning most of the README into one underlined link surface. This materially differed from the GitHub reference and reduced readability.
+- Fix: constrained inline-style matching to complete tag names with `(?=\\s|>)`, then rebuilt the email body and preview.
+
+### Pass 2 — passed
+
+- Post-fix visual evidence shows underline only on actual links. Headings, paragraph text, bold emphasis, blockquote, lists, code blocks, and tables render independently.
+- First dashboard screenshot is visible above the fold at 1280 × 960 and remains fully scaled without horizontal overflow at 720 × 960.
+- Browser error/warning logs: 0.
+
+## Required fidelity surfaces
+
+- Fonts and typography: system UI/Segoe UI/Noto Sans KR fallbacks, 32px H1, 24px H2, 20px H3, 16px body, 1.6–1.65 line height, and 700 emphasis preserve the GitHub README hierarchy without Markdown syntax leakage.
+- Spacing and layout rhythm: 960px email container, 42px content padding, GitHub-like section spacing, divider rules, table cells, and blockquote inset remain consistent. GitHub repository tabs/sidebar are intentionally omitted because they are site chrome, not README content.
+- Colors and tokens: white content, `#f6f8fa` page surface, `#d1d9e0` borders, `#1f2328` text, and `#0969da` links match the visible GitHub light theme. The yellow correction notice is an intentional email-only status banner.
+- Image quality and asset fidelity: all three original public README PNG assets are used directly; no placeholders, CSS art, custom SVG substitutes, external image URLs, or recompression are introduced. Email delivery uses CID inline parts.
+- Copy and content: the complete public README is retained in Korean and English. The only added copy explains why this corrected email replaces the attachment-only message.
+- Responsiveness and accessibility: 720px preview has `scrollWidth == clientWidth`; images are complete and scaled to 597px without clipping. Existing image alt text, heading hierarchy, table semantics, and readable link contrast are retained.
+
+## Final result
+
+passed

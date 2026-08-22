@@ -1,0 +1,38 @@
+{
+  "name": "bof-endpoint-coach",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "build:single": "vite build --config vite.single.config.mjs && node scripts/prepare-standalone.mjs",
+    "check": "npm run lint && npm run test && npm run build && npm run build:single && npm run test:sites",
+    "lint": "eslint src tests vite.config.mjs vite.single.config.mjs",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:sites": "node --test tests/sites-worker.test.mjs"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@vitejs/plugin-react": "5.0.4",
+    "jszip": "^3.10.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "vite": "6.4.3",
+    "vite-plugin-singlefile": "^2.3.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.6",
+    "eslint": "^10.9.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "fake-indexeddb": "^6.2.5",
+    "globals": "^17.11.0",
+    "jsdom": "^30.0.1",
+    "vitest": "^4.1.11"
+  }
+}

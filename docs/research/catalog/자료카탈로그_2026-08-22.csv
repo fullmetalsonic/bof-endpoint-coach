@@ -1,0 +1,41 @@
+id,category,year,title,source,access,url,tool_relevance
+S01,education,,Basic Oxygen Steelmaking,steeluniversity,public-page,https://steeluniversity.org/courses/man0104-basic-oxygen-steelmaking/,high
+S02,education,,Basic Oxygen Steelmaking Converter Process Control,steeluniversity,public-page,https://steeluniversity.org/courses/man0302mp-basic-oxygen-steelmaking-converter-process-control/,high
+S03,education,,Blow Theory,steeluniversity,public-page,https://hub.steeluniversity.org/catalog/module/92,high
+S04,simulation-guide,,Basic Oxygen Steelmaking Simulation User Guide,steeluniversity,public-pdf,https://content.steeluniversity.org/simulators/sc13/bos/help/BOS_User_Guide_EN_ver02.pdf,high
+S05,course-note,,Process Control BOF Steelmaking Overview,NPTEL,public-page,https://archive.nptel.ac.in/content/storage2/courses/113104059/lecture20/20_2.htm,high
+S06,course-note,,Static Model,NPTEL,public-page,https://archive.nptel.ac.in/content/storage2/courses/113104059/lecture20/20_3.htm,high
+S07,course-note,,Semi-dynamic and Dynamic Models,NPTEL,public-page,https://archive.nptel.ac.in/content/storage2/courses/113104059/lecture20/20_4.htm,high
+S08,course-note,,Converter Steelmaking Practice,NPTEL,public-page,https://archive.nptel.ac.in/content/storage2/courses/113104059/lecture12/12_3.htm,high
+S09,course-note,,Slag in Steelmaking,NPTEL,public-page,https://archive.nptel.ac.in/content/storage2/courses/113104059/lecture4/4_3.htm,high
+S10,course-note,,Dephosphorization Conditions,NPTEL,public-page,https://archive.nptel.ac.in/content/storage2/courses/113104059/lecture8/8_5.htm,high
+S11,safety,2025,Safety hazards in molten metal industries,HSE,public-page,https://www.hse.gov.uk/moltenmetals/safety-topics.htm,high
+S12,research,2022,Hybrid Method for Endpoint Prediction in a Basic Oxygen Furnace,Metals,open-access,https://www.mdpi.com/2075-4701/12/5/801,high
+S13,research,2020,A review of end-point carbon prediction for BOF steelmaking process,High Temperature Materials and Processes,abstract-doi,https://doi.org/10.1515/htmp-2020-0098,high
+S14,research,2019,Understanding Dephosphorization in BOFs Using Data Driven Modeling Techniques,Metals,open-access,https://www.mdpi.com/2075-4701/9/9/955,high
+S15,research,2022,Basic Oxygen Steelmaking Slag Formation Reaction and Energy and Material Recovery,steel research international,abstract-doi,https://doi.org/10.1002/srin.202100167,medium
+S16,research,2017,A review of phosphorus partition relations for use in basic oxygen steelmaking,Ironmaking and Steelmaking,abstract-doi,https://doi.org/10.1080/03019233.2017.1386456,medium
+S17,research,2021,A dynamic optimization framework for basic oxygen furnace operation,Chemical Engineering Science,abstract-doi,https://doi.org/10.1016/j.ces.2021.116653,medium
+S18,research,2022,Prediction of Temperature and Carbon Concentration in Oxygen Steelmaking by Machine Learning,Applied Sciences,open-access,https://www.mdpi.com/2076-3417/12/15/7757,medium
+S19,research,2024,Dynamic Soft Sensor Model for Endpoint Carbon Content and Temperature in BOF Steelmaking,Processes,open-access,https://www.mdpi.com/2227-9717/12/9/1807,medium
+S20,research,2026,Physics-Aware Framework for Cumulative Decarburization in BOF Steelmaking,Applied Sciences,open-access,https://www.mdpi.com/2076-3417/16/6/3059,medium
+S21,research,2023,Method for Dynamic Prediction of Oxygen Demand in Steelmaking Process Based on BOF Technology,Processes,open-access,https://www.mdpi.com/2227-9717/11/8/2404,medium
+S22,research,2019,Hot Metal Temperature Prediction at BOF Converter Using IR Thermometry,Energies,open-access,https://www.mdpi.com/1996-1073/12/17/3235,medium
+S23,research,2023,Production State Characterization and End-Point Time Prediction of BOF Steelmaking,Metals,open-access,https://www.mdpi.com/2075-4701/13/1/2,medium
+S24,research,2026,BOF endpoint forecasting via informer architecture,Metallurgical Research and Technology,open-access,https://doi.org/10.1051/metal/2025119,medium
+S25,thesis,2012,Special measurements and control models for a BOF,Oulu University,public-repository,https://oulurepo.oulu.fi/handle/10024/34869,medium
+S26,industry,,Cold Rolled Steel manufacturing process POSCO,POSCO,public-pdf,https://www.posco.co.kr/homepage/servlet/FileDownLoad?fileCategory=prdMda&fileNum=43,medium
+S27,domestic-standard,2022,Steelmaking occupational standard excerpt,Korean education notice,public-pdf,https://teacher.pass.com/site/contents/exam/html/edu_data/file_down.php?value=D31,medium
+S28,patent,2014,KR 10-1412569 slag oxidation prediction,KIPRIS patent image,public-pdf,https://patentimages.storage.googleapis.com/pdfs/5d23f0112eb58df0b43e/1020120083599.pdf,low
+S29,industry,1977,Basic Oxygen Process Manual of Practice,US EPA,public-text,https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=910183FS.TXT,medium
+S30,industry,2016,Environmental Code of Practice for integrated steel mills Canada,Canada government,public-page,https://www.canada.ca/en/environment-climate-change/services/canadian-environmental-protection-act-registry/publications/code-practice-integrated-steel-mills/section-3.html,low
+S31,domestic-research,2023,Effect of Supersonic Oxygen Lance on Post-Combustion in Converter Steelmaking Process,Korean Journal of Metals and Materials,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=4028923,medium
+S32,domestic-research,1995,A Study on the Reduction of Blowing Time in BOF Operation,Korean Journal of Metals and Materials,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=136295,medium
+S33,domestic-research,2020,A Study on the Supersonic Jet Nozzle to Improve of the Operating Efficiency of the Converter Process,Korean Journal of Metals and Materials,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=3811565,medium
+S34,domestic-research,2002,Temperature Prediction System for Steelmaking Process Using Fuzzy Regression Model,Korean Operations Research and Management Science Society,abstract-page,https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE00580312,medium
+S35,domestic-research,1988,Computer Control Model for BOF Steelmaking Process,Korean Institute of Metals and Materials,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=139540,medium
+S36,domestic-research,2020,Slag Carryover Prevention Equipment in Converter Tapping,Korean Industrial and Engineering Chemistry conference,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=3860011,low
+S37,domestic-research,2015,Quality Evaluation of Converter Coolant from Steelworks Byproducts,Korean Industrial and Engineering Chemistry conference,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=3372853,low
+S38,domestic-research,1999,Mechanism of Slag Coating on Lining of LD Converters,Korean Journal of Metals and Materials,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=221417,low
+S39,international-research,2020,Using Machine Learning for Robust Target Prediction in a Basic Oxygen Furnace System,Metallurgical and Materials Transactions B,abstract-page,https://link.springer.com/article/10.1007/s11663-020-01853-5,high
+S40,international-research,2025,Incorporation of Control Parameters into a Kinetic Model for Decarburization During Basic Oxygen Furnace Steelmaking,Processes,open-access,https://www.mdpi.com/2227-9717/13/10/3048,high

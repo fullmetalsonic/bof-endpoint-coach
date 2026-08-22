@@ -1,0 +1,17 @@
+# Company operational data must not be committed or shared with project source.
+data/exports/*
+!data/exports/README.md
+
+# Browser/local test data
+data/local/*
+!data/local/README.md
+
+# Local dependencies and generated test/build output
+app/node_modules/
+app/dist/
+app/coverage/
+app/*.log
+
+# User-provided references and temporary workspace files
+.codex-remote-attachments/
+work/

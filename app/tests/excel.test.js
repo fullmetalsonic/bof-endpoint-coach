@@ -1,0 +1,29 @@
+import { describe, expect, it } from "vitest";
+import JSZip from "jszip";
+import { createDemoState } from "../src/data/demoState.js";
+import { buildExcelBlob, buildExcelSheets } from "../src/reports/excel.js";
+
+describe("Excel report", () => {
+  it("builds four operator-facing sheets", () => {
+    const sheets = buildExcelSheets(createDemoState());
+    expect(sheets.map((sheet) => sheet.name)).toEqual(["Heat summary", "Events", "Analysis", "Read me"]);
+    expect(sheets[0].rows.length).toBeGreaterThan(1);
+  });
+
+  it("packages a valid Open XML workbook structure", async () => {
+    const blob = await buildExcelBlob(createDemoState());
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+    expect(Object.keys(zip.files)).toEqual(expect.arrayContaining([
+      "[Content_Types].xml",
+      "_rels/.rels",
+      "xl/workbook.xml",
+      "xl/_rels/workbook.xml.rels",
+      "xl/styles.xml",
+      "xl/worksheets/sheet1.xml",
+      "xl/worksheets/sheet4.xml",
+    ]));
+    const workbook = await zip.file("xl/workbook.xml").async("text");
+    expect(workbook).toContain('name="Heat summary"');
+    expect(workbook).toContain('name="Read me"');
+  });
+});

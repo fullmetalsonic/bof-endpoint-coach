@@ -1,0 +1,3 @@
+heat_id,status,event_type,event_time,recorded_time,steel_grade_group,material_or_sample_id,quantity,unit,temperature_c,carbon_pct,manganese_pct,phosphorus_pct,sulfur_pct,note
+EXAMPLE-001,in_progress,sample_taken,2026-08-22T09:10:00+09:00,2026-08-22T09:10:20+09:00,example_group,S-001,,,,,,,,,Example only; do not enter company data in this template
+EXAMPLE-001,in_progress,analysis_received,2026-08-22T09:10:00+09:00,2026-08-22T09:15:00+09:00,example_group,S-001,,,1600,0.30,0.10,0.020,0.010,Example values only

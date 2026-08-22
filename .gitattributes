@@ -1,0 +1,12 @@
+* text=auto
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.csv text eol=lf
+*.md text eol=lf whitespace=-trailing-space,-blank-at-eof
+*.png binary
+*.jpg binary

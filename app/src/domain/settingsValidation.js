@@ -1,6 +1,8 @@
 import { COEFFICIENT_FIELDS } from "../calculation/coefficientProfile.js";
 
 const coefficientFieldKeys = new Set(COEFFICIENT_FIELDS.map((field) => field.key));
+const massUnits = new Set(["kg", "t", "g"]);
+const chemistryUnits = new Set(["%", "wt%", "ppm"]);
 
 function duplicates(values) {
   const seen = new Set();
@@ -17,6 +19,9 @@ function finite(value) {
 
 export function validateSettings(settings, locale = "ko") {
   const errors = [];
+  if (!settings.gradeProfiles.length || !settings.materials.length || !settings.equipmentProfiles.length || !settings.coefficientProfiles.length) {
+    errors.push(locale === "ko" ? "강종·재료·설비·계수 프로필은 각각 하나 이상 필요합니다." : "At least one grade, material, equipment, and coefficient profile is required.");
+  }
   if (duplicates(settings.gradeProfiles.map((item) => item.code.trim())).length) {
     errors.push(locale === "ko" ? "강종 코드는 비어 있거나 중복될 수 없습니다." : "Grade codes cannot be blank or duplicated.");
   }
@@ -26,13 +31,35 @@ export function validateSettings(settings, locale = "ko") {
   if (duplicates(settings.coefficientProfiles.map((item) => item.id.trim())).length) {
     errors.push(locale === "ko" ? "계수 프로필 ID는 비어 있거나 중복될 수 없습니다." : "Coefficient profile IDs cannot be blank or duplicated.");
   }
+  if (duplicates(settings.equipmentProfiles.map((item) => item.id.trim())).length) {
+    errors.push(locale === "ko" ? "설비 프로필 ID는 비어 있거나 중복될 수 없습니다." : "Equipment profile IDs cannot be blank or duplicated.");
+  }
+  const units = settings.unitPolicy ?? {};
+  if (!massUnits.has(units.mass) || units.oxygen !== "Nm³" || units.temperature !== "°C" || !chemistryUnits.has(units.chemistry)) {
+    errors.push(locale === "ko" ? "기본 단위 정책에 지원하지 않는 단위가 있습니다." : "The default unit policy contains an unsupported unit.");
+  }
   settings.gradeProfiles.forEach((grade) => {
     Object.entries(grade.targets).forEach(([key, target]) => {
       if (target.min !== null && target.min !== undefined && target.max !== null && target.max !== undefined && Number(target.min) > Number(target.max)) {
         errors.push(locale === "ko" ? `${grade.code}의 ${key} 최소값이 최대값보다 큽니다.` : `${grade.code} ${key} minimum is greater than its maximum.`);
       }
+      const limit = key === "temperature" ? 2500 : 100;
+      if ([target.min, target.max].some((value) => value !== null && value !== undefined && (!finite(value) || Number(value) < 0 || Number(value) > limit))) {
+        errors.push(locale === "ko" ? `${grade.code}의 ${key} 목표값 범위를 확인하십시오.` : `Check the target range for ${grade.code} ${key}.`);
+      }
     });
   });
+  settings.materials.forEach((material) => {
+    if (!massUnits.has(material.unit)) {
+      errors.push(locale === "ko" ? `${material.code} 기본 투입 단위를 확인하십시오.` : `Check the default input unit for ${material.code}.`);
+    }
+    if (Object.values(material.composition ?? {}).some((value) => value !== null && value !== undefined && (!finite(value) || Number(value) < 0 || Number(value) > 100))) {
+      errors.push(locale === "ko" ? `${material.code} 조성은 0~100% 범위여야 합니다.` : `${material.code} composition must be between 0 and 100%.`);
+    }
+  });
+  if (settings.equipmentProfiles.some((profile) => !profile.id?.trim() || !finite(profile.nominalCapacityT) || Number(profile.nominalCapacityT) <= 0)) {
+    errors.push(locale === "ko" ? "설비 ID와 호칭 용량을 확인하십시오." : "Check equipment IDs and nominal capacities.");
+  }
   settings.coefficientProfiles.forEach((profile) => {
     const values = { ...(profile.literatureValues ?? {}), ...(profile.overrideValues ?? {}) };
     if (Object.values(profile.literatureValues ?? {}).some((value) => !finite(value)) || Object.values(profile.overrideValues ?? {}).some((value) => !finite(value))) {

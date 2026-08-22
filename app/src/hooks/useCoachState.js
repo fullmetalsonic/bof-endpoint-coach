@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createDemoState, createEmptyState } from "../data/demoState.js";
 import { normalizeCoachState } from "../data/stateMigration.js";
-import { advanceHeat, applyHeatEvent, archiveHeat, canDeleteHeat, cancelHeat, createHeatFromForm } from "../domain/heatOperations.js";
+import { advanceHeat, applyHeatEvent, archiveHeat, canDeleteHeat, cancelHeat, createHeatFromForm, updateHeatInputs } from "../domain/heatOperations.js";
+import { adoptAnalysisRecord, correctAnalysisRecord, correctEventRecord, correctTapRecord, invalidateAnalysisRecord, invalidateEventRecord, rollbackLastStage, setActualEndpointAnalysis } from "../domain/correctionOperations.js";
+import { capturePredictionSnapshot } from "../domain/predictionHistory.js";
 import { clearRecoveryState, clearState, loadRecoveryState, loadState, saveRecoveryState, saveState } from "../storage/indexedDb.js";
 
 function withLog(state, type, payload = {}) {
@@ -10,6 +12,10 @@ function withLog(state, type, payload = {}) {
     ...state,
     operationLog: [...(state.operationLog ?? []), { id: `LOG-${crypto.randomUUID()}`, type, at, ...payload }],
   };
+}
+
+function withPrediction(heat, settings, trigger) {
+  return capturePredictionSnapshot(heat, settings, trigger);
 }
 
 export function useCoachState() {
@@ -52,14 +58,23 @@ export function useCoachState() {
 
   const addEvent = useCallback((type, form) => {
     setState((previous) => {
-      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? applyHeatEvent(heat, type, form, previous.operatorProfile) : heat);
+      const heats = previous.heats.map((heat) => {
+        if (heat.id !== previous.currentHeatId) return heat;
+        const updated = applyHeatEvent(heat, type, form, previous.operatorProfile);
+        const triggerId = updated.events.at(-1)?.id;
+        return withPrediction(updated, previous.settings, { type, id: triggerId });
+      });
       return withLog({ ...previous, heats }, `event_${type}`, { heatId: previous.currentHeatId, operator: previous.operatorProfile?.displayName ?? "" });
     });
   }, []);
 
   const advanceCurrentStage = useCallback((form) => {
     setState((previous) => {
-      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? advanceHeat(heat, form, previous.operatorProfile) : heat);
+      const heats = previous.heats.map((heat) => {
+        if (heat.id !== previous.currentHeatId) return heat;
+        const updated = advanceHeat(heat, form, previous.operatorProfile);
+        return withPrediction(updated, previous.settings, { type: "stage", id: updated.stageHistory.at(-1)?.id });
+      });
       return withLog({ ...previous, heats }, "stage_advanced", { heatId: previous.currentHeatId, to: heats.find((heat) => heat.id === previous.currentHeatId)?.stage });
     });
   }, []);
@@ -72,8 +87,22 @@ export function useCoachState() {
 
   const createHeat = useCallback((form) => {
     setState((previous) => {
-      const heat = createHeatFromForm(form, previous.operatorProfile);
+      const heatId = form.id?.trim();
+      if (previous.heats.some((item) => item.id === heatId)) return previous;
+      const created = createHeatFromForm(form, previous.operatorProfile, new Date().toISOString(), previous.settings);
+      const heat = withPrediction(created, previous.settings, { type: "heat_created", id: created.events[0]?.id });
       return withLog({ ...previous, heats: [...previous.heats, heat], currentHeatId: heat.id }, "heat_created", { heatId: heat.id });
+    });
+  }, []);
+
+  const updateCurrentHeatInputs = useCallback((form) => {
+    setState((previous) => {
+      const heats = previous.heats.map((heat) => {
+        if (heat.id !== previous.currentHeatId) return heat;
+        const updated = updateHeatInputs(heat, form, previous.operatorProfile, new Date().toISOString(), previous.settings);
+        return withPrediction(updated, previous.settings, { type: "initial_updated", id: updated.events.at(-1)?.id });
+      });
+      return withLog({ ...previous, heats }, "initial_inputs_updated", { heatId: previous.currentHeatId, operator: previous.operatorProfile?.displayName ?? "" });
     });
   }, []);
 
@@ -119,7 +148,61 @@ export function useCoachState() {
     return withLog({ ...previous, heats }, action === "cancel" ? "heat_cancelled" : "heat_archived", { heatId, reason });
   }), []);
 
+  const correctRecord = useCallback((heatId, targetKind, targetId, changes, reason) => setState((previous) => {
+    const heats = previous.heats.map((heat) => {
+      if (heat.id !== heatId) return heat;
+      const corrected = targetKind === "analysis"
+        ? correctAnalysisRecord(heat, targetId, changes, reason, previous.operatorProfile)
+        : correctEventRecord(heat, targetId, changes, reason, previous.operatorProfile);
+      return withPrediction(corrected, previous.settings, { type: "correction", id: corrected.correctionLog.at(-1)?.id });
+    });
+    return withLog({ ...previous, heats }, "record_corrected", { heatId, targetKind, targetId, reason });
+  }), []);
+
+  const invalidateRecord = useCallback((heatId, targetKind, targetId, reason) => setState((previous) => {
+    const heats = previous.heats.map((heat) => {
+      if (heat.id !== heatId) return heat;
+      const corrected = targetKind === "analysis"
+        ? invalidateAnalysisRecord(heat, targetId, reason, previous.operatorProfile)
+        : invalidateEventRecord(heat, targetId, reason, previous.operatorProfile);
+      return withPrediction(corrected, previous.settings, { type: "invalidation", id: corrected.correctionLog.at(-1)?.id });
+    });
+    return withLog({ ...previous, heats }, "record_voided", { heatId, targetKind, targetId, reason });
+  }), []);
+
+  const rollbackStage = useCallback((heatId, reason) => setState((previous) => {
+    const heats = previous.heats.map((heat) => {
+      if (heat.id !== heatId) return heat;
+      const corrected = rollbackLastStage(heat, reason, previous.operatorProfile);
+      return withPrediction(corrected, previous.settings, { type: "stage_rollback", id: corrected.correctionLog.at(-1)?.id });
+    });
+    return withLog({ ...previous, heats }, "stage_rolled_back", { heatId, reason });
+  }), []);
+
+  const correctTap = useCallback((heatId, occurredAt, reason) => setState((previous) => {
+    const heats = previous.heats.map((heat) => {
+      if (heat.id !== heatId) return heat;
+      const corrected = correctTapRecord(heat, occurredAt, reason, previous.operatorProfile);
+      return withPrediction(corrected, previous.settings, { type: "tap_correction", id: corrected.correctionLog.at(-1)?.id });
+    });
+    return withLog({ ...previous, heats }, "tap_corrected", { heatId, occurredAt, reason });
+  }), []);
+
+  const adoptAnalysis = useCallback((heatId, analysisId, reason) => setState((previous) => {
+    const heats = previous.heats.map((heat) => {
+      if (heat.id !== heatId) return heat;
+      const corrected = adoptAnalysisRecord(heat, analysisId, reason, previous.operatorProfile);
+      return withPrediction(corrected, previous.settings, { type: "analysis_adopted", id: analysisId });
+    });
+    return withLog({ ...previous, heats }, "analysis_adopted", { heatId, analysisId, reason });
+  }), []);
+
+  const selectActualEndpoint = useCallback((heatId, analysisId, reason) => setState((previous) => {
+    const heats = previous.heats.map((heat) => heat.id === heatId ? setActualEndpointAnalysis(heat, analysisId, reason, previous.operatorProfile) : heat);
+    return withLog({ ...previous, heats }, "actual_endpoint_selected", { heatId, analysisId, reason });
+  }), []);
+
   const setLocale = useCallback((locale) => setState((previous) => ({ ...previous, locale })), []);
 
-  return { state, currentHeat, recovery, saveStatus, selectHeat, addEvent, advanceCurrentStage, createHeat, updateSettings, recordOperation, replaceState, resetWorkspace, restoreRecovery, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, setLocale };
+  return { state, currentHeat, recovery, saveStatus, selectHeat, addEvent, advanceCurrentStage, createHeat, updateCurrentHeatInputs, updateSettings, recordOperation, replaceState, resetWorkspace, restoreRecovery, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, correctRecord, invalidateRecord, rollbackStage, correctTap, adoptAnalysis, selectActualEndpoint, setLocale };
 }

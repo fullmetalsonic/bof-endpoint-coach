@@ -4,9 +4,9 @@ import { createDemoState } from "../src/data/demoState.js";
 import { buildExcelBlob, buildExcelSheets } from "../src/reports/excel.js";
 
 describe("Excel report", () => {
-  it("builds four operator-facing sheets", () => {
+  it("builds correction-aware operator-facing sheets", () => {
     const sheets = buildExcelSheets(createDemoState());
-    expect(sheets.map((sheet) => sheet.name)).toEqual(["Heat summary", "Events", "Analysis", "Read me"]);
+    expect(sheets.map((sheet) => sheet.name)).toEqual(["Heat summary", "Events", "Analysis", "Corrections", "Predictions", "Read me"]);
     expect(sheets[0].rows.length).toBeGreaterThan(1);
   });
 

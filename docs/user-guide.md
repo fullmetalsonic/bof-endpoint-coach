@@ -1,4 +1,4 @@
-# 취련 코치 v0.2.1 사용 설명서 / BOF Endpoint Coach v0.2.1 User Guide
+# 취련 코치 v0.3.0 사용 설명서 / BOF Endpoint Coach v0.3.0 User Guide
 
 이 문서는 회사 공용 PC에서 단일 HTML 파일을 열어 사용하는 초기 공개본의 조작 순서와 안전 경계를 설명합니다. 모든 화면과 예시는 합성 DEMO 데이터입니다.
 
@@ -6,7 +6,7 @@
 
 ## 1. 실행 전 준비
 
-1. `BOF_Endpoint_Coach_v0.2.1.html`과 이 사용 설명서를 공용 PC의 작업 폴더에 저장합니다.
+1. `BOF_Endpoint_Coach_v0.3.0.html`과 이 사용 설명서를 공용 PC의 작업 폴더에 저장합니다.
 2. 실행 파일을 Microsoft Edge 또는 Google Chrome으로 엽니다. 서버 설치나 인터넷 연결은 필요하지 않습니다.
 3. 브라우저 배율은 100%를 권장하며, 화면은 1280px 이상 데스크톱용입니다. 1920×1080 모니터에서 검증했습니다.
 4. 첫 화면에서 작업자 이름을 입력합니다. 합성 차지 없이 시작하려면 `빈 작업으로 시작`, 기능을 둘러보려면 `DEMO로 체험`을 선택합니다.
@@ -21,12 +21,14 @@
 | 상단 차지 탭 | 동시에 진행 중인 차지를 선택하고 `신규 차지`를 생성 |
 | 상단 요약 | 강종, 목표 C, 현재 단계, 경과시간, 누적 산소, 예상 출강시각, 다음 행동 |
 | 좌측 G0~G8 | 장입부터 후처리까지 현재 공정 게이트와 입력된 실제 전환 시각 |
-| 중앙 상단 단계 전환 | 현재 단계에서 다음 단계로 이동하며 실제 시각·산소·랜스·유량을 기록 |
-| 중앙 다음 행동 | 현재 단계와 C·온도 상태에 따른 확인 항목 |
+| 중앙 현재 해야 할 일 | 지금 눌러야 할 입력창과 입력 목적을 큰 버튼으로 표시 |
+| 중앙 진행 순서 | 이 단계에서 기록할 항목과 완료 여부, 권장 항목을 순서대로 표시 |
+| 중앙 다음 단계 | 예상 상태와 다음 게이트를 확인하고 실제 전환 시각·산소·랜스·유량을 기록 |
 | 품질 막대 | 검은 점은 최신 실측, 흰 점은 기준 종점 참고예상, 얇은 범위는 문헌 저/고 시나리오, 녹색은 강종 목표 |
 | 최근 분석 표 | 채취 시각, 샘플 ID, C·Si·Mn·P·S·온도, 분석 방법 |
+| 전체 이력·정정 | 원본을 지우지 않고 수정·무효·채택·단계 복귀·출강 정정과 예상 대 실제값을 관리 |
 | Data Ledger | 입력 최신성, 로컬 저장, 외부 연동 여부, 미완료 확인, 계산식·계수·근거·설비 프로필 |
-| 하단 6개 버튼 | 자재, 샘플, 분석, 체크포인트, 재취련, 출강 입력 |
+| 하단 6개 버튼 | 자재, 샘플, 분석, 체크포인트, 재취련, 출강 입력. 현재 권장 입력에는 `지금 입력` 표시 |
 
 P·Mn·Si·S는 현장 승인 계산식이 없으므로 실측과 목표만 표시하고 종점 예상값을 만들지 않습니다.
 
@@ -42,7 +44,7 @@ P·Mn·Si·S는 현장 승인 계산식이 없으므로 실측과 목표만 표�
 ### 3.2 재료와 단위
 
 - 자재 코드, 분류, 기본 단위와 C·Si·Mn·P·S·CaO 조성을 기록할 수 있습니다.
-- kg·t·g 입력은 내부에서 kg로 환산됩니다.
+- kg·t·g 질량 입력은 내부에서 kg로, %·wt%·ppm 성분 입력은 %로 환산됩니다. 백업에는 환산값과 원래 값·단위가 함께 보존됩니다.
 - 현재 계산에는 `flux` 분류의 투입 중량만 열수지에 반영됩니다. 합금 수율 계산은 아직 제공하지 않습니다.
 - 차지 이벤트에서 사용 중인 재료와 마지막 남은 재료는 삭제할 수 없습니다.
 
@@ -70,16 +72,32 @@ P·Mn·Si·S는 현장 승인 계산식이 없으므로 실측과 목표만 표�
 1. 상단 `신규 차지`를 누릅니다.
 2. 차지 번호, 강종, 설비, 계수 프로필을 선택합니다.
 3. 시작 시각은 현재 시각이 기본이며 실제 시각으로 수정할 수 있습니다.
-4. 실제로 알고 있는 용선·스크랩 질량과 C, 용선 온도, 계획 총 산소량, 초기 누적 산소, 산소 유량, 랜스 높이를 입력합니다. 초기 화면은 임의의 현장 수치를 미리 넣지 않습니다.
+4. 입력창의 `계산 핵심` 표시를 따라 용선·스크랩 질량과 C, 용선 온도, 계획 총 산소량을 입력합니다. `정확도 권장` 값은 알고 있는 실제값만 넣습니다. 초기 화면은 임의의 현장 수치를 미리 넣지 않습니다.
 5. 용선 Si·Mn·P를 알고 있으면 입력합니다. 비워 두면 계수 프로필의 문헌 참고값이 쓰이며 Data Ledger에 대체 입력으로 표시됩니다.
 
-차지를 만들면 G0에서 시작하며, 상단 탭을 클릭해 여러 진행 차지를 번갈아 볼 수 있습니다. 값이 비어 있으면 해당 계산은 `–`로 표시되며 실제 값을 입력하기 전까지 임의 수치를 만들지 않습니다.
+차지를 만들면 G0에서 시작하며, 상단 탭을 클릭해 여러 진행 차지를 번갈아 볼 수 있습니다. 값이 비어 있으면 해당 계산은 `–`로 표시되며 실제 값을 입력하기 전까지 임의 수치를 만들지 않습니다. 생성 뒤 값을 고쳐야 하면 중앙 우측의 `기초 입력값 확인·수정`을 사용합니다. 차지 번호와 시작 시각은 이력 식별값이므로 수정하지 않고, 변경 작업자·시각은 자동으로 남깁니다.
 
-## 6. 취련 중 입력 순서
+## 6. 화면 안내를 따라 취련 중 입력하기
 
 모든 입력창의 시각 기본값은 현재 시각입니다. 실제 발생 시각이 다르면 저장 전에 수정합니다.
 
-1. **단계 전환:** 중앙 상단의 `G0 → G1` 형식 버튼을 누르고 실제 전환 시각을 확인합니다. 필요하면 당시 누적 산소·랜스 높이·산소 유량과 메모를 함께 기록합니다.
+현재보다 미래인 시각, 차지 시작 전 시각, 이전 단계보다 빠른 전환 시각은 저장되지 않습니다. 과거 시각으로 자재·샘플·분석을 보완 입력할 때도 그 시각의 실제 공정 단계에서 허용되는 항목인지 검사합니다.
+
+먼저 중앙의 `현재 해야 할 일`을 봅니다. 저장이 끝나면 안내가 자동으로 다음 항목으로 바뀝니다. 좌측 게이트에서 `다음 단계`를 미리 확인할 수 있고, 현재 권장 입력과 같은 하단 버튼에는 `지금 입력`이 표시됩니다.
+
+| 단계 | 중앙 안내 흐름 |
+| --- | --- |
+| G0 | 계산 핵심 기초값 입력 → G1 이동 |
+| G1·G2 | 체크포인트 실제값 입력 → 다음 게이트 이동 |
+| G3·G4 | 샘플 채취 → 분석값 입력 → 샘플 시점 체크포인트 → 다음 게이트 이동 |
+| G5 | 종점 검토 샘플 → C·온도 분석 → 최종 조업값 확인(권장) → G6 이동 |
+| G6 | 출강 전 최종 샘플·분석(현장 기준에 따른 권장) → 출강 기록으로 G7 이동 |
+| G7 | 후처리 자재·최종 샘플(해당 시) → G8 완료 |
+| G8 | 입력·단계 이력 완료 확인 |
+
+세부 입력 종류는 다음과 같습니다.
+
+1. **단계 전환:** 중앙의 `G0 → G1` 형식 버튼을 누르고 실제 전환 시각을 확인합니다. 필요하면 당시 누적 산소·랜스 높이·산소 유량과 메모를 함께 기록합니다.
 2. **자재 투입 기록:** 현재 단계에서 허용될 때 재료, 중량, 단위, 투입 시각을 기록합니다.
 3. **샘플 채취 기록:** G2~G6에서 중복되지 않는 샘플 ID와 실제 채취 시각을 기록합니다. 당시 누적 산소·유량·랜스 높이가 함께 저장됩니다.
 4. **분석 결과 입력:** 채취한 샘플을 선택하고 C·Si·Mn·P·S·온도와 분석 방법, 실제 분석 입력 시각을 기록합니다. 샘플 채취 시각은 바뀌지 않습니다.
@@ -88,9 +106,28 @@ P·Mn·Si·S는 현장 승인 계산식이 없으므로 실측과 목표만 표�
 7. **출강 기록:** G6에서 실제 출강 시각을 기록하면 G7 출강 단계로 이동합니다.
 8. **후처리·완료 처리:** G7에서는 후처리 자재와 최종 샘플·분석을 추가할 수 있습니다. 기록이 끝나면 `G7 → G8`을 눌러 완료합니다.
 
-G5에서 G6로 이동하려면 채택된 샘플에 C와 온도가 모두 입력돼 있어야 합니다. 사용할 수 없는 하단 버튼은 회색으로 잠기며, 차지가 완료·취소·보관된 뒤에는 추가 이벤트를 입력할 수 없습니다.
+G5에서 G6로 이동하려면 채택된 샘플에 C와 온도가 모두 입력돼 있어야 합니다. 단계 전환이 가능해도 아직 수행하지 않은 현재 작업이 있으면 전환 버튼은 흰색 보조 버튼으로 표시됩니다. 실제 공정 진행을 기록해야 하므로 강제로 막지는 않지만, 중앙 진행 순서의 미완료 항목을 먼저 확인하십시오. 사용할 수 없는 하단 버튼은 회색으로 잠기며, 차지가 완료·취소·보관된 뒤에는 추가 이벤트를 입력할 수 없습니다.
 
-## 7. 종점 참고예상 해석
+## 7. 잘못 입력했을 때 정정하기
+
+![정정·이력 관리 화면](https://raw.githubusercontent.com/fullmetalsonic/bof-endpoint-coach/main/docs/screenshots/correction-ledger-ko.png)
+
+| 상황 | 사용할 기능 |
+| --- | --- |
+| 방금 입력한 분석·투입·샘플·체크포인트가 틀림 | 최근 분석의 `수정·무효` 또는 `전체 이력·정정`에서 대상 행 선택 |
+| 마지막 단계 전환을 잘못 누름 | 대시보드 또는 전체 이력의 `마지막 단계 전환 취소` |
+| 몇 단계 전 값이 틀림 | 단계를 되돌리지 말고 전체 타임라인에서 해당 기록만 정정 |
+| 실제 조업을 중단함 | `차지 이력`에서 차지 `취소`와 사유 기록 |
+| 출강 시각이 틀림 | G7·G8 전체 이력 상단의 `출강 기록 정정` |
+| 출강 후 최종 분석이 확정됨 | 해당 분석 행의 `종점 실제값` |
+
+정정창은 대상 이후 이벤트·샘플·단계·예상 스냅샷 건수를 먼저 보여 줍니다. 실제 발생 시각과 값을 확인하고 사유를 입력한 뒤 `영향 확인 후 적용`을 누릅니다. 원본은 `정정됨` 또는 `무효`로 남고, 새 기록과 현재 예상값이 추가됩니다.
+
+`마지막 단계 전환 취소`는 한 단계만 되돌립니다. 여러 단계 전의 수치가 틀렸다고 공정 단계를 여러 번 되감지 마십시오. 해당 과거 기록을 정정하면 현재 단계는 유지되고 이후 계산 정합성을 다시 검사합니다. 출강 이후에는 일반 단계 복귀를 쓰지 않고 별도 출강 기록 정정을 사용합니다.
+
+분석 결과는 한 샘플에 여러 건을 보존할 수 있습니다. 현재 참고예상에 사용할 분석은 `채택`, 출강 후 정확도 비교에 사용할 확정 분석은 `종점 실제값`으로 지정합니다. 둘은 서로 다른 의미입니다.
+
+## 8. 종점 참고예상 해석
 
 ```text
 C_end = C_sample + C_literature(O_plan) - C_literature(O_sample)
@@ -103,17 +140,20 @@ T_end = T_sample + T_literature(O_plan) - T_literature(O_sample)
 - 결과 옆의 계산식 버전, 계수 프로필, 적용 상태, 근거 ID, 계획값 포함 여부를 같이 확인합니다.
 - 목표 범위 안에 있어도 최종 분석과 현장 표준을 우선합니다.
 
-## 8. 저장, 백업, 복원, 보고서
+## 9. 저장, 백업, 복원, 보고서
 
 - 입력 내용은 현재 브라우저의 IndexedDB에 자동 저장됩니다.
 - 교대, PC 변경, 브라우저 초기화 전에는 `분석 · 리포트`에서 CSV 백업 ZIP을 저장합니다.
 - 백업 ZIP은 CSV 7종과 `manifest.csv`를 포함하고, 복원 전에 SHA-256 무결성을 검사합니다.
 - 복원은 이 도구가 만든 ZIP만 사용합니다. 일부 CSV를 직접 수정하면 무결성 검사에 실패합니다.
 - XLSX는 사람이 확인하는 보고서이며 복원 파일로 사용할 수 없습니다.
-- v0.2.1은 백업 스키마 v0.2.0을 사용하며, 기존 v0.1.0 백업도 복원해 현재 구조로 변환합니다.
+- v0.3.0은 백업 스키마 v0.3.0을 사용하며, 기존 v0.1.0·v0.2.0·v0.2.1 백업도 복원해 현재 구조로 변환합니다.
+- 백업은 원본/정정/무효 상태, 복수 분석과 채택값, 예상 스냅샷, 종점 실제값, 차지별 기준 스냅샷을 함께 보존합니다.
+- XLSX 보고서에는 `Corrections`와 `Predictions` 시트가 추가되지만 복원 파일로 사용할 수 없습니다.
+- 복원 시 필수 CSV 7종, 중복 없는 manifest, SHA-256, 행 수, 참조 ID, 단계·샘플 시각과 수치 범위를 모두 확인합니다. 실패한 파일은 상태를 바꾸지 않으며 같은 파일을 다시 선택해 재시도할 수 있습니다.
 - `작업공간 초기화`는 확인창에서 빈 작업 또는 DEMO를 선택합니다. 초기화 직전 상태는 한 번 복구할 수 있는 별도 슬롯에 저장됩니다.
 
-## 9. 차지 삭제·취소·보관
+## 10. 차지 삭제·취소·보관
 
 `차지 이력`에서 상태에 맞는 관리 버튼을 사용합니다.
 
@@ -122,7 +162,7 @@ T_end = T_sample + T_literature(O_plan) - T_literature(O_sample)
 - 완료 또는 취소 차지는 `보관` 상태로 옮길 수 있습니다.
 - 작업자 이름은 우측 상단 이름 버튼에서 수정할 수 있으며, 이후 이벤트와 단계 전환부터 새 이름이 기록됩니다.
 
-## 10. 문제가 생겼을 때
+## 11. 문제가 생겼을 때
 
 | 증상 | 확인 순서 |
 | --- | --- |
@@ -130,21 +170,26 @@ T_end = T_sample + T_literature(O_plan) - T_literature(O_sample)
 | 설정 저장 버튼 비활성 | 화면 상단 정합성 경고에서 코드 중복, 범위 역전, 계수 순서, 승인정보 누락 확인 |
 | 과거 데이터가 보이지 않음 | 같은 브라우저·같은 파일 위치인지 확인하고 저장한 CSV ZIP 복원 시도 |
 | 단계 전환 버튼이 비활성 | 현재 단계와 차지 상태를 확인하고, G5에서는 C·온도가 있는 채택 샘플 확인 |
+| 다음에 무엇을 입력할지 모름 | 중앙 `현재 해야 할 일`의 파란 버튼을 누르고, 저장 뒤 바뀐 진행 순서를 확인 |
 | 하단 입력 버튼이 비활성 | 해당 입력이 허용되는 단계인지 확인. 출강은 G6에서만 가능 |
+| 정정 적용 버튼이 비활성 | 정정 사유, 실제 발생 시각, 성분 범위, 샘플·분석 순서, 앞뒤 누적 산소 순서를 확인 |
+| 이전 단계로 여러 번 돌아가고 싶음 | 공정 단계는 한 번만 복귀. 더 오래된 오입력은 전체 이력에서 해당 기록만 정정 |
 | 화면이 잘리거나 너무 작음 | Edge/Chrome, 100% 배율, 1280px 이상 해상도 확인 |
 | 결과가 현장 경험과 다름 | 이 도구의 문헌 시나리오를 조업 기준으로 사용하지 말고 실제 분석·현장 표준을 우선 |
 
-## 11. English quick guide
+## 12. English quick guide
 
 ![BOF Endpoint Coach English dashboard](https://raw.githubusercontent.com/fullmetalsonic/bof-endpoint-coach/main/docs/screenshots/dashboard-en.png)
 
-1. Open `BOF_Endpoint_Coach_v0.2.1.html` in Edge or Chrome at 100% zoom.
+1. Open `BOF_Endpoint_Coach_v0.3.0.html` in Edge or Chrome at 100% zoom.
 2. Enter an operator display name and choose an empty workspace or optional synthetic DEMO.
 3. Review grade, material, equipment, and coefficient profiles before entering a real heat.
-4. Create a heat, record actual timestamps and values, and use the stage button to advance manually from G0 to G8. G5→G6 requires an adopted sample with C and temperature; tap is recorded at G6.
+4. Create a heat and follow the central **Do this now** panel. It advances the guidance from initial inputs to checkpoints, sampling, analysis, tap review, and post-treatment as each record is saved. G5→G6 requires an adopted sample with C and temperature; tap is recorded at G6.
 5. Read the black marker as the latest actual, the white marker as the base endpoint estimate, the thin band as the literature sensitivity range, and the green segment as the grade target.
-6. Delete only DEMO/G0 drafts, cancel active heats with a reason, and archive closed heats from Heat history.
-7. Export a CSV ZIP backup before shift handover, browser reset, or PC change. XLSX is for viewing only.
-8. The tool is not plant-validated and does not replace controls, safety interlocks, SOPs, laboratory results, tap authorization, or operator judgment.
+6. Use **Full timeline** to correct or void a record without deleting its original. Use **Undo last stage** for exactly one transition, and **Correct tap record** after tapping.
+7. Select an adopted analysis for the current reference estimate and, after tapping, separately select an actual endpoint result for prediction-error review.
+8. Delete only DEMO/G0 drafts, cancel active heats with a reason, and archive closed heats from Heat history.
+9. Export a CSV ZIP backup before shift handover, browser reset, or PC change. XLSX is for viewing only.
+10. The tool is not plant-validated and does not replace controls, safety interlocks, SOPs, laboratory results, tap authorization, or operator judgment.
 
 추가 계산 경계와 공개 근거는 [README](https://github.com/fullmetalsonic/bof-endpoint-coach/blob/main/README.md), [종점 참고 계산식](https://github.com/fullmetalsonic/bof-endpoint-coach/blob/main/docs/domain/%EC%A2%85%EC%A0%90%EC%B0%B8%EA%B3%A0%EA%B3%84%EC%82%B0%EC%8B%9D_%EC%B4%88%EC%95%88.md), [검증·승인 계획](https://github.com/fullmetalsonic/bof-endpoint-coach/blob/main/docs/product/%EC%A2%85%EC%A0%90%EC%B0%B8%EA%B3%A0%EC%98%88%EC%83%81_%EA%B2%80%EC%A6%9D%EB%B0%8F%EC%8A%B9%EC%9D%B8%EA%B3%84%ED%9A%8D_%EC%B4%88%EC%95%88.md)을 참고하십시오.

@@ -1,9 +1,13 @@
+function hasValue(value) {
+  return value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
+}
+
 function formatValue(value, decimals) {
-  return Number.isFinite(Number(value)) ? Number(value).toFixed(decimals) : "–";
+  return hasValue(value) ? Number(value).toFixed(decimals) : "–";
 }
 
 function rangeFor(row) {
-  const values = [row.actual, row.prediction?.available ? row.prediction.value : null, row.prediction?.low, row.prediction?.high, row.target?.min, row.target?.max].filter((value) => Number.isFinite(Number(value))).map(Number);
+  const values = [row.actual, row.prediction?.available ? row.prediction.value : null, row.prediction?.low, row.prediction?.high, row.target?.min, row.target?.max].filter(hasValue).map(Number);
   if (!values.length) return [0, 1];
   let min = Math.min(...values);
   let max = Math.max(...values);
@@ -15,7 +19,7 @@ function rangeFor(row) {
 }
 
 function position(value, view) {
-  if (!Number.isFinite(Number(value))) return null;
+  if (!hasValue(value)) return null;
   return Math.max(0, Math.min(100, (Number(value) - view[0]) / (view[1] - view[0]) * 100));
 }
 
@@ -26,8 +30,10 @@ export function QualityBar({ row, locale, t }) {
   const target = row.target;
   const decimals = target?.decimals ?? 3;
   const view = rangeFor(row);
-  const targetStart = position(target?.min ?? view[0], view) ?? 0;
-  const targetEnd = position(target?.max ?? view[1], view) ?? 100;
+  const hasMin = hasValue(target?.min);
+  const hasMax = hasValue(target?.max);
+  const targetStart = position(hasMin ? target.min : view[0], view) ?? 0;
+  const targetEnd = position(hasMax ? target.max : view[1], view) ?? 100;
   const actualPosition = position(row.actual, view);
   const predictedPosition = row.prediction?.available ? position(row.prediction.value, view) : null;
   const scenarioLow = row.prediction?.available ? position(row.prediction.low, view) : null;
@@ -39,12 +45,12 @@ export function QualityBar({ row, locale, t }) {
       <div className="quality-number"><span>{t("currentActual")}</span><strong>{formatValue(row.actual, decimals)}</strong></div>
       <div className="quality-number estimate"><span>{t("endpointEstimate")}</span><strong>{row.prediction?.available ? formatValue(row.prediction.value, decimals) : "–"}</strong><small>{row.prediction?.available ? t(row.predictionState) : t("noFormula")}</small>{row.prediction?.available && <small>{formatValue(row.prediction.low, decimals)}–{formatValue(row.prediction.high, decimals)}</small>}</div>
       <div className="quality-track-wrap">
-        <div className="range-labels"><span>{target?.min !== undefined ? `${t("min")} ${formatValue(target.min, decimals)}` : ""}</span><strong>{t("targetRange")} {target?.min !== undefined ? formatValue(target.min, decimals) : "–"} – {target?.max !== undefined ? formatValue(target.max, decimals) : "–"}</strong><span>{target?.max !== undefined ? `${t("max")} ${formatValue(target.max, decimals)}` : ""}</span></div>
+        <div className="range-labels"><span>{hasMin ? `${t("min")} ${formatValue(target.min, decimals)}` : ""}</span><strong>{t("targetRange")} {formatValue(target?.min, decimals)} – {formatValue(target?.max, decimals)}</strong><span>{hasMax ? `${t("max")} ${formatValue(target.max, decimals)}` : ""}</span></div>
         <div className="quality-track">
-          <span className="target-zone" style={{ left: `${targetStart}%`, width: `${Math.max(0, targetEnd - targetStart)}%` }} />
+          {(hasMin || hasMax) && <span className="target-zone" style={{ left: `${targetStart}%`, width: `${Math.max(0, targetEnd - targetStart)}%` }} />}
           {scenarioLow !== null && scenarioHigh !== null && <span className="scenario-zone" title={t("literatureScenarioRange")} style={{ left: `${Math.min(scenarioLow, scenarioHigh)}%`, width: `${Math.abs(scenarioHigh - scenarioLow)}%` }} />}
-          {target?.min !== undefined && <span className="limit-line" style={{ left: `${targetStart}%` }} />}
-          {target?.max !== undefined && <span className="limit-line" style={{ left: `${targetEnd}%` }} />}
+          {hasMin && <span className="limit-line" style={{ left: `${targetStart}%` }} />}
+          {hasMax && <span className="limit-line" style={{ left: `${targetEnd}%` }} />}
           {actualPosition !== null && <span className={`value-dot actual ${row.actualState}`} style={{ left: `${actualPosition}%` }}><b>{formatValue(row.actual, decimals)}</b></span>}
           {predictedPosition !== null && <span className={`value-dot predicted ${row.predictionState}`} style={{ left: `${predictedPosition}%` }}><b>{formatValue(row.prediction.value, decimals)}</b></span>}
         </div>

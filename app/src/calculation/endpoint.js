@@ -1,15 +1,11 @@
 import { coefficientBasisLabel, resolveCoefficientProfile } from "./coefficientProfile.js";
 import { calculateHeatBalance } from "./heatBalance.js";
 import { calculateMassBalance, scenarioParameters } from "./massBalance.js";
+import { latestAdoptedSample } from "../domain/analysisRecords.js";
+import { resolveHeatSettings } from "../domain/referenceSnapshot.js";
 
 function finite(value) {
   return value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
-}
-
-function latestAdoptedSample(heat) {
-  return [...(heat.samples ?? [])]
-    .filter((sample) => sample.adopted && sample.values)
-    .sort((a, b) => new Date(b.sampledAt) - new Date(a.sampledAt))[0] ?? null;
 }
 
 function unavailable(reason, mode = "unavailable") {
@@ -62,9 +58,10 @@ function applySampleAnchor(endpointRun, sampleRun, sample) {
 }
 
 export function calculateEndpoint(heat, settings, calculatedAt = new Date().toISOString()) {
-  const rawCoefficient = settings.coefficientProfiles.find((item) => item.id === heat.coefficientProfileId);
-  const equipment = settings.equipmentProfiles.find((item) => item.id === heat.equipmentProfileId);
-  const grade = settings.gradeProfiles.find((item) => item.code === heat.gradeCode);
+  const effectiveSettings = resolveHeatSettings(heat, settings);
+  const rawCoefficient = effectiveSettings.coefficientProfiles.find((item) => item.id === heat.coefficientProfileId);
+  const equipment = effectiveSettings.equipmentProfiles.find((item) => item.id === heat.equipmentProfileId);
+  const grade = effectiveSettings.gradeProfiles.find((item) => item.code === heat.gradeCode);
   const sample = latestAdoptedSample(heat);
   const initial = heat.initial ?? {};
   const process = heat.process ?? {};
@@ -94,7 +91,7 @@ export function calculateEndpoint(heat, settings, calculatedAt = new Date().toIS
       temperature: unavailable("coefficient_profile_invalid"),
       assumedInputs: [],
       usesPlannedValues: false,
-      demo: Boolean(heat.demo || settings.status === "demo"),
+      demo: Boolean(heat.demo || effectiveSettings.status === "demo"),
     };
   }
   if (!finite(initial.plannedTotalOxygenNm3)) {
@@ -157,7 +154,7 @@ export function calculateEndpoint(heat, settings, calculatedAt = new Date().toIS
     })),
     assumedInputs: baseRun?.mass?.assumedInputs ?? [],
     usesPlannedValues: true,
-    demo: Boolean(heat.demo || settings.status === "demo"),
+    demo: Boolean(heat.demo || effectiveSettings.status === "demo"),
   };
 }
 
@@ -169,7 +166,8 @@ export function targetState(value, target) {
 }
 
 export function qualityRows(heat, settings, calculation) {
-  const grade = settings.gradeProfiles.find((item) => item.code === heat.gradeCode);
+  const effectiveSettings = resolveHeatSettings(heat, settings);
+  const grade = effectiveSettings.gradeProfiles.find((item) => item.code === heat.gradeCode);
   const sample = latestAdoptedSample(heat);
   const values = sample?.values ?? {};
   const keys = ["C", "temperature", "P", "Mn", "Si", "S"];

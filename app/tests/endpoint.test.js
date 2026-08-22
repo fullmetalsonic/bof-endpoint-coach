@@ -32,7 +32,7 @@ describe("endpoint calculation", () => {
 
   it("uses an override without changing the preserved literature value", () => {
     const state = createDemoState();
-    const profile = state.settings.coefficientProfiles[0];
+    const profile = state.heats[0].referenceSnapshot.coefficientProfile;
     const literatureValue = profile.literatureValues.postCombustionRatioBase;
     const baseline = calculateEndpoint(state.heats[0], state.settings).carbon.value;
     profile.overrideValues.postCombustionRatioBase = 0.18;
@@ -46,7 +46,7 @@ describe("endpoint calculation", () => {
 
   it("labels an approved override as the highest-priority basis", () => {
     const state = createDemoState();
-    const profile = state.settings.coefficientProfiles[0];
+    const profile = state.heats[0].referenceSnapshot.coefficientProfile;
     profile.overrideValues.heatLossFractionBase = 0.04;
     profile.overrideStatus = "site_approved";
     profile.approvedBy = "BOF supervisor";
@@ -68,11 +68,21 @@ describe("endpoint calculation", () => {
 
   it("fails closed when loaded coefficient scenarios are invalid", () => {
     const state = createDemoState();
-    state.settings.coefficientProfiles[0].overrideValues.oxygenPurityFraction = 1.5;
+    state.heats[0].referenceSnapshot.coefficientProfile.overrideValues.oxygenPurityFraction = 1.5;
     const result = calculateEndpoint(state.heats[0], state.settings);
     expect(result.carbon.available).toBe(false);
     expect(result.carbon.reason).toBe("coefficient_profile_invalid");
     expect(result.temperature.available).toBe(false);
+  });
+
+  it("freezes reference settings per heat even when global settings change later", () => {
+    const state = createDemoState();
+    const baseline = calculateEndpoint(state.heats[0], state.settings);
+    state.settings.coefficientProfiles[0].overrideValues.postCombustionRatioBase = 0.2;
+    state.settings.coefficientProfiles[0].overrideStatus = "user_modified";
+    const afterGlobalChange = calculateEndpoint(state.heats[0], state.settings);
+    expect(afterGlobalChange.carbon.value).toBeCloseTo(baseline.carbon.value, 10);
+    expect(afterGlobalChange.basis.status).toBe(baseline.basis.status);
   });
 
   it("keeps each quality target state independent", () => {

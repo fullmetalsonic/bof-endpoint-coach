@@ -11,13 +11,12 @@ const outputPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_README_v${ve
 
 const renderedReadme = execFileSync(
   "gh",
-  [
-    "api",
-    `repos/${repository}/readme`,
-    "-H",
-    "Accept: application/vnd.github.html+json",
-  ],
-  { encoding: "utf8", maxBuffer: 5 * 1024 * 1024 },
+  ["api", "markdown", "--method", "POST", "--input", "-"],
+  {
+    input: JSON.stringify({ text: readFileSync(resolve(projectRoot, "README.md"), "utf8"), mode: "gfm", context: repository }),
+    encoding: "utf8",
+    maxBuffer: 5 * 1024 * 1024,
+  },
 );
 
 function imageDataUri(relativePath) {
@@ -29,6 +28,7 @@ function imageDataUri(relativePath) {
 let articleHtml = renderedReadme;
 for (const imagePath of [
   "docs/screenshots/dashboard-ko.png",
+  "docs/screenshots/correction-ledger-ko.png",
   "docs/screenshots/settings-ko.png",
   "docs/screenshots/dashboard-en.png",
 ]) {

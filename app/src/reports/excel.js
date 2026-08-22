@@ -1,6 +1,8 @@
 import JSZip from "jszip";
 import { calculateEndpoint } from "../calculation/endpoint.js";
 import { downloadBlob } from "./backup.js";
+import { getAnalysisResults, latestAdoptedSample } from "../domain/analysisRecords.js";
+import { endpointValidationComparison } from "../domain/predictionHistory.js";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -57,7 +59,8 @@ function objectRows(objects) {
 export function buildExcelSheets(state) {
   const summary = state.heats.map((heat) => {
     const calc = calculateEndpoint(heat, state.settings);
-    const latest = [...heat.samples].sort((a, b) => new Date(b.sampledAt) - new Date(a.sampledAt))[0];
+    const latest = latestAdoptedSample(heat);
+    const comparison = endpointValidationComparison(heat);
     return {
       "Heat ID": heat.id,
       Grade: heat.gradeCode,
@@ -75,29 +78,40 @@ export function buildExcelSheets(state) {
       "Coefficient basis": calc.basis?.status ?? "",
       "Override fields": calc.basis?.overrideFields?.join(", ") ?? "",
       "Literature source IDs": calc.basis?.sourceIds?.join(", ") ?? "",
-      "DEMO / not plant validated": calc.demo ? "YES" : "NO",
+      "Synthetic DEMO heat": calc.demo ? "YES" : "NO",
+      "Actual endpoint analysis ID": heat.actualEndpointAnalysisId ?? "",
+      "C prediction error (%)": comparison.carbonError ?? "",
+      "Temperature prediction error (°C)": comparison.temperatureError ?? "",
+      "Reference settings version": heat.referenceSnapshot?.settingsVersion ?? "",
     };
   });
   const events = state.heats.flatMap((heat) => heat.events.map((event) => ({
     "Heat ID": heat.id,
     "Event ID": event.id,
     Type: event.type,
+    Status: event.status ?? "active",
     "Occurred at": event.occurredAt,
     Summary: event.summaryKo ?? event.summaryEn ?? "",
   })));
-  const analyses = state.heats.flatMap((heat) => heat.samples.map((sample) => ({
+  const analyses = state.heats.flatMap((heat) => heat.samples.flatMap((sample) => getAnalysisResults(sample).map((analysis) => ({
     "Heat ID": heat.id,
     "Sample ID": sample.id,
+    "Analysis ID": analysis.id,
     "Sampled at": sample.sampledAt,
+    "Analyzed at": analysis.occurredAt,
     Stage: sample.stage,
-    Method: sample.method,
-    Adopted: sample.adopted,
-    "Oxygen at analysis (Nm3)": sample.processSnapshot?.cumulativeOxygenNm3 ?? "",
-    ...sample.values,
-  })));
+    Status: analysis.status ?? "active",
+    Method: analysis.method,
+    Adopted: sample.adopted && sample.adoptedAnalysisId === analysis.id,
+    "Actual endpoint": heat.actualEndpointAnalysisId === analysis.id,
+    "Oxygen at analysis (Nm3)": analysis.processSnapshot?.cumulativeOxygenNm3 ?? "",
+    ...analysis.values,
+  }))));
+  const corrections = state.heats.flatMap((heat) => (heat.correctionLog ?? []).map((entry) => ({ "Heat ID": heat.id, "Correction ID": entry.id, Type: entry.type, "Target kind": entry.targetKind, "Target ID": entry.targetId, Reason: entry.reason, "Recorded at": entry.recordedAt, Operator: entry.recordedBy?.displayName ?? "" })));
+  const predictions = state.heats.flatMap((heat) => (heat.predictionSnapshots ?? []).map((entry) => ({ "Heat ID": heat.id, "Prediction ID": entry.id, Trigger: entry.triggerType, Stage: entry.stage, "Calculated at": entry.calculatedAt, "C estimate (%)": entry.carbon?.available ? entry.carbon.value : "Unavailable", "Temperature estimate (°C)": entry.temperature?.available ? entry.temperature.value : "Unavailable", "Sample ID": entry.sampleId ?? "", "Formula version": entry.formulaVersion ?? "", "Settings version": entry.settingsVersion ?? "" })));
   const readMe = [
     ["Warning"],
-    ["Synthetic DEMO operating data with public-literature calculation scenarios. Not plant-validated."],
+    ["Manual or synthetic operating data with public-literature calculation scenarios. Not plant-validated."],
     ["Priority: site-approved overrides, then user overrides, then preserved literature values."],
     ["Low/high values are literature scenarios, not statistically validated confidence intervals."],
     ["Does not replace plant procedures, safety systems, laboratory results, or operator judgment."],
@@ -107,6 +121,8 @@ export function buildExcelSheets(state) {
     { name: "Heat summary", rows: objectRows(summary) },
     { name: "Events", rows: objectRows(events) },
     { name: "Analysis", rows: objectRows(analyses) },
+    { name: "Corrections", rows: objectRows(corrections) },
+    { name: "Predictions", rows: objectRows(predictions) },
     { name: "Read me", rows: readMe },
   ];
 }

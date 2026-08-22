@@ -2,7 +2,7 @@ import { createLiteratureCoefficientProfile } from "../calculation/coefficientPr
 
 export function createReferenceSettings() {
   return {
-    status: "demo",
+    status: "literature_reference",
     gradeProfiles: [
       {
         code: "DEMO-LC",

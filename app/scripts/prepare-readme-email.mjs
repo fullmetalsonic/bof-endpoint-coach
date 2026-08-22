@@ -12,19 +12,19 @@ const previewPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_EMAIL_PREVI
 
 const images = [
   { path: "docs/screenshots/dashboard-ko.png", cid: "bof-dashboard-ko" },
+  { path: "docs/screenshots/correction-ledger-ko.png", cid: "bof-correction-ledger-ko" },
   { path: "docs/screenshots/settings-ko.png", cid: "bof-settings-ko" },
   { path: "docs/screenshots/dashboard-en.png", cid: "bof-dashboard-en" },
 ];
 
 const renderedReadme = execFileSync(
   "gh",
-  [
-    "api",
-    `repos/${repository}/readme`,
-    "-H",
-    "Accept: application/vnd.github.html+json",
-  ],
-  { encoding: "utf8", maxBuffer: 5 * 1024 * 1024 },
+  ["api", "markdown", "--method", "POST", "--input", "-"],
+  {
+    input: JSON.stringify({ text: readFileSync(resolve(projectRoot, "README.md"), "utf8"), mode: "gfm", context: repository }),
+    encoding: "utf8",
+    maxBuffer: 5 * 1024 * 1024,
+  },
 );
 
 function imageDataUri(relativePath) {
@@ -94,7 +94,7 @@ function wrapEmail(articleHtml) {
         <table role="presentation" width="960" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:960px;border-collapse:collapse;">
           <tr>
             <td style="padding:14px 18px;border:1px solid #d1d9e0;border-radius:6px 6px 0 0;background:#fff8c5;color:#633c01;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif;font-size:14px;line-height:1.5;">
-              <strong style="font-weight:700;">v${version} 배포 안내:</strong> 공개 문헌 시나리오 기반 종점 C·온도 계산과 현장 수정·승인값 우선 적용 기능을 추가했습니다. GitHub README 전체와 최신 화면을 본문에서 바로 볼 수 있습니다.
+              <strong style="font-weight:700;">v${version} 배포 안내:</strong> 현재 해야 할 일·단계별 진행 순서·권장 입력 강조와 기초 입력 수정 기능을 보강했습니다. GitHub README 전체와 최신 화면을 본문에서 바로 볼 수 있습니다.
             </td>
           </tr>
           <tr>

@@ -57,6 +57,96 @@
 
 passed
 
+# Design QA — v0.2.3 작업 흐름·인간공학 보강
+
+## Comparison setup
+
+- Source visual truth: `D:\Codex\취련 코치\.codex-remote-attachments\01a02829-911d-7c30-b89f-b4b8e9e13c08\6b3516d3-f500-4236-89d3-3e0a22a0a92c\1-Photo-1.jpg`
+- Previous rendered state: `D:\Codex\취련 코치\work\ux-audit\v0.2.2-next-action\03-g0-current.png`
+- Final implementation screenshots: `D:\Codex\취련 코치\docs\screenshots\dashboard-ko.png`, `D:\Codex\취련 코치\docs\screenshots\dashboard-en.png`, `D:\Codex\취련 코치\work\ux-implementation\v0.2.3\08-g0-1920x1080-final.png`
+- Combined comparisons: `D:\Codex\취련 코치\work\ux-implementation\v0.2.3\comparison-g0-before-after.png`, `D:\Codex\취련 코치\work\ux-implementation\v0.2.3\comparison-reference-g6.png`
+- Source reference pixels: 1280 × 912; source G0 and implementation pixels: 1920 × 1080; browser CSS viewport: 1920 × 1080; device scale factor: 1
+- Density normalization: the 1920 G0 pair was drawn into equal 920 × 518 regions. The G6 reference and implementation were fit without cropping into equal 920 × 540 regions because the supplied reference had a different aspect ratio.
+- State: Korean synthetic G6 tap review and blank G0 initial-input state; English synthetic G6 was also checked.
+
+## Full-view and focused evidence
+
+- The same-state G0 comparison shows that the previous one-line `장입값 확인` card became a working panel with a single current task, 0/2 completion, ordered steps, estimate status, next-stage preview, and persistent-entry relationship.
+- The G6 reference comparison confirms that the professional white/navy control-room structure, top heat context, G0–G8 rail, quality bars, recent sample table, Data Ledger, and six persistent input actions remain present.
+- Focused form evidence: `D:\Codex\취련 코치\work\ux-implementation\v0.2.3\02-initial-input-edit-first-pass.png` verifies required/core/recommended labeling, disabled identity fields, and editable calculation inputs.
+- Focused completion evidence: `D:\Codex\취련 코치\work\ux-implementation\v0.2.3\04-g1-checkpoint-complete.png` verifies the central action changes from checkpoint entry to G2 stage movement after a real save.
+
+## Comparison history
+
+### Pass 1 — blocked
+
+- P1 behavior: the former dashboard stated a next action but did not provide a clear input path or completion sequence. Added `WorkflowPanel` backed by actual heat history and action availability.
+- P1 consistency: the header and Data Ledger continued to show older generic guidance after the central action changed. Routed all three surfaces through the dynamic workflow result.
+- P2 hierarchy: current input and an early next-stage transition were both blue primary controls. Kept one blue current action and changed the early transition to a white secondary control.
+- P2 data trust: immediately after initial-value save, calculation time could appear older than the newest process input. Recalculated with the save render timestamp.
+- P2 viewport: the first Korean capture had 18px vertical overflow and the English panel wrapped 13px taller. Adjusted workflow grid proportions, quality-row density, and reserved bottom spacing.
+
+### Pass 2 — passed
+
+- Korean and English both measured `scrollWidth <= clientWidth` and `scrollHeight = innerHeight = 1080` at 1920 × 1080.
+- The one-primary-action rule and separate secondary transition passed automated browser style checks.
+- G0 initial edit, G1 checkpoint, G1→G2 transition, and G3 sample→analysis→checkpoint state changes were exercised through the rendered browser.
+- Full G0→G8, multi-heat, backup/restore, operator/lifecycle, validation, menus/settings, DEMO deletion, and standalone reload scenarios passed in Chromium, installed Chrome, and installed Edge.
+- Browser development logs contained no error or warning entries.
+
+## Required fidelity surfaces
+
+- Fonts and typography: retained Malgun Gothic/Noto Sans KR/Segoe UI fallbacks and the compact professional hierarchy. Current work uses 19px/800, section labels 10px/800, and dense data labels without truncating checklist text in Korean or English.
+- Spacing and layout rhythm: retained square cards, thin dividers, compact grid rhythm, and fixed action bar. The three-column work panel aligns with the existing dashboard and fits above six quality rows and the analysis table at 1080px height.
+- Colors and visual tokens: retained navy/blue active states, green safe/target states, amber caution, red danger, white surfaces, and gray disabled states. No gradients or decorative AI-style treatments were introduced.
+- Image quality and asset fidelity: the application uses the original product mark and the existing Phosphor icon family. No emoji, placeholder art, CSS illustration, or custom SVG substitute was added.
+- Copy and content: task copy names concrete operator actions and explains what is required, calculation-critical, recommended for accuracy, or optional. Safety and plant-validation boundaries remain visible.
+- Accessibility and interaction: dialogs retain labels and focus states; field badges are `aria-hidden` so accessible names stay stable; visible task changes are also announced through an `aria-live` status.
+
+## Residual test gaps
+
+- Actual shop-floor readability under glare, PPE use, and operator time pressure requires human observation.
+- Plant-specific stage criteria and endpoint accuracy remain outside visual QA and require approved shadow validation.
+
+## Final result
+
+passed
+
+---
+
+# Design QA — v0.3.0 정정·이력 관리
+
+## 비교 조건
+
+- 고정 시각 기준선: 사용자 제공 `1-Photo-1.jpg`의 전문 Data Ledger형 데스크톱 화면
+- 브라우저 CSS 화면: 1920 × 1080, 배율 100%
+- 상태: 합성 DEMO G6 출강 검토, 한국어·영어
+- 구현 증거: `docs/screenshots/dashboard-ko.png`, `docs/screenshots/dashboard-en.png`, `docs/screenshots/correction-ledger-ko.png`, `docs/screenshots/correction-modal-ko.png`
+
+## 화면 흐름 판정
+
+- 기존 대시보드의 차지 탭·G0~G8·중앙 작업 안내·품질 막대·최근 분석·Data Ledger·하단 입력바를 유지했다.
+- 최근 분석 행의 `수정·무효`, 표 제목의 `전체 이력·정정`, 제목 오른쪽의 `마지막 단계 전환 취소`를 기능 성격에 맞는 세 위치로 분리했다.
+- 전체 이력은 유효/정정됨/무효를 모두 보이되, 가장 자주 쓰는 유효 기록에만 동작 버튼을 표시했다.
+- 정정창은 대상과 영향 미리보기를 먼저 표시하고, 사유와 값이 유효해야 적용 버튼을 활성화한다.
+- G7·G8의 출강 정정과 종점 실제값 지정은 출강 전 화면에 노출하지 않는다.
+- 이모지·장식용 버튼·가짜 상태는 추가하지 않았고 기존 흰색/남색/녹색/황색/적색 업무용 체계를 유지했다.
+
+## 검증 중 시각·동작 수정
+
+- 실제 시각 입력을 분 단위에서 초 단위로 바꿔 같은 분 안의 샘플·분석 순서 오판을 막았다.
+- 계산용 채택 투영과 최근 이력 표시를 분리해 비채택 과거 분석도 실제 수치로 보이게 했다.
+- `마지막 단계 전환 취소`는 파란 현재 작업과 경쟁하지 않도록 작은 황색 경고 버튼으로 유지했다.
+
+## 한계
+
+- 실제 제어실의 조도·원거리 시인성·보호구 상태 클릭성은 현장 관찰이 필요하다.
+- 현재 표 밀도는 1920×1080 기준이며 모바일 재배치는 범위 밖이다.
+
+## Final result
+
+passed for release-candidate verification; plant ergonomics remain unverified
+
 ---
 
 # Design QA — 문헌 시나리오 및 계수 우선순위

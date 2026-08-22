@@ -43,4 +43,28 @@ describe("settings validation", () => {
     const errors = validateSettings(settings, "en");
     expect(errors.some((error) => error.includes("unknown override"))).toBe(true);
   });
+
+  it("rejects out-of-range grade targets, material composition, and equipment capacity", () => {
+    const settings = structuredClone(createDemoState().settings);
+    settings.gradeProfiles[0].targets.C.min = -0.01;
+    settings.materials[0].composition.CaO = 101;
+    settings.equipmentProfiles[0].nominalCapacityT = 0;
+    const errors = validateSettings(settings, "en");
+    expect(errors.some((error) => error.includes("target range"))).toBe(true);
+    expect(errors.some((error) => error.includes("composition"))).toBe(true);
+    expect(errors.some((error) => error.includes("nominal capacities"))).toBe(true);
+  });
+
+  it("rejects empty profile groups, duplicate equipment IDs, and unsupported units", () => {
+    const settings = structuredClone(createDemoState().settings);
+    settings.gradeProfiles = [];
+    settings.equipmentProfiles.push(structuredClone(settings.equipmentProfiles[0]));
+    settings.materials[0].unit = "lb";
+    settings.unitPolicy.chemistry = "mol/L";
+    const errors = validateSettings(settings, "en");
+    expect(errors.some((error) => error.includes("At least one"))).toBe(true);
+    expect(errors.some((error) => error.includes("Equipment profile IDs"))).toBe(true);
+    expect(errors.some((error) => error.includes("default input unit"))).toBe(true);
+    expect(errors.some((error) => error.includes("unit policy"))).toBe(true);
+  });
 });

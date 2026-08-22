@@ -1,27 +1,35 @@
-import { getStageGuidance } from "../domain/operationalGuidance.js";
+import { getStageWorkflow } from "../domain/workflowGuidance.js";
 import { Plus } from "@phosphor-icons/react";
 import { isActiveHeat } from "../domain/processStages.js";
+import { heatGradeProfile } from "../domain/referenceSnapshot.js";
 
 function formatTime(value) {
   if (!value) return "–";
   return new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 }
 
+function formatTarget(target) {
+  const finite = (value) => value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
+  if (!finite(target?.min) && !finite(target?.max)) return "–";
+  const decimals = target?.decimals ?? 3;
+  return `${finite(target?.min) ? Number(target.min).toFixed(decimals) : "–"}–${finite(target?.max) ? Number(target.max).toFixed(decimals) : "–"} ${target?.unit ?? "%"}`;
+}
+
 export function HeatSummaryBar({ heat, heats, settings, locale, t, selectHeat, calculation, onNewHeat }) {
-  const grade = settings.gradeProfiles.find((item) => item.code === heat.gradeCode);
+  const grade = heatGradeProfile(heat, settings);
   const target = grade?.targets?.C;
-  const guidance = getStageGuidance(heat.stage, locale);
+  const workflow = getStageWorkflow(heat, locale);
   const elapsedEnd = heat.completedAt ?? heat.cancelledAt ?? calculation.calculatedAt;
   const elapsedMinutes = Math.max(0, Math.floor((new Date(elapsedEnd) - new Date(heat.startedAt)) / 60000));
   const summary = [
     [t("heatNo"), heat.id],
     [t("grade"), locale === "ko" ? grade?.nameKo : grade?.nameEn],
-    [t("targetCarbon"), target ? `${target.min.toFixed(3)}–${target.max.toFixed(3)} %` : "–"],
+    [t("targetCarbon"), formatTarget(target)],
     [t("currentStage"), `${heat.stage}  ${locale === "ko" ? heat.stageLabelKo : heat.stageLabelEn}`],
     [t("elapsed"), locale === "ko" ? `${elapsedMinutes} 분` : `${elapsedMinutes} min`],
     [t("oxygen"), `${Number(heat.process.cumulativeOxygenNm3).toLocaleString()} Nm³`],
     [t("expectedTap"), formatTime(heat.expectedTapAt)],
-    [t("nextAction"), guidance.title],
+    [t("nextAction"), workflow.current.title],
   ];
   return (
     <section className="heat-context" aria-label={t("activeHeats")}>

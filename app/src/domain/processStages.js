@@ -26,7 +26,8 @@ export function isActiveHeat(heat) {
 }
 
 export function hasEndpointReviewSample(heat) {
-  return (heat?.samples ?? []).some((sample) => sample.adopted && Number.isFinite(Number(sample.values?.C)) && Number.isFinite(Number(sample.values?.temperature)));
+  const valid = (value) => value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
+  return (heat?.samples ?? []).some((sample) => (sample.status ?? "active") === "active" && sample.adopted && valid(sample.values?.C) && valid(sample.values?.temperature));
 }
 
 export function validateStageAdvance(heat) {
@@ -44,7 +45,7 @@ export function getActionAvailability(heat) {
   return {
     material: (index >= 0 && index <= 5) || index === 7,
     sample: (index >= 2 && index <= 6) || index === 7,
-    analysis: ((index >= 2 && index <= 6) || index === 7) && (heat.samples?.length ?? 0) > 0,
+    analysis: ((index >= 2 && index <= 6) || index === 7) && (heat.samples ?? []).some((sample) => (sample.status ?? "active") === "active"),
     checkpoint: index >= 1 && index <= 6,
     reblow: index >= 5 && index <= 6,
     tap: heat.stage === "G6",

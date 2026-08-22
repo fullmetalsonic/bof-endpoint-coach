@@ -14,9 +14,9 @@ function relativeAge(value, now, locale) {
 }
 
 export function DataLedger({ heat, calculation, rows, saveStatus, t, locale }) {
-  const latestAnalysis = [...heat.samples].sort((a, b) => new Date(b.analyzedAt ?? b.sampledAt) - new Date(a.analyzedAt ?? a.sampledAt))[0];
-  const latestProcessEvent = [...(heat.events ?? []), ...(heat.stageHistory ?? [])].sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))[0];
-  const latestAnalysisAt = latestAnalysis?.analyzedAt ?? latestAnalysis?.sampledAt;
+  const latestAnalysis = [...heat.samples].filter((sample) => (sample.status ?? "active") === "active" && sample.analyzedAt).sort((a, b) => new Date(b.analyzedAt) - new Date(a.analyzedAt))[0];
+  const latestProcessEvent = [...(heat.events ?? []), ...(heat.stageHistory ?? [])].filter((record) => (record.status ?? "active") === "active").sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))[0];
+  const latestAnalysisAt = latestAnalysis?.analyzedAt;
   const checks = getOpenChecks(heat, rows, locale);
   return (
     <aside className="data-ledger">

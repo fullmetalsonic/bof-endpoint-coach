@@ -11,6 +11,7 @@ const sourcePath = resolve(projectRoot, "docs/user-guide.md");
 const outputPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_USER_GUIDE_v${version}.html`);
 const screenshotPaths = [
   "docs/screenshots/dashboard-ko.png",
+  "docs/screenshots/correction-ledger-ko.png",
   "docs/screenshots/settings-ko.png",
   "docs/screenshots/dashboard-en.png",
 ];

@@ -1,6 +1,6 @@
 {
   "name": "bof-endpoint-coach",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,9 +11,12 @@
     "build:user-guide": "node scripts/prepare-user-guide.mjs",
     "build:single": "vite build --config vite.single.config.mjs && node scripts/prepare-standalone.mjs",
     "check": "npm run lint && npm run test && npm run build && npm run build:single && npm run test:sites",
-    "lint": "eslint src tests scripts vite.config.mjs vite.single.config.mjs",
+    "lint": "eslint src tests e2e scripts playwright.config.mjs vite.config.mjs vite.single.config.mjs",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:chrome": "playwright test --project=chrome",
+    "test:e2e:edge": "playwright test --project=msedge",
     "test:watch": "vitest",
     "test:sites": "node --test tests/sites-worker.test.mjs"
   },
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.6",
     "eslint": "^10.9.0",

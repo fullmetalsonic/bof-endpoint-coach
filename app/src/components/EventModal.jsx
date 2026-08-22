@@ -12,11 +12,17 @@ function isoFromLocal(value) {
   return new Date(value).toISOString();
 }
 
+function localValueFromIso(value) {
+  const date = new Date(value);
+  const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return shifted.toISOString().slice(0, 16);
+}
+
 const titles = { material: "materialEvent", sample: "sampleEvent", analysis: "analysisEvent", checkpoint: "checkpointEvent", reblow: "reblowEvent", tap: "tapEvent" };
 
 export function EventModal({ action, heat, settings, locale, t, onClose, onSave }) {
   const defaults = useMemo(() => ({
-    occurredAt: localDateTimeValue(),
+    occurredAt: action === "analysis" && heat.samples.at(-1)?.sampledAt ? localValueFromIso(heat.samples.at(-1).sampledAt) : localDateTimeValue(),
     materialCode: settings.materials[0]?.code ?? "",
     amountKg: "500",
     amountUnit: isSupportedMassUnit(settings.materials[0]?.unit) ? settings.materials[0].unit : settings.unitPolicy.mass,
@@ -30,7 +36,7 @@ export function EventModal({ action, heat, settings, locale, t, onClose, onSave 
     Mn: "",
     Si: "",
     S: "",
-    cumulativeOxygenNm3: heat.process.cumulativeOxygenNm3,
+    cumulativeOxygenNm3: action === "analysis" ? heat.samples.at(-1)?.processSnapshot?.cumulativeOxygenNm3 ?? heat.process.cumulativeOxygenNm3 : heat.process.cumulativeOxygenNm3,
     oxygenFlowNm3PerMinute: heat.process.oxygenFlowNm3PerMinute ?? "",
     lanceHeightM: heat.process.lanceHeightM,
     remainingMinutes: heat.process.remainingMinutes,
@@ -77,8 +83,9 @@ export function EventModal({ action, heat, settings, locale, t, onClose, onSave 
           {action === "material" && <><label><span>{t("material")}</span><select value={form.materialCode} onChange={(event) => { const item = settings.materials.find((candidate) => candidate.code === event.target.value); setForm((previous) => ({ ...previous, materialCode: event.target.value, amountUnit: isSupportedMassUnit(item?.unit) ? item.unit : previous.amountUnit })); }}>{settings.materials.map((item) => <option key={item.code} value={item.code}>{locale === "ko" ? item.nameKo : item.nameEn}</option>)}</select></label><label><span>{t("amount")}</span><div className="input-with-unit"><input type="number" min="0" step="0.001" value={form.amountKg} onChange={(event) => set("amountKg", event.target.value)} required /><select aria-label={t("unit")} value={form.amountUnit} onChange={(event) => set("amountUnit", event.target.value)}>{massUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label></>}
           {action === "sample" && <label className="full"><span>{t("sampleId")}</span><input value={form.sampleId} onChange={(event) => set("sampleId", event.target.value)} required /></label>}
           {action === "analysis" && <>
-            <label><span>{t("sampleId")}</span><select value={form.sampleId || latestSample?.id || ""} onChange={(event) => set("sampleId", event.target.value)}>{heat.samples.map((sample) => <option key={sample.id}>{sample.id}</option>)}</select></label>
+            <label><span>{t("sampleId")}</span><select value={form.sampleId || latestSample?.id || ""} onChange={(event) => { const selected = heat.samples.find((sample) => sample.id === event.target.value); setForm((previous) => ({ ...previous, sampleId: event.target.value, cumulativeOxygenNm3: selected?.processSnapshot?.cumulativeOxygenNm3 ?? heat.process.cumulativeOxygenNm3, occurredAt: selected?.sampledAt ? localValueFromIso(selected.sampledAt) : previous.occurredAt })); }}>{heat.samples.map((sample) => <option key={sample.id}>{sample.id}</option>)}</select></label>
             <label><span>{t("method")}</span><input value={form.method} onChange={(event) => set("method", event.target.value)} /></label>
+            <label><span>{locale === "ko" ? "샘플 시점 누적 산소" : "Oxygen at sample"} (Nm³)</span><input type="number" min="0" value={form.cumulativeOxygenNm3} onChange={(event) => set("cumulativeOxygenNm3", event.target.value)} required /></label>
             {["C", "P", "Mn", "Si", "S"].map((key) => <label key={key}><span>{key} (%)</span><input type="number" step="0.001" value={form[key]} onChange={(event) => set(key, event.target.value)} /></label>)}
             <label><span>T (°C)</span><input type="number" step="1" value={form.temperature} onChange={(event) => set("temperature", event.target.value)} /></label>
           </>}

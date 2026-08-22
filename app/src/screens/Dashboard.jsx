@@ -20,7 +20,7 @@ export function Dashboard({ state, heat, locale, t, selectHeat, saveStatus, onAc
           <ReviewSummary heat={heat} locale={locale} rows={rows} t={t} />
           <QualityPanel rows={rows} locale={locale} t={t} />
           <AnalysisTable heat={heat} t={t} />
-          <p className="calculation-footnote">※ {t("validationWarning")} · {t("demoOnly")}</p>
+          <p className="calculation-footnote">※ {t("validationWarning")} · {locale === "ko" ? calculation.basis?.labelKo : calculation.basis?.labelEn} · {t("literatureScenarioRange")}: {calculation.carbon.available ? `${calculation.carbon.low.toFixed(3)}–${calculation.carbon.high.toFixed(3)} %` : "–"} / {calculation.temperature.available ? `${calculation.temperature.low.toFixed(0)}–${calculation.temperature.high.toFixed(0)} °C` : "–"}</p>
         </main>
         <DataLedger heat={heat} calculation={calculation} rows={rows} saveStatus={saveStatus} t={t} locale={locale} />
       </div>

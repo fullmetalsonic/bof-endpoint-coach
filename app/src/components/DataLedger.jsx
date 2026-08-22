@@ -38,10 +38,13 @@ export function DataLedger({ heat, calculation, rows, saveStatus, t, locale }) {
         <dl>
           <div><dt>{t("formulaVersion")}</dt><dd>{calculation.formulaVersion ?? "–"}</dd></div>
           <div><dt>{t("coefficientVersion")}</dt><dd>{calculation.coefficient?.id ?? "–"}</dd></div>
+          <div><dt>{t("coefficientBasis")}</dt><dd>{locale === "ko" ? calculation.basis?.labelKo : calculation.basis?.labelEn}</dd></div>
+          <div><dt>{t("literatureSources")}</dt><dd>{calculation.basis?.sourceIds?.join(", ") ?? "–"}</dd></div>
+          <div><dt>{t("assumedInputs")}</dt><dd>{calculation.assumedInputs?.length ?? 0}</dd></div>
           <div><dt>{t("equipmentProfile")}</dt><dd>{calculation.equipment?.id ?? "–"}</dd></div>
           <div><dt>{t("calculatedAt")}</dt><dd>{formatTime(calculation.calculatedAt)}</dd></div>
         </dl>
-        <div className="input-basis">{calculation.usesPlannedValues ? t("plannedIncluded") : t("actualOnly")}</div>
+        <div className={`input-basis ${calculation.basis?.status ?? ""}`}>{calculation.usesPlannedValues ? t("plannedIncluded") : t("actualOnly")} · {locale === "ko" ? calculation.basis?.labelKo : calculation.basis?.labelEn}</div>
       </section>
     </aside>
   );

@@ -3,6 +3,8 @@ import { CheckCircle } from "@phosphor-icons/react";
 import { GradeProfilesEditor } from "../components/settings/GradeProfilesEditor.jsx";
 import { MaterialsEditor } from "../components/settings/MaterialsEditor.jsx";
 import { UnitPolicyEditor } from "../components/settings/UnitPolicyEditor.jsx";
+import { CoefficientProfilesEditor } from "../components/settings/CoefficientProfilesEditor.jsx";
+import { coefficientBasisLabel, resolveCoefficientProfile } from "../calculation/coefficientProfile.js";
 import { validateSettings } from "../domain/settingsValidation.js";
 
 const tabKeys = ["grades", "materials", "gates", "units", "equipment", "coefficients", "versions"];
@@ -13,9 +15,9 @@ export function SettingsScreen({ settings, locale, t, onSave }) {
   const [saved, setSaved] = useState(false);
   const equipment = draft.equipmentProfiles[0];
   const coefficient = draft.coefficientProfiles[0];
+  const coefficientBasis = resolveCoefficientProfile(coefficient);
   const validationErrors = validateSettings(draft, locale);
   const updateEquipment = (field, value) => setDraft((previous) => ({ ...previous, equipmentProfiles: [{ ...previous.equipmentProfiles[0], [field]: value }, ...previous.equipmentProfiles.slice(1)] }));
-  const updateCoefficient = (field, value) => setDraft((previous) => ({ ...previous, coefficientProfiles: [{ ...previous.coefficientProfiles[0], [field]: Number(value) }, ...previous.coefficientProfiles.slice(1)] }));
   function save() {
     if (validationErrors.length) return;
     onSave(draft);
@@ -34,8 +36,8 @@ export function SettingsScreen({ settings, locale, t, onSave }) {
           {tab === "gates" && <><h2>{t("gates")}</h2><div className="gate-settings">{draft.gates.map((gate, index) => <div key={gate}><CheckCircle /><strong>{gate}</strong><span>{locale === "ko" ? `${index + 1}단계 입력·확인 규칙` : `Stage ${index + 1} input and check rules`}</span></div>)}</div></>}
           {tab === "units" && <UnitPolicyEditor draft={draft} setDraft={setDraft} t={t} />}
           {tab === "equipment" && <><h2>{t("equipment")}</h2><div className="settings-form-grid"><label><span>ID</span><input value={equipment.id} readOnly /></label><label><span>{locale === "ko" ? "호칭 용량" : "Nominal capacity"} (t)</span><input type="number" value={equipment.nominalCapacityT} onChange={(event) => updateEquipment("nominalCapacityT", Number(event.target.value))} /></label><label><span>{locale === "ko" ? "취련 방식" : "Blowing type"}</span><select value={equipment.blowingType} onChange={(event) => updateEquipment("blowingType", event.target.value)}><option value="top">Top blow</option><option value="combined">Combined blow</option></select></label><label><span>{locale === "ko" ? "랜스 프로필" : "Lance profile"}</span><input value={equipment.lanceProfile} onChange={(event) => updateEquipment("lanceProfile", event.target.value)} /></label><label><span>{locale === "ko" ? "저취 가스" : "Bottom gas"}</span><input value={equipment.bottomGas} onChange={(event) => updateEquipment("bottomGas", event.target.value)} /></label></div></>}
-          {tab === "coefficients" && <><h2>{t("coefficients")} <small>{coefficient.id}</small></h2><div className="settings-warning">{t("demoBanner")}</div><div className="settings-form-grid coefficient-grid">{Object.entries(coefficient).filter(([, value]) => typeof value === "number").map(([key, value]) => <label key={key}><span>{key}</span><input type="number" step="0.001" value={value} onChange={(event) => updateCoefficient(key, event.target.value)} /></label>)}</div></>}
-          {tab === "versions" && <><h2>{t("versions")}</h2><dl className="version-list"><div><dt>{locale === "ko" ? "설정 버전" : "Settings version"}</dt><dd>{draft.version}</dd></div><div><dt>{locale === "ko" ? "상태" : "Status"}</dt><dd>DEMO</dd></div><div><dt>{locale === "ko" ? "계수 승인" : "Coefficient approval"}</dt><dd>{coefficient.approved ? "Approved" : "Not approved"}</dd></div><div><dt>{locale === "ko" ? "계산식" : "Formula"}</dt><dd>{coefficient.formulaVersion}</dd></div></dl></>}
+          {tab === "coefficients" && <CoefficientProfilesEditor draft={draft} setDraft={setDraft} locale={locale} />}
+          {tab === "versions" && <><h2>{t("versions")}</h2><dl className="version-list"><div><dt>{locale === "ko" ? "설정 버전" : "Settings version"}</dt><dd>{draft.version}</dd></div><div><dt>{locale === "ko" ? "운영 데이터" : "Operating data"}</dt><dd>DEMO</dd></div><div><dt>{locale === "ko" ? "계수 적용 상태" : "Coefficient basis"}</dt><dd>{coefficientBasisLabel(coefficientBasis.status, locale)}</dd></div><div><dt>{locale === "ko" ? "계산식" : "Formula"}</dt><dd>{coefficient.formulaVersion}</dd></div><div><dt>{locale === "ko" ? "문헌 근거" : "Literature sources"}</dt><dd>{coefficient.sourceIds.join(", ")}</dd></div></dl></>}
           {saved && <div className="save-toast"><CheckCircle weight="fill" /> {t("settingSaved")}</div>}
         </section>
       </div>

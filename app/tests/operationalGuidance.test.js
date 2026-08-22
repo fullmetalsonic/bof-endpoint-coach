@@ -12,6 +12,8 @@ describe("operational guidance", () => {
   it("flags out-of-target endpoint estimates for the early heat", () => {
     const state = createDemoState();
     const heat = state.heats[1];
+    heat.samples[0].values.C = 0.01;
+    heat.samples[0].values.temperature = 1800;
     const calculation = calculateEndpoint(heat, state.settings, "2026-08-22T10:24:05+09:00");
     const rows = qualityRows(heat, state.settings, calculation);
     const checks = getOpenChecks(heat, rows, "ko").map((item) => item.text);

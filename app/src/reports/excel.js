@@ -65,9 +65,16 @@ export function buildExcelSheets(state) {
       Stage: heat.stage,
       "Actual C (%)": latest?.values?.C ?? "",
       "Estimated C (%)": calc.carbon.available ? calc.carbon.value : "Unavailable",
+      "C scenario low (%)": calc.carbon.available ? calc.carbon.low : "Unavailable",
+      "C scenario high (%)": calc.carbon.available ? calc.carbon.high : "Unavailable",
       "Actual temperature (°C)": latest?.values?.temperature ?? "",
       "Estimated temperature (°C)": calc.temperature.available ? calc.temperature.value : "Unavailable",
+      "Temperature scenario low (°C)": calc.temperature.available ? calc.temperature.low : "Unavailable",
+      "Temperature scenario high (°C)": calc.temperature.available ? calc.temperature.high : "Unavailable",
       "Formula version": calc.formulaVersion ?? "",
+      "Coefficient basis": calc.basis?.status ?? "",
+      "Override fields": calc.basis?.overrideFields?.join(", ") ?? "",
+      "Literature source IDs": calc.basis?.sourceIds?.join(", ") ?? "",
       "DEMO / not plant validated": calc.demo ? "YES" : "NO",
     };
   });
@@ -85,11 +92,14 @@ export function buildExcelSheets(state) {
     Stage: sample.stage,
     Method: sample.method,
     Adopted: sample.adopted,
+    "Oxygen at analysis (Nm3)": sample.processSnapshot?.cumulativeOxygenNm3 ?? "",
     ...sample.values,
   })));
   const readMe = [
     ["Warning"],
-    ["Synthetic demo and decision-support output only. Not plant-validated."],
+    ["Synthetic DEMO operating data with public-literature calculation scenarios. Not plant-validated."],
+    ["Priority: site-approved overrides, then user overrides, then preserved literature values."],
+    ["Low/high values are literature scenarios, not statistically validated confidence intervals."],
     ["Does not replace plant procedures, safety systems, laboratory results, or operator judgment."],
     ["Settings version", state.settings.version],
   ];

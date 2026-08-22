@@ -38,7 +38,7 @@ export function HeatSummaryBar({ heat, heats, settings, locale, t, selectHeat, c
           </div>
         ))}
       </div>
-      {calculation.demo && <span className="summary-demo-tag">DEMO</span>}
+      <div className="summary-status-tags">{calculation.demo && <span className="summary-demo-tag">DEMO</span>}<span className={`summary-basis-tag ${calculation.basis?.status ?? ""}`}>{locale === "ko" ? calculation.basis?.labelKo : calculation.basis?.labelEn}</span></div>
     </section>
   );
 }

@@ -39,3 +39,7 @@ S37,domestic-research,2015,Quality Evaluation of Converter Coolant from Steelwor
 S38,domestic-research,1999,Mechanism of Slag Coating on Lining of LD Converters,Korean Journal of Metals and Materials,abstract-page,https://kiss.kstudy.com/Detail/Ar?key=221417,low
 S39,international-research,2020,Using Machine Learning for Robust Target Prediction in a Basic Oxygen Furnace System,Metallurgical and Materials Transactions B,abstract-page,https://link.springer.com/article/10.1007/s11663-020-01853-5,high
 S40,international-research,2025,Incorporation of Control Parameters into a Kinetic Model for Decarburization During Basic Oxygen Furnace Steelmaking,Processes,open-access,https://www.mdpi.com/2227-9717/13/10/3048,high
+S41,standard-reference,2025,Standard conditions for gases,IUPAC Gold Book,public-page,https://goldbook.iupac.org/terms/view/S05910,high
+S42,reference-data,1998,NIST-JANAF Thermochemical Tables,NIST,public-database,https://janaf.nist.gov/,high
+S43,reference-data,,Oxygen thermochemistry and molecular data,NIST Chemistry WebBook,public-database,https://webbook.nist.gov/cgi/cbook.cgi?ID=C7782447&Mask=1,high
+S44,research,2021,General heat balance for oxygen steelmaking,Journal of Iron and Steel Research International,open-access,https://doi.org/10.1007/s42243-020-00491-0,high

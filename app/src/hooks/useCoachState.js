@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createDemoState } from "../data/demoState.js";
+import { normalizeCoachState } from "../data/stateMigration.js";
 import { clearState, loadState, saveState } from "../storage/indexedDb.js";
 
 function withLog(state, type, payload = {}) {
@@ -10,6 +11,10 @@ function withLog(state, type, payload = {}) {
   };
 }
 
+function optionalNumber(value) {
+  return value === "" || value === null || value === undefined ? null : Number(value);
+}
+
 export function useCoachState() {
   const [state, setState] = useState(null);
   const [saveStatus, setSaveStatus] = useState("loading");
@@ -17,7 +22,7 @@ export function useCoachState() {
 
   useEffect(() => {
     loadState()
-      .then((saved) => setState(saved ?? createDemoState()))
+      .then((saved) => setState(normalizeCoachState(saved ?? createDemoState())))
       .catch(() => setState(createDemoState()))
       .finally(() => {
         loaded.current = true;
@@ -73,7 +78,7 @@ export function useCoachState() {
         next = { ...next, initial: { ...heat.initial, fluxKg: Number(heat.initial.fluxKg ?? 0) + Number(form.amountKg) } };
       }
       if (type === "sample") {
-        next = { ...next, samples: [...(heat.samples ?? []), { id: form.sampleId, sampledAt: form.occurredAt, stage: heat.stage, method: "Pending", adopted: false, values: {} }] };
+        next = { ...next, samples: [...(heat.samples ?? []), { id: form.sampleId, sampledAt: form.occurredAt, stage: heat.stage, method: "Pending", adopted: false, values: {}, processSnapshot: { cumulativeOxygenNm3: Number(heat.process.cumulativeOxygenNm3), oxygenFlowNm3PerMinute: Number(heat.process.oxygenFlowNm3PerMinute), lanceHeightM: Number(heat.process.lanceHeightM) } }] };
       }
       if (type === "analysis") {
         const sampleId = form.sampleId || heat.samples.at(-1)?.id || `S-${Date.now()}`;
@@ -82,8 +87,8 @@ export function useCoachState() {
         next = {
           ...next,
           samples: exists
-            ? heat.samples.map((sample) => ({ ...sample, adopted: sample.id === sampleId, ...(sample.id === sampleId ? { method: form.method || "OES", values, sampledAt: form.occurredAt } : {}) }))
-            : [...heat.samples.map((sample) => ({ ...sample, adopted: false })), { id: sampleId, sampledAt: form.occurredAt, stage: heat.stage, method: form.method || "OES", adopted: true, values }],
+            ? heat.samples.map((sample) => ({ ...sample, adopted: sample.id === sampleId, ...(sample.id === sampleId ? { method: form.method || "OES", values, sampledAt: form.occurredAt, processSnapshot: { cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3), oxygenFlowNm3PerMinute: Number(heat.process.oxygenFlowNm3PerMinute), lanceHeightM: Number(heat.process.lanceHeightM) } } : {}) }))
+            : [...heat.samples.map((sample) => ({ ...sample, adopted: false })), { id: sampleId, sampledAt: form.occurredAt, stage: heat.stage, method: form.method || "OES", adopted: true, values, processSnapshot: { cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3), oxygenFlowNm3PerMinute: Number(heat.process.oxygenFlowNm3PerMinute), lanceHeightM: Number(heat.process.lanceHeightM) } }],
         };
       }
       if (type === "tap") {
@@ -93,7 +98,10 @@ export function useCoachState() {
     }, `event_${type}`);
   }, [updateCurrentHeat]);
 
-  const updateSettings = useCallback((settings) => setState((previous) => withLog({ ...previous, settings }, "settings_updated")), []);
+  const updateSettings = useCallback((settings) => setState((previous) => withLog({ ...previous, settings }, "settings_updated", {
+    settingsVersion: settings.version,
+    coefficientProfiles: structuredClone(settings.coefficientProfiles),
+  })), []);
   const recordOperation = useCallback((type, payload = {}) => setState((previous) => withLog(previous, type, payload)), []);
 
   const createHeat = useCallback((form) => {
@@ -114,6 +122,9 @@ export function useCoachState() {
         initial: {
           hotMetalKg: Number(form.hotMetalKg),
           hotMetalC: Number(form.hotMetalC),
+          hotMetalSi: optionalNumber(form.hotMetalSi),
+          hotMetalMn: optionalNumber(form.hotMetalMn),
+          hotMetalP: optionalNumber(form.hotMetalP),
           hotMetalTemperatureC: Number(form.hotMetalTemperatureC),
           scrapKg: Number(form.scrapKg),
           scrapC: Number(form.scrapC),

@@ -1,6 +1,8 @@
 import JSZip from "jszip";
 import { encodeCsv, parseCsv } from "../storage/csv.js";
-import { APP_VERSION } from "../data/demoState.js";
+import { BACKUP_SCHEMA_VERSION } from "../data/demoState.js";
+import { normalizeCoachState } from "../data/stateMigration.js";
+import { validateSettings } from "../domain/settingsValidation.js";
 
 const REQUIRED_FILES = ["heats.csv", "events.csv", "samples.csv", "analysis_results.csv", "analysis_values.csv", "reference_values.csv", "operation_log.csv"];
 
@@ -30,7 +32,7 @@ function buildCsvFiles(state) {
     process_json: json(heat.process),
   }));
   const events = state.heats.flatMap((heat) => heat.events.map((event) => ({ heat_id: heat.id, event_id: event.id, type: event.type, occurred_at: event.occurredAt, payload_json: json(event) })));
-  const samples = state.heats.flatMap((heat) => heat.samples.map((sample) => ({ heat_id: heat.id, sample_id: sample.id, sampled_at: sample.sampledAt, stage: sample.stage, method: sample.method, adopted: sample.adopted ? "true" : "false" })));
+  const samples = state.heats.flatMap((heat) => heat.samples.map((sample) => ({ heat_id: heat.id, sample_id: sample.id, sampled_at: sample.sampledAt, stage: sample.stage, method: sample.method, adopted: sample.adopted ? "true" : "false", process_snapshot_json: json(sample.processSnapshot) })));
   const analysisResults = state.heats.flatMap((heat) => heat.samples.map((sample) => ({ heat_id: heat.id, analysis_id: `${sample.id}-A1`, sample_id: sample.id, method: sample.method, adopted: sample.adopted ? "true" : "false", recorded_at: sample.sampledAt })));
   const analysisValues = state.heats.flatMap((heat) => heat.samples.flatMap((sample) => Object.entries(sample.values ?? {}).map(([item, value]) => ({ heat_id: heat.id, analysis_id: `${sample.id}-A1`, item, value, unit: item === "temperature" ? "°C" : "%" }))));
   const referenceValues = [
@@ -43,7 +45,7 @@ function buildCsvFiles(state) {
   return {
     "heats.csv": encodeCsv(heats, ["heat_id", "grade_code", "equipment_profile_id", "coefficient_profile_id", "status", "stage", "stage_label_ko", "stage_label_en", "started_at", "expected_tap_at", "initial_json", "process_json"]),
     "events.csv": encodeCsv(events, ["heat_id", "event_id", "type", "occurred_at", "payload_json"]),
-    "samples.csv": encodeCsv(samples, ["heat_id", "sample_id", "sampled_at", "stage", "method", "adopted"]),
+    "samples.csv": encodeCsv(samples, ["heat_id", "sample_id", "sampled_at", "stage", "method", "adopted", "process_snapshot_json"]),
     "analysis_results.csv": encodeCsv(analysisResults, ["heat_id", "analysis_id", "sample_id", "method", "adopted", "recorded_at"]),
     "analysis_values.csv": encodeCsv(analysisValues, ["heat_id", "analysis_id", "item", "value", "unit"]),
     "reference_values.csv": encodeCsv(referenceValues, ["scope", "key", "value_json"]),
@@ -69,7 +71,7 @@ export async function restoreBackup(file) {
     if (!zip.file(required)) throw new Error(`missing_file:${required}`);
   }
   const manifest = parseCsv(await zip.file("manifest.csv").async("text"));
-  if (manifest.some((entry) => entry.schema_version !== APP_VERSION)) throw new Error("unsupported_schema_version");
+  if (manifest.some((entry) => entry.schema_version !== BACKUP_SCHEMA_VERSION)) throw new Error("unsupported_schema_version");
   for (const entry of manifest) {
     const content = await zip.file(entry.file_name).async("text");
     if (await sha256(content) !== entry.sha256) throw new Error(`hash_mismatch:${entry.file_name}`);
@@ -84,7 +86,7 @@ export async function restoreBackup(file) {
   const heats = heatsRows.map((row) => {
     const samples = sampleRows.filter((sample) => sample.heat_id === row.heat_id).map((sample) => {
       const values = Object.fromEntries(analysisValueRows.filter((value) => value.heat_id === row.heat_id && value.analysis_id === `${sample.sample_id}-A1`).map((value) => [value.item, Number(value.value)]));
-      return { id: sample.sample_id, sampledAt: sample.sampled_at, stage: sample.stage, method: sample.method, adopted: sample.adopted === "true", values };
+      return { id: sample.sample_id, sampledAt: sample.sampled_at, stage: sample.stage, method: sample.method, adopted: sample.adopted === "true", values, processSnapshot: sample.process_snapshot_json ? JSON.parse(sample.process_snapshot_json) : null };
     });
     const events = eventRows.filter((event) => event.heat_id === row.heat_id).map((event) => JSON.parse(event.payload_json));
     return {
@@ -113,14 +115,16 @@ export async function restoreBackup(file) {
     operationLog: operationRows.map((row) => JSON.parse(row.payload_json)),
     lastSavedAt: null,
   };
-  if (restored.schemaVersion !== APP_VERSION) throw new Error("unsupported_schema_version");
+  if (restored.schemaVersion !== BACKUP_SCHEMA_VERSION) throw new Error("unsupported_schema_version");
   const gradeCodes = new Set(restored.settings.gradeProfiles.map((item) => item.code));
   const equipmentIds = new Set(restored.settings.equipmentProfiles.map((item) => item.id));
   const coefficientIds = new Set(restored.settings.coefficientProfiles.map((item) => item.id));
   const heatIds = new Set(restored.heats.map((heat) => heat.id));
   const invalidReference = restored.heats.some((heat) => !gradeCodes.has(heat.gradeCode) || !equipmentIds.has(heat.equipmentProfileId) || !coefficientIds.has(heat.coefficientProfileId));
   if (invalidReference || !heatIds.has(restored.currentHeatId)) throw new Error("reference_integrity_failed");
-  return restored;
+  const normalized = normalizeCoachState(restored);
+  if (validateSettings(normalized.settings, "en").length) throw new Error("settings_integrity_failed");
+  return normalized;
 }
 
 export function downloadBlob(blob, filename) {

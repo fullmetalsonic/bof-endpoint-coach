@@ -6,8 +6,9 @@ import { fileURLToPath } from "node:url";
 const repository = "fullmetalsonic/bof-endpoint-coach";
 const repositoryUrl = `https://github.com/${repository}`;
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const emailBodyPath = resolve(projectRoot, "work/email/BOF_Endpoint_Coach_EMAIL_BODY_v0.1.0.html");
-const previewPath = resolve(projectRoot, "release/BOF_Endpoint_Coach_EMAIL_PREVIEW_v0.1.0.html");
+const { version } = JSON.parse(readFileSync(resolve(projectRoot, "app/package.json"), "utf8"));
+const emailBodyPath = resolve(projectRoot, `work/email/BOF_Endpoint_Coach_EMAIL_BODY_v${version}.html`);
+const previewPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_EMAIL_PREVIEW_v${version}.html`);
 
 const images = [
   { path: "docs/screenshots/dashboard-ko.png", cid: "bof-dashboard-ko" },
@@ -84,7 +85,7 @@ function wrapEmail(articleHtml) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>취련 코치 v0.1.0 · GitHub README</title>
+  <title>취련 코치 v${version} · GitHub README</title>
 </head>
 <body style="margin:0;padding:0;background:#f6f8fa;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background:#f6f8fa;border-collapse:collapse;">
@@ -93,7 +94,7 @@ function wrapEmail(articleHtml) {
         <table role="presentation" width="960" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:960px;border-collapse:collapse;">
           <tr>
             <td style="padding:14px 18px;border:1px solid #d1d9e0;border-radius:6px 6px 0 0;background:#fff8c5;color:#633c01;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif;font-size:14px;line-height:1.5;">
-              <strong style="font-weight:700;">수정본 안내:</strong> 이전 메일은 HTML 안내서가 첨부만 되어 본문 화면이 보이지 않았습니다. 이번 메일은 GitHub README 전체와 화면 이미지를 본문에서 바로 볼 수 있게 다시 보냅니다.
+              <strong style="font-weight:700;">v${version} 배포 안내:</strong> 공개 문헌 시나리오 기반 종점 C·온도 계산과 현장 수정·승인값 우선 적용 기능을 추가했습니다. GitHub README 전체와 최신 화면을 본문에서 바로 볼 수 있습니다.
             </td>
           </tr>
           <tr>

@@ -3,7 +3,7 @@ function formatValue(value, decimals) {
 }
 
 function rangeFor(row) {
-  const values = [row.actual, row.prediction?.available ? row.prediction.value : null, row.target?.min, row.target?.max].filter((value) => Number.isFinite(Number(value))).map(Number);
+  const values = [row.actual, row.prediction?.available ? row.prediction.value : null, row.prediction?.low, row.prediction?.high, row.target?.min, row.target?.max].filter((value) => Number.isFinite(Number(value))).map(Number);
   if (!values.length) return [0, 1];
   let min = Math.min(...values);
   let max = Math.max(...values);
@@ -30,16 +30,19 @@ export function QualityBar({ row, locale, t }) {
   const targetEnd = position(target?.max ?? view[1], view) ?? 100;
   const actualPosition = position(row.actual, view);
   const predictedPosition = row.prediction?.available ? position(row.prediction.value, view) : null;
+  const scenarioLow = row.prediction?.available ? position(row.prediction.low, view) : null;
+  const scenarioHigh = row.prediction?.available ? position(row.prediction.high, view) : null;
   const label = locale === "ko" ? names[row.key] : englishNames[row.key];
   return (
     <div className="quality-row">
       <div className="quality-name"><strong>{label}</strong><span>({target?.unit ?? "–"})</span></div>
       <div className="quality-number"><span>{t("currentActual")}</span><strong>{formatValue(row.actual, decimals)}</strong></div>
-      <div className="quality-number estimate"><span>{t("endpointEstimate")}</span><strong>{row.prediction?.available ? formatValue(row.prediction.value, decimals) : "–"}</strong><small>{row.prediction?.available ? t(row.predictionState) : t("noFormula")}</small></div>
+      <div className="quality-number estimate"><span>{t("endpointEstimate")}</span><strong>{row.prediction?.available ? formatValue(row.prediction.value, decimals) : "–"}</strong><small>{row.prediction?.available ? t(row.predictionState) : t("noFormula")}</small>{row.prediction?.available && <small>{formatValue(row.prediction.low, decimals)}–{formatValue(row.prediction.high, decimals)}</small>}</div>
       <div className="quality-track-wrap">
         <div className="range-labels"><span>{target?.min !== undefined ? `${t("min")} ${formatValue(target.min, decimals)}` : ""}</span><strong>{t("targetRange")} {target?.min !== undefined ? formatValue(target.min, decimals) : "–"} – {target?.max !== undefined ? formatValue(target.max, decimals) : "–"}</strong><span>{target?.max !== undefined ? `${t("max")} ${formatValue(target.max, decimals)}` : ""}</span></div>
         <div className="quality-track">
           <span className="target-zone" style={{ left: `${targetStart}%`, width: `${Math.max(0, targetEnd - targetStart)}%` }} />
+          {scenarioLow !== null && scenarioHigh !== null && <span className="scenario-zone" title={t("literatureScenarioRange")} style={{ left: `${Math.min(scenarioLow, scenarioHigh)}%`, width: `${Math.abs(scenarioHigh - scenarioLow)}%` }} />}
           {target?.min !== undefined && <span className="limit-line" style={{ left: `${targetStart}%` }} />}
           {target?.max !== undefined && <span className="limit-line" style={{ left: `${targetEnd}%` }} />}
           {actualPosition !== null && <span className={`value-dot actual ${row.actualState}`} style={{ left: `${actualPosition}%` }}><b>{formatValue(row.actual, decimals)}</b></span>}

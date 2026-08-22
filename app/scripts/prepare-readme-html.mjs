@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 const repository = "fullmetalsonic/bof-endpoint-coach";
 const repositoryUrl = `https://github.com/${repository}`;
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const outputPath = resolve(projectRoot, "release/BOF_Endpoint_Coach_README_v0.1.0.html");
+const { version } = JSON.parse(readFileSync(resolve(projectRoot, "app/package.json"), "utf8"));
+const outputPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_README_v${version}.html`);
 
 const renderedReadme = execFileSync(
   "gh",
@@ -142,13 +143,13 @@ const standaloneHtml = `<!doctype html>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light">
-  <title>취련 코치 v0.1.0 · README</title>
+  <title>취련 코치 v${version} · README</title>
   <style>${styles}</style>
 </head>
 <body>
   <main class="page-shell">
     <header class="document-bar">
-      <strong>취련 코치 v0.1.0 · GitHub README 오프라인 사본</strong>
+      <strong>취련 코치 v${version} · GitHub README 오프라인 사본</strong>
       <a href="${repositoryUrl}">${repository}</a>
     </header>
     ${articleHtml}

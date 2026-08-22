@@ -11,6 +11,7 @@ app/node_modules/
 app/dist/
 app/coverage/
 app/*.log
+.vite/
 
 # User-provided references and temporary workspace files
 .codex-remote-attachments/

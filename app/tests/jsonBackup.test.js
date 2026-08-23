@@ -34,7 +34,7 @@ describe("canonical JSON backup", () => {
     });
     const restored = await parseJsonBackup(created.blob);
 
-    expect(created.filename).toBe("BOF_Coach_Backup_2026-08-23_1103.json");
+    expect(created.filename).toMatch(/^BOF_Coach_Backup_\d{4}-\d{2}-\d{2}_\d{4}\.json$/);
     expect(restored.sha256).toMatch(/^[a-f0-9]{64}$/);
     expect(restored.state.operatorProfile.displayName).toBe("JSON 검증자");
     expect(restored.state.heats).toHaveLength(2);

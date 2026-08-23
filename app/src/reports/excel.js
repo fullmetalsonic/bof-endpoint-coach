@@ -3,6 +3,8 @@ import { calculateEndpoint } from "../calculation/endpoint.js";
 import { downloadBlob } from "./backup.js";
 import { getAnalysisResults, latestAdoptedSample } from "../domain/analysisRecords.js";
 import { endpointValidationComparison } from "../domain/predictionHistory.js";
+import { buildResidualLedger } from "../calibration/residualLedger.js";
+import { buildCalibrationRecommendations } from "../calibration/recommendation.js";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -74,6 +76,10 @@ export function buildExcelSheets(state) {
       "Estimated temperature (°C)": calc.temperature.available ? calc.temperature.value : "Unavailable",
       "Temperature scenario low (°C)": calc.temperature.available ? calc.temperature.low : "Unavailable",
       "Temperature scenario high (°C)": calc.temperature.available ? calc.temperature.high : "Unavailable",
+      "Estimated P (%)": calc.phosphorus.available ? calc.phosphorus.value : "Unavailable",
+      "Estimated Mn (%)": calc.manganese.available ? calc.manganese.value : "Unavailable",
+      "Estimated Si (%)": calc.silicon.available ? calc.silicon.value : "Unavailable",
+      "Estimated S (%)": calc.sulfur.available ? calc.sulfur.value : "Unavailable",
       "Formula version": calc.formulaVersion ?? "",
       "Coefficient basis": calc.basis?.status ?? "",
       "Override fields": calc.basis?.overrideFields?.join(", ") ?? "",
@@ -82,6 +88,10 @@ export function buildExcelSheets(state) {
       "Actual endpoint analysis ID": heat.actualEndpointAnalysisId ?? "",
       "C prediction error (%)": comparison.carbonError ?? "",
       "Temperature prediction error (°C)": comparison.temperatureError ?? "",
+      "P prediction error (%)": comparison.phosphorusError ?? "",
+      "Mn prediction error (%)": comparison.manganeseError ?? "",
+      "Si prediction error (%)": comparison.siliconError ?? "",
+      "S prediction error (%)": comparison.sulfurError ?? "",
       "Reference settings version": heat.referenceSnapshot?.settingsVersion ?? "",
     };
   });
@@ -108,7 +118,15 @@ export function buildExcelSheets(state) {
     ...analysis.values,
   }))));
   const corrections = state.heats.flatMap((heat) => (heat.correctionLog ?? []).map((entry) => ({ "Heat ID": heat.id, "Correction ID": entry.id, Type: entry.type, "Target kind": entry.targetKind, "Target ID": entry.targetId, Reason: entry.reason, "Recorded at": entry.recordedAt, Operator: entry.recordedBy?.displayName ?? "" })));
-  const predictions = state.heats.flatMap((heat) => (heat.predictionSnapshots ?? []).map((entry) => ({ "Heat ID": heat.id, "Prediction ID": entry.id, Trigger: entry.triggerType, Stage: entry.stage, "Calculated at": entry.calculatedAt, "C estimate (%)": entry.carbon?.available ? entry.carbon.value : "Unavailable", "Temperature estimate (°C)": entry.temperature?.available ? entry.temperature.value : "Unavailable", "Sample ID": entry.sampleId ?? "", "Formula version": entry.formulaVersion ?? "", "Settings version": entry.settingsVersion ?? "" })));
+  const predictions = state.heats.flatMap((heat) => (heat.predictionSnapshots ?? []).map((entry) => ({ "Heat ID": heat.id, "Prediction ID": entry.id, Trigger: entry.triggerType, Stage: entry.stage, "Calculated at": entry.calculatedAt, "C estimate (%)": entry.carbon?.available ? entry.carbon.value : "Unavailable", "Temperature estimate (°C)": entry.temperature?.available ? entry.temperature.value : "Unavailable", "P estimate (%)": entry.phosphorus?.available ? entry.phosphorus.value : "Unavailable", "Mn estimate (%)": entry.manganese?.available ? entry.manganese.value : "Unavailable", "Si estimate (%)": entry.silicon?.available ? entry.silicon.value : "Unavailable", "S estimate (%)": entry.sulfur?.available ? entry.sulfur.value : "Unavailable", "Sample ID": entry.sampleId ?? "", "Formula version": entry.formulaVersion ?? "", "Coefficient version": entry.coefficientVersionId ?? "", "Settings version": entry.settingsVersion ?? "" })));
+  const residuals = buildResidualLedger(state);
+  const recommendations = buildCalibrationRecommendations(residuals, state.settings.coefficientProfiles[0]?.calibrationOffsets, state.settings.coefficientProfiles[0]?.versionId).map((item) => ({
+    "Group": item.groupKey, "Element": item.element, "Stage": item.stage, "Evidence count": item.count, "Training count": item.trainingCount, "Validation count": item.validationCount, "Current offset": item.currentOffset, "Recommended delta": item.recommendedDelta, "Candidate offset": item.candidateOffset, "Baseline validation MAE": item.validationBaseline.mae, "Candidate validation MAE": item.validationCandidate.mae, "Eligible for approval": item.eligibleForApproval, "Reason": item.reason,
+  }));
+  const coefficientVersions = state.settings.coefficientProfiles.flatMap((profile) => [
+    { "Coefficient ID": profile.id, "Version ID": profile.versionId ?? "legacy", "Parent version": profile.parentVersionId ?? "", Status: "current", "Created at": profile.createdAt ?? "", "Archived at": "", Operator: profile.approvedBy ?? "", Reason: profile.approvalReason ?? "", "Offsets JSON": JSON.stringify(profile.calibrationOffsets ?? {}) },
+    ...(profile.versionHistory ?? []).map((version) => ({ "Coefficient ID": profile.id, "Version ID": version.versionId, "Parent version": version.profile?.parentVersionId ?? "", Status: "archived", "Created at": version.profile?.createdAt ?? "", "Archived at": version.archivedAt ?? "", Operator: version.archivedBy ?? "", Reason: version.changeReason ?? "", "Offsets JSON": JSON.stringify(version.profile?.calibrationOffsets ?? {}) })),
+  ]);
   const readMe = [
     ["Warning"],
     ["Manual or synthetic operating data with public-literature calculation scenarios. Not plant-validated."],
@@ -123,6 +141,9 @@ export function buildExcelSheets(state) {
     { name: "Analysis", rows: objectRows(analyses) },
     { name: "Corrections", rows: objectRows(corrections) },
     { name: "Predictions", rows: objectRows(predictions) },
+    { name: "Residual ledger", rows: objectRows(residuals) },
+    { name: "Calibration candidates", rows: objectRows(recommendations) },
+    { name: "Coefficient versions", rows: objectRows(coefficientVersions) },
     { name: "Read me", rows: readMe },
   ];
 }

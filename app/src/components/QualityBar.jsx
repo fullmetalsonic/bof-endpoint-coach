@@ -23,8 +23,22 @@ function position(value, view) {
   return Math.max(0, Math.min(100, (Number(value) - view[0]) / (view[1] - view[0]) * 100));
 }
 
+function targetLabel(target, decimals, locale, t) {
+  const hasMin = hasValue(target?.min);
+  const hasMax = hasValue(target?.max);
+  if (hasMin && hasMax) return `${t("targetRange")} ${formatValue(target.min, decimals)} – ${formatValue(target.max, decimals)}`;
+  if (hasMax) return locale === "ko" ? `목표 상한 ≤ ${formatValue(target.max, decimals)}` : `Target maximum ≤ ${formatValue(target.max, decimals)}`;
+  if (hasMin) return locale === "ko" ? `목표 하한 ≥ ${formatValue(target.min, decimals)}` : `Target minimum ≥ ${formatValue(target.min, decimals)}`;
+  return locale === "ko" ? "목표 미설정" : "No target";
+}
+
 const names = { C: "C", temperature: "온도", P: "P", Mn: "Mn", Si: "Si", S: "S" };
 const englishNames = { ...names, temperature: "Temperature" };
+const confidenceLabels = {
+  medium: { ko: "문헌 신뢰도 중", en: "Literature confidence: medium" },
+  low: { ko: "문헌 신뢰도 낮음", en: "Literature confidence: low" },
+  very_low: { ko: "문헌 신뢰도 매우 낮음", en: "Literature confidence: very low" },
+};
 
 export function QualityBar({ row, locale, t }) {
   const target = row.target;
@@ -43,9 +57,9 @@ export function QualityBar({ row, locale, t }) {
     <div className="quality-row">
       <div className="quality-name"><strong>{label}</strong><span>({target?.unit ?? "–"})</span></div>
       <div className="quality-number"><span>{t("currentActual")}</span><strong>{formatValue(row.actual, decimals)}</strong></div>
-      <div className="quality-number estimate"><span>{t("endpointEstimate")}</span><strong>{row.prediction?.available ? formatValue(row.prediction.value, decimals) : "–"}</strong><small>{row.prediction?.available ? t(row.predictionState) : t("noFormula")}</small>{row.prediction?.available && <small>{formatValue(row.prediction.low, decimals)}–{formatValue(row.prediction.high, decimals)}</small>}</div>
+      <div className="quality-number estimate"><span>{t("endpointEstimate")}</span><strong>{row.prediction?.available ? formatValue(row.prediction.value, decimals) : "–"}</strong><small>{row.prediction?.available ? t(row.predictionState) : t("noFormula")}</small>{row.prediction?.available && <small>{formatValue(row.prediction.low, decimals)}–{formatValue(row.prediction.high, decimals)}</small>}{row.prediction?.available && row.prediction.confidence && <small className={`confidence-label ${row.prediction.confidence}`}>{confidenceLabels[row.prediction.confidence]?.[locale] ?? row.prediction.confidence}</small>}</div>
       <div className="quality-track-wrap">
-        <div className="range-labels"><span>{hasMin ? `${t("min")} ${formatValue(target.min, decimals)}` : ""}</span><strong>{t("targetRange")} {formatValue(target?.min, decimals)} – {formatValue(target?.max, decimals)}</strong><span>{hasMax ? `${t("max")} ${formatValue(target.max, decimals)}` : ""}</span></div>
+        <div className="range-labels"><span>{hasMin ? `${t("min")} ${formatValue(target.min, decimals)}` : ""}</span><strong>{targetLabel(target, decimals, locale, t)}</strong><span>{hasMax ? `${t("max")} ${formatValue(target.max, decimals)}` : ""}</span></div>
         <div className="quality-track">
           {(hasMin || hasMax) && <span className="target-zone" style={{ left: `${targetStart}%`, width: `${Math.max(0, targetEnd - targetStart)}%` }} />}
           {scenarioLow !== null && scenarioHigh !== null && <span className="scenario-zone" title={t("literatureScenarioRange")} style={{ left: `${Math.min(scenarioLow, scenarioHigh)}%`, width: `${Math.abs(scenarioHigh - scenarioLow)}%` }} />}

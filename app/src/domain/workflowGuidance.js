@@ -1,7 +1,7 @@
 import { getActionAvailability, getNextStage, hasEndpointReviewSample, validateStageAdvance } from "./processStages.js";
 
 const initialPredictionFields = ["hotMetalKg", "hotMetalC", "scrapKg", "scrapC", "plannedTotalOxygenNm3", "hotMetalTemperatureC"];
-const initialAccuracyFields = ["hotMetalSi", "hotMetalMn", "hotMetalP", "fluxKg"];
+const initialAccuracyFields = ["hotMetalSi", "hotMetalMn", "hotMetalP", "hotMetalS", "scrapSi", "scrapMn", "scrapP", "scrapS", "fluxKg"];
 
 function hasValue(value) {
   return value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));

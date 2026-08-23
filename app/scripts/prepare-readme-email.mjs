@@ -11,10 +11,9 @@ const emailBodyPath = resolve(projectRoot, `work/email/BOF_Endpoint_Coach_EMAIL_
 const previewPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_EMAIL_PREVIEW_v${version}.html`);
 
 const images = [
-  { path: "docs/screenshots/dashboard-ko.png", cid: "bof-dashboard-ko" },
-  { path: "docs/screenshots/correction-ledger-ko.png", cid: "bof-correction-ledger-ko" },
-  { path: "docs/screenshots/settings-ko.png", cid: "bof-settings-ko" },
-  { path: "docs/screenshots/dashboard-en.png", cid: "bof-dashboard-en" },
+  { path: "docs/manual/screenshots/v0.5.0/14-dashboard-1280-g6.png", cid: "bof-dashboard-g6" },
+  { path: "docs/manual/screenshots/v0.5.0/03-learning-ledger.png", cid: "bof-learning-ledger" },
+  { path: "docs/manual/screenshots/v0.5.0/08-settings-coefficient-history.png", cid: "bof-coefficient-history" },
 ];
 
 const renderedReadme = execFileSync(

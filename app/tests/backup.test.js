@@ -8,9 +8,9 @@ import { correctAnalysisRecord, setActualEndpointAnalysis } from "../src/domain/
 import { capturePredictionSnapshot } from "../src/domain/predictionHistory.js";
 
 describe("backup package", () => {
-  it("uses the correction-ledger v0.3.0 backup schema", () => {
-    expect(APP_VERSION).toBe("0.4.0");
-    expect(BACKUP_SCHEMA_VERSION).toBe("0.3.0");
+  it("uses the learning-ledger v0.4.0 backup schema", () => {
+    expect(APP_VERSION).toBe("0.5.0");
+    expect(BACKUP_SCHEMA_VERSION).toBe("0.4.0");
     expect(createDemoState().schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
   });
 
@@ -23,12 +23,12 @@ describe("backup package", () => {
     const blob = await createBackupBlob(source);
     const archive = await blob.arrayBuffer();
     const zip = await JSZip.loadAsync(archive);
-    expect(Object.keys(zip.files)).toEqual(expect.arrayContaining(["manifest.csv", "heats.csv", "events.csv", "samples.csv", "analysis_results.csv", "analysis_values.csv", "reference_values.csv", "operation_log.csv"]));
+    expect(Object.keys(zip.files)).toEqual(expect.arrayContaining(["manifest.csv", "heats.csv", "events.csv", "samples.csv", "analysis_results.csv", "analysis_values.csv", "reference_values.csv", "operation_log.csv", "coefficient_versions.csv", "calibration_residuals.csv"]));
     const restored = await restoreBackup(archive);
     expect(restored.heats).toHaveLength(source.heats.length);
     expect(restored.heats[0].id).toBe(source.heats[0].id);
     expect(restored.heats[0].samples.at(-1).values.C).toBe(0.074);
-    expect(restored.settings.coefficientProfiles[0].formulaVersion).toBe("BOF-REF-CALC 0.2.0");
+    expect(restored.settings.coefficientProfiles[0].formulaVersion).toBe("BOF-REF-CALC 0.3.0");
     expect(restored.settings.coefficientProfiles[0].literatureValues.postCombustionRatioBase).toBe(0.15);
     expect(restored.heats[0].samples.at(-1).processSnapshot.cumulativeOxygenNm3).toBe(12970);
     expect(restored.operationLog.some((entry) => entry.type === "backup_exported")).toBe(true);
@@ -42,7 +42,12 @@ describe("backup package", () => {
     const source = createDemoState();
     source.schemaVersion = "0.1.0";
     const blob = await createBackupBlob(source);
-    const restored = await restoreBackup(await blob.arrayBuffer());
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+    zip.remove("coefficient_versions.csv");
+    zip.remove("calibration_residuals.csv");
+    const manifest = await zip.file("manifest.csv").async("text");
+    zip.file("manifest.csv", manifest.split("\n").filter((line) => !line.startsWith("coefficient_versions.csv,") && !line.startsWith("calibration_residuals.csv,")).join("\n"));
+    const restored = await restoreBackup(await zip.generateAsync({ type: "arraybuffer" }));
     expect(restored.schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
     expect(restored.heats[0].id).toBe(source.heats[0].id);
   });

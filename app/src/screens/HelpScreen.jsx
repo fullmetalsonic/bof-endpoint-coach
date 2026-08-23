@@ -22,6 +22,9 @@ const termRows = [
   ["랜스 높이", "Lance height", "현장 기준점에서 산소 랜스까지의 거리입니다. 기준점은 사업소 표준을 따릅니다.", "Distance from the site-defined reference point to the oxygen lance."],
   ["채택 분석", "Adopted analysis", "여러 분석 중 현재 종점 참고예상의 기준으로 선택한 분석입니다.", "The selected analysis used as the basis for the current endpoint reference."],
   ["종점 실제값", "Actual endpoint", "출강 후 예측 오차 비교에 사용할 확정 분석입니다. 채택 분석과 용도가 다릅니다.", "Confirmed post-tap analysis used to compare prediction error."],
+  ["계수 버전", "Coefficient version", "예상 계산에 실제 사용된 문헌값과 보정 오프셋의 묶음입니다. 변경·복구할 때마다 새 버전이 생깁니다.", "The literature values and correction offsets actually used by a prediction. Each save or restore creates a new version."],
+  ["오차(잔차)", "Residual", "실측값에서 예상값을 뺀 값입니다. 양수면 실측이 예상보다 높고, 음수면 낮습니다.", "Actual minus predicted. Positive means the actual is higher; negative means it is lower."],
+  ["추천 후보", "Correction candidate", "같은 강종·설비·계수버전의 오차를 모아 만든 검토용 보정값입니다. 자동 적용되지 않습니다.", "A review-only correction built from residuals for the same grade, equipment, and coefficient version. It is never auto-applied."],
   ["Data Ledger", "Data Ledger", "입력·분석·계산의 최신성, 저장 상태, 적용 계수와 미완료 확인 항목을 모은 상태판입니다.", "Status panel for input freshness, storage, coefficients, and pending checks."],
 ];
 
@@ -53,7 +56,7 @@ export function HelpScreen({ locale, onStart, onSettings }) {
         <section className="panel"><div className="panel-title"><h2>{ko ? "단위와 환산" : "Units and conversion"}</h2></div><dl className="help-definition-list">{unitRows.map(([term, meaningKo, meaningEn]) => <div key={term}><dt>{term}</dt><dd>{ko ? meaningKo : meaningEn}</dd></div>)}</dl></section>
         <section className="panel"><div className="panel-title"><h2>{ko ? "표시를 읽는 법" : "How to read the display"}</h2></div><ul className="help-status-list"><li><CheckCircle weight="fill" /><span>{ko ? "녹색: 강종 목표 범위 또는 정상 완료 상태" : "Green: grade target range or completed state"}</span></li><li><WarningCircle weight="fill" /><span>{ko ? "주황·빨강: 확인 필요 또는 목표 이탈. 자동 출강 판단이 아닙니다." : "Amber/red: check required or outside target; never an automatic tap decision."}</span></li><li><Info weight="fill" /><span>{ko ? "회색 버튼: 현재 단계에서 사용할 수 없습니다. 버튼 안의 사용 가능 단계를 확인합니다." : "Gray button: unavailable at this stage; read the availability note inside it."}</span></li><li><Info weight="fill" /><span>{ko ? "검은 점은 최신 실측, 흰 점은 종점 참고예상, 녹색 선은 목표 범위입니다." : "Black is latest actual, white is endpoint estimate, and green is target range."}</span></li></ul></section>
       </div>
-      <div className="settings-warning help-boundary">{ko ? "C·온도는 공개 문헌 시나리오 참고예상입니다. P·Mn·Si·S 종점 예상은 현장 승인식이 없어 만들지 않습니다. 설비 제어·안전 인터록·출강 승인과 취련사의 판단을 대체하지 않습니다." : "C and temperature are public-literature scenario estimates. P, Mn, Si, and S endpoint estimates are intentionally unavailable without approved site formulas. This does not replace controls, interlocks, tap authorization, or operator judgment."}</div>
+      <div className="settings-warning help-boundary">{ko ? "C·온도·P·Mn·Si·S는 공개 문헌 시나리오 기반 참고예상입니다. 항목별 문헌 신뢰도가 다르며 실제 현장 정확도는 아직 검증되지 않았습니다. 설비 제어·안전 인터록·출강 승인과 취련사의 판단을 대체하지 않습니다." : "C, temperature, P, Mn, Si, and S are public-literature scenario reference estimates. Literature confidence differs by item, and plant accuracy has not yet been validated. This does not replace controls, interlocks, tap authorization, or operator judgment."}</div>
     </main>
   );
 }

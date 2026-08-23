@@ -52,7 +52,7 @@ export function validateNewHeatInput(form, existingHeatIds = [], recordedAt = ne
     if (invalidOptionalNumber(form[key])) return result("nonnegative_number_required");
   }
   if (invalidOptionalNumber(form.expectedDurationMinutes, { positive: true })) return result("positive_duration_required");
-  for (const key of ["hotMetalC", "hotMetalSi", "hotMetalMn", "hotMetalP", "scrapC"]) {
+  for (const key of ["hotMetalC", "hotMetalSi", "hotMetalMn", "hotMetalP", "hotMetalS", "scrapC", "scrapSi", "scrapMn", "scrapP", "scrapS"]) {
     if (invalidOptionalNumber(form[key], { max: 100 })) return result("chemistry_out_of_range");
   }
   if (invalidOptionalNumber(form.hotMetalTemperatureC, { max: 2500 })) return result("temperature_out_of_range");

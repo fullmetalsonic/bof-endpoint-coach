@@ -6,7 +6,10 @@ import { buildExcelBlob, buildExcelSheets } from "../src/reports/excel.js";
 describe("Excel report", () => {
   it("builds correction-aware operator-facing sheets", () => {
     const sheets = buildExcelSheets(createDemoState());
-    expect(sheets.map((sheet) => sheet.name)).toEqual(["Heat summary", "Events", "Analysis", "Corrections", "Predictions", "Read me"]);
+    expect(sheets.map((sheet) => sheet.name)).toEqual([
+      "Heat summary", "Events", "Analysis", "Corrections", "Predictions",
+      "Residual ledger", "Calibration candidates", "Coefficient versions", "Read me",
+    ]);
     expect(sheets[0].rows.length).toBeGreaterThan(1);
   });
 

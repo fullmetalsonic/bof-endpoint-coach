@@ -25,7 +25,8 @@ function ActionButton({ step, onAction, onAdvance, onEditInitial, locale, writeL
 }
 
 function PredictionNotice({ rows, locale, t }) {
-  const endpointRows = rows.filter((row) => ["C", "temperature"].includes(row.key));
+  const hasValue = (value) => value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
+  const endpointRows = rows.filter((row) => hasValue(row.target?.min) || hasValue(row.target?.max));
   const available = endpointRows.every((row) => row.prediction.available);
   const inside = available && endpointRows.every((row) => row.predictionState === "within");
   return (

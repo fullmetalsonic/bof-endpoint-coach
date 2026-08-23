@@ -5,8 +5,14 @@ import { normalizeCoachState } from "../data/stateMigration.js";
 import { validateSettings } from "../domain/settingsValidation.js";
 import { validateOperationalState } from "../domain/stateIntegrity.js";
 import { getAnalysisResults, normalizeSampleAnalyses } from "../domain/analysisRecords.js";
+import { buildResidualLedger } from "../calibration/residualLedger.js";
 
-const REQUIRED_FILES = ["heats.csv", "events.csv", "samples.csv", "analysis_results.csv", "analysis_values.csv", "reference_values.csv", "operation_log.csv"];
+const BASE_REQUIRED_FILES = ["heats.csv", "events.csv", "samples.csv", "analysis_results.csv", "analysis_values.csv", "reference_values.csv", "operation_log.csv"];
+const V040_REQUIRED_FILES = [...BASE_REQUIRED_FILES, "coefficient_versions.csv", "calibration_residuals.csv"];
+
+function requiredFilesForSchema(schemaVersion) {
+  return schemaVersion === "0.4.0" ? V040_REQUIRED_FILES : BASE_REQUIRED_FILES;
+}
 
 function csvRowCount(content) {
   return Math.max(0, content.split("\n").length - 1);
@@ -14,9 +20,13 @@ function csvRowCount(content) {
 
 function validateManifest(manifest) {
   const names = manifest.map((entry) => entry.file_name);
-  if (manifest.length !== REQUIRED_FILES.length || new Set(names).size !== names.length || REQUIRED_FILES.some((name) => !names.includes(name))) throw new Error("manifest_file_set_invalid");
   if (manifest.some((entry) => !SUPPORTED_BACKUP_SCHEMA_VERSIONS.includes(entry.schema_version))) throw new Error("unsupported_schema_version");
+  const schemas = [...new Set(manifest.map((entry) => entry.schema_version))];
+  if (schemas.length !== 1) throw new Error("manifest_schema_mismatch");
+  const required = requiredFilesForSchema(schemas[0]);
+  if (manifest.length !== required.length || new Set(names).size !== names.length || required.some((name) => !names.includes(name))) throw new Error("manifest_file_set_invalid");
   if (manifest.some((entry) => !/^[a-f0-9]{64}$/i.test(entry.sha256) || !/^\d+$/.test(entry.row_count))) throw new Error("manifest_entry_invalid");
+  return schemas[0];
 }
 
 function json(value) {
@@ -65,6 +75,13 @@ function buildCsvFiles(state) {
     { scope: "application", key: "onboardingCompleted", value_json: json(state.onboardingCompleted ?? true) },
   ];
   const operationLog = (state.operationLog ?? []).map((entry) => ({ log_id: entry.id, type: entry.type, at: entry.at, payload_json: json(entry) }));
+  const coefficientVersions = (state.settings.coefficientProfiles ?? []).flatMap((profile) => [
+    { coefficient_id: profile.id, version_id: profile.versionId ?? "legacy", parent_version_id: profile.parentVersionId ?? "", created_at: profile.createdAt ?? "", status: "current", profile_json: json(Object.fromEntries(Object.entries(profile).filter(([key]) => key !== "versionHistory"))) },
+    ...(profile.versionHistory ?? []).map((version) => ({ coefficient_id: profile.id, version_id: version.versionId, parent_version_id: version.profile?.parentVersionId ?? "", created_at: version.profile?.createdAt ?? "", status: "archived", archived_at: version.archivedAt, archived_by: version.archivedBy, change_reason: version.changeReason, profile_json: json(version.profile) })),
+  ]);
+  const residuals = buildResidualLedger(state).map((row) => ({
+    residual_id: row.id, heat_id: row.heatId, element: row.element, unit: row.unit, predicted: row.predicted, actual: row.actual, residual: row.residual, predicted_at: row.predictedAt, actual_at: row.actualAt, grade_code: row.gradeCode, equipment_profile_id: row.equipmentProfileId, formula_version: row.formulaVersion, coefficient_id: row.coefficientId, coefficient_version_id: row.coefficientVersionId, reference_mode: row.referenceMode, synthetic: row.synthetic ? "true" : "false",
+  }));
   return {
     "heats.csv": encodeCsv(heats, ["heat_id", "grade_code", "equipment_profile_id", "coefficient_profile_id", "status", "stage", "stage_label_ko", "stage_label_en", "started_at", "expected_tap_at", "demo", "initial_json", "process_json", "stage_history_json", "correction_base_json", "reference_snapshot_json", "prediction_snapshots_json", "correction_log_json", "actual_endpoint_analysis_id", "lifecycle_json"]),
     "events.csv": encodeCsv(events, ["heat_id", "event_id", "type", "occurred_at", "payload_json"]),
@@ -73,6 +90,8 @@ function buildCsvFiles(state) {
     "analysis_values.csv": encodeCsv(analysisValues, ["heat_id", "analysis_id", "item", "value", "unit"]),
     "reference_values.csv": encodeCsv(referenceValues, ["scope", "key", "value_json"]),
     "operation_log.csv": encodeCsv(operationLog, ["log_id", "type", "at", "payload_json"]),
+    "coefficient_versions.csv": encodeCsv(coefficientVersions, ["coefficient_id", "version_id", "parent_version_id", "created_at", "status", "archived_at", "archived_by", "change_reason", "profile_json"]),
+    "calibration_residuals.csv": encodeCsv(residuals, ["residual_id", "heat_id", "element", "unit", "predicted", "actual", "residual", "predicted_at", "actual_at", "grade_code", "equipment_profile_id", "formula_version", "coefficient_id", "coefficient_version_id", "reference_mode", "synthetic"]),
   };
 }
 
@@ -90,11 +109,10 @@ export async function createBackupBlob(state) {
 
 export async function restoreBackup(file) {
   const zip = await JSZip.loadAsync(file);
-  for (const required of [...REQUIRED_FILES, "manifest.csv"]) {
-    if (!zip.file(required)) throw new Error(`missing_file:${required}`);
-  }
+  if (!zip.file("manifest.csv")) throw new Error("missing_file:manifest.csv");
   const manifest = parseCsv(await zip.file("manifest.csv").async("text"));
-  validateManifest(manifest);
+  const schemaVersion = validateManifest(manifest);
+  for (const required of requiredFilesForSchema(schemaVersion)) if (!zip.file(required)) throw new Error(`missing_file:${required}`);
   for (const entry of manifest) {
     const fileEntry = zip.file(entry.file_name);
     if (!fileEntry) throw new Error(`missing_file:${entry.file_name}`);

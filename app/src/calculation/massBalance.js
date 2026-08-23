@@ -21,13 +21,6 @@ function finite(value) {
   return value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
 }
 
-function targetMidpoint(target, fallback = 0) {
-  if (finite(target?.min) && finite(target?.max)) return (Number(target.min) + Number(target.max)) / 2;
-  if (finite(target?.max)) return Number(target.max);
-  if (finite(target?.min)) return Number(target.min);
-  return fallback;
-}
-
 export function oxygenDensityKgPerNm3(values) {
   const temperatureK = Number(values.normalTemperatureC) + 273.15;
   const pressurePa = Number(values.normalPressureKPa) * 1000;
@@ -45,7 +38,7 @@ export function scenarioParameters(values, scenario) {
   };
 }
 
-export function calculateMassBalance(initial, grade, values, scenario, oxygenNm3) {
+export function calculateMassBalance(initial, values, scenario, oxygenNm3, charge = null) {
   const required = [initial.hotMetalKg, initial.hotMetalC, initial.scrapKg, initial.scrapC, oxygenNm3];
   if (!required.every(finite)) return { available: false, reason: "carbon_required_inputs_missing", scenario: scenario.name };
 
@@ -66,15 +59,14 @@ export function calculateMassBalance(initial, grade, values, scenario, oxygenNm3
     }
   }
 
-  const initialCarbonKg = hotMetalKg * Number(initial.hotMetalC) / 100 + scrapKg * Number(initial.scrapC) / 100;
-  const initialSiliconKg = hotMetalKg * chemistry.Si / 100;
-  const initialManganeseKg = hotMetalKg * chemistry.Mn / 100;
-  const initialPhosphorusKg = hotMetalKg * chemistry.P / 100;
-  const siliconRemovedKg = Math.max(0, initialSiliconKg * Number(values.siliconOxidationFraction));
-  const manganeseTargetKg = (hotMetalKg + scrapKg) * targetMidpoint(grade?.targets?.Mn) / 100;
-  const phosphorusTargetKg = (hotMetalKg + scrapKg) * targetMidpoint(grade?.targets?.P) / 100;
-  const manganeseRemovedKg = Math.max(0, initialManganeseKg - manganeseTargetKg);
-  const phosphorusRemovedKg = Math.max(0, initialPhosphorusKg - phosphorusTargetKg);
+  const initialCarbonKg = finite(charge?.elements?.C?.totalKg) ? Number(charge.elements.C.totalKg) : hotMetalKg * Number(initial.hotMetalC) / 100 + scrapKg * Number(initial.scrapC) / 100;
+  const initialSiliconKg = finite(charge?.elements?.Si?.totalKg) ? Number(charge.elements.Si.totalKg) : hotMetalKg * chemistry.Si / 100;
+  const initialManganeseKg = finite(charge?.elements?.Mn?.totalKg) ? Number(charge.elements.Mn.totalKg) : hotMetalKg * chemistry.Mn / 100;
+  const initialPhosphorusKg = finite(charge?.elements?.P?.totalKg) ? Number(charge.elements.P.totalKg) : hotMetalKg * chemistry.P / 100;
+  const suffix = scenario.name === "low" ? "Low" : scenario.name === "high" ? "High" : "Base";
+  const siliconRemovedKg = Math.max(0, initialSiliconKg * Number(values[`siliconOxidationFraction${suffix}`]));
+  const manganeseRemovedKg = Math.max(0, initialManganeseKg * Number(values.manganeseOxidationFraction));
+  const phosphorusRemovedKg = Math.max(0, initialPhosphorusKg * Number(values.phosphorusOxidationFraction));
 
   const oxideMasses = {
     SiO2: siliconRemovedKg * OXIDE_MASS_RATIOS.siliconToSiO2,
@@ -101,7 +93,8 @@ export function calculateMassBalance(initial, grade, values, scenario, oxygenNm3
   const carbonRemovedKg = Math.min(initialCarbonKg, potentialCarbonRemovedKg);
   const excessOxygenKg = Math.max(0, oxygenForCarbonKg - carbonRemovedKg * oxygenPerCarbonKg);
   const remainingCarbonKg = Math.max(0, initialCarbonKg - carbonRemovedKg);
-  const estimatedSteelMassKg = hotMetalKg + scrapKg - carbonRemovedKg - siliconRemovedKg - manganeseRemovedKg - phosphorusRemovedKg - ironRemovedKg;
+  const initialMetalChargeKg = finite(charge?.metalChargeKg) ? Number(charge.metalChargeKg) : hotMetalKg + scrapKg;
+  const estimatedSteelMassKg = initialMetalChargeKg - carbonRemovedKg - siliconRemovedKg - manganeseRemovedKg - phosphorusRemovedKg - ironRemovedKg;
   const carbonPercent = estimatedSteelMassKg > 0 ? 100 * remainingCarbonKg / estimatedSteelMassKg : NaN;
 
   return {
@@ -111,6 +104,7 @@ export function calculateMassBalance(initial, grade, values, scenario, oxygenNm3
     estimatedSteelMassKg,
     oxygenDensityKgPerNm3: oxygenDensity,
     oxygenInputKg,
+    initialMetalChargeKg,
     oxygenForOtherElementsKg,
     oxygenForCarbonKg,
     excessOxygenKg,

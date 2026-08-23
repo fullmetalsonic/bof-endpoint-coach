@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash } from "@phosphor-icons/react";
 
-const compositionKeys = ["C", "Si", "Mn", "P", "S", "CaO"];
+const compositionKeys = ["C", "Si", "Mn", "P", "S", "CaO", "MgO", "SiO2", "Al2O3", "FeO", "Fe2O3", "MnO", "P2O5"];
 
 export function MaterialsEditor({ draft, setDraft, locale, t, usedMaterialCodes }) {
   const [selectedIndex, setSelectedIndex] = useState(0);

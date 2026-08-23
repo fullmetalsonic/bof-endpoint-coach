@@ -82,6 +82,7 @@ export function EventModal({ action, heat, settings, locale, t, onClose, onSave 
     canonicalUnit: action === "material" ? "kg" : undefined,
     materialCategory: material?.category ?? "other",
     materialName: locale === "ko" ? material?.nameKo : material?.nameEn,
+    materialCompositionSnapshot: action === "material" ? structuredClone(material?.composition ?? {}) : undefined,
     values,
     originalValues: action === "analysis" ? Object.fromEntries(chemistryKeys.map((key) => [key, { value: form[key], unit: form[`${key}Unit`] }]).concat([["temperature", { value: form.temperature, unit: "°C" }]])) : undefined,
   };

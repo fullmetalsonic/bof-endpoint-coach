@@ -43,3 +43,6 @@ S41,standard-reference,2025,Standard conditions for gases,IUPAC Gold Book,public
 S42,reference-data,1998,NIST-JANAF Thermochemical Tables,NIST,public-database,https://janaf.nist.gov/,high
 S43,reference-data,,Oxygen thermochemistry and molecular data,NIST Chemistry WebBook,public-database,https://webbook.nist.gov/cgi/cbook.cgi?ID=C7782447&Mask=1,high
 S44,research,2021,General heat balance for oxygen steelmaking,Journal of Iron and Steel Research International,open-access,https://doi.org/10.1007/s42243-020-00491-0,high
+S45,international-research,2002,Relation between MgO Content in Slag and Manganese Distribution Ratio in BOF,ISIJ International,open-abstract,https://doi.org/10.2355/isijinternational.42.63,medium
+S46,international-research,2023,Phosphorus Distribution Between Liquid Steel and High-Basicity BOF Slags,Metallurgical and Materials Transactions B,open-access,https://doi.org/10.1007/s11663-023-02778-5,high
+S47,international-research,1987,Equilibrium Sulfur Distribution between Slag and Metal in Steelmaking,Canadian Metallurgical Quarterly,abstract-page,https://doi.org/10.1179/cmq.1987.26.2.117,medium

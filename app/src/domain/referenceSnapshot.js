@@ -9,6 +9,7 @@ export function captureHeatReferenceSnapshot(settings, selection, capturedAt = n
     gradeProfile: clone(settings.gradeProfiles?.find((item) => item.code === selection.gradeCode) ?? null),
     equipmentProfile: clone(settings.equipmentProfiles?.find((item) => item.id === selection.equipmentProfileId) ?? null),
     coefficientProfile: clone(settings.coefficientProfiles?.find((item) => item.id === selection.coefficientProfileId) ?? null),
+    materials: clone(settings.materials ?? []),
   };
 }
 
@@ -21,6 +22,7 @@ export function resolveHeatSettings(heat, currentSettings) {
     gradeProfiles: [clone(snapshot.gradeProfile)],
     equipmentProfiles: [clone(snapshot.equipmentProfile)],
     coefficientProfiles: [clone(snapshot.coefficientProfile)],
+    materials: snapshot.materials ? clone(snapshot.materials) : currentSettings.materials,
   };
 }
 

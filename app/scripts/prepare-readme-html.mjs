@@ -27,10 +27,9 @@ function imageDataUri(relativePath) {
 
 let articleHtml = renderedReadme;
 for (const imagePath of [
-  "docs/screenshots/dashboard-ko.png",
-  "docs/screenshots/correction-ledger-ko.png",
-  "docs/screenshots/settings-ko.png",
-  "docs/screenshots/dashboard-en.png",
+  "docs/manual/screenshots/v0.5.0/14-dashboard-1280-g6.png",
+  "docs/manual/screenshots/v0.5.0/03-learning-ledger.png",
+  "docs/manual/screenshots/v0.5.0/08-settings-coefficient-history.png",
 ]) {
   articleHtml = articleHtml.replaceAll(
     `src="${imagePath}"`,

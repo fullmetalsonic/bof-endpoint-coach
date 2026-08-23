@@ -37,8 +37,8 @@ export function createHeatFromForm(form, operatorProfile, recordedAt = new Date(
   const recordedBy = operatorSnapshot(operatorProfile);
   const initial = {
     hotMetalKg: optionalNumber(form.hotMetalKg), hotMetalC: optionalNumber(form.hotMetalC), hotMetalSi: optionalNumber(form.hotMetalSi),
-    hotMetalMn: optionalNumber(form.hotMetalMn), hotMetalP: optionalNumber(form.hotMetalP), hotMetalTemperatureC: optionalNumber(form.hotMetalTemperatureC),
-    scrapKg: optionalNumber(form.scrapKg), scrapC: optionalNumber(form.scrapC), fluxKg: optionalNumber(form.fluxKg),
+    hotMetalMn: optionalNumber(form.hotMetalMn), hotMetalP: optionalNumber(form.hotMetalP), hotMetalS: optionalNumber(form.hotMetalS), hotMetalTemperatureC: optionalNumber(form.hotMetalTemperatureC),
+    scrapKg: optionalNumber(form.scrapKg), scrapC: optionalNumber(form.scrapC), scrapSi: optionalNumber(form.scrapSi), scrapMn: optionalNumber(form.scrapMn), scrapP: optionalNumber(form.scrapP), scrapS: optionalNumber(form.scrapS), fluxKg: optionalNumber(form.fluxKg),
     plannedTotalOxygenNm3: optionalNumber(form.plannedTotalOxygenNm3),
     inputMetadata: form.inputMetadata ? structuredClone(form.inputMetadata) : undefined,
   };
@@ -97,8 +97,8 @@ export function updateHeatInputs(heat, form, operatorProfile, recordedAt = new D
       coefficientProfileId: form.coefficientProfileId,
       initial: {
         hotMetalKg: optionalNumber(form.hotMetalKg), hotMetalC: optionalNumber(form.hotMetalC), hotMetalSi: optionalNumber(form.hotMetalSi),
-        hotMetalMn: optionalNumber(form.hotMetalMn), hotMetalP: optionalNumber(form.hotMetalP), hotMetalTemperatureC: optionalNumber(form.hotMetalTemperatureC),
-        scrapKg: optionalNumber(form.scrapKg), scrapC: optionalNumber(form.scrapC), fluxKg: optionalNumber(form.fluxKg),
+        hotMetalMn: optionalNumber(form.hotMetalMn), hotMetalP: optionalNumber(form.hotMetalP), hotMetalS: optionalNumber(form.hotMetalS), hotMetalTemperatureC: optionalNumber(form.hotMetalTemperatureC),
+        scrapKg: optionalNumber(form.scrapKg), scrapC: optionalNumber(form.scrapC), scrapSi: optionalNumber(form.scrapSi), scrapMn: optionalNumber(form.scrapMn), scrapP: optionalNumber(form.scrapP), scrapS: optionalNumber(form.scrapS), fluxKg: optionalNumber(form.fluxKg),
         plannedTotalOxygenNm3: optionalNumber(form.plannedTotalOxygenNm3),
       },
       inputMetadata: form.inputMetadata ? structuredClone(form.inputMetadata) : undefined,

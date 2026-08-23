@@ -7,14 +7,21 @@ describe("endpoint calculation", () => {
     const state = createDemoState();
     const result = calculateEndpoint(state.heats[0], state.settings, "2026-08-22T01:24:05Z");
     expect(result.carbon.available).toBe(true);
-    expect(result.carbon.value).toBeCloseTo(0.062599, 6);
-    expect(result.temperature.value).toBeCloseTo(1655.107, 3);
+    expect(result.carbon.value).toBeCloseTo(0.062596, 6);
+    expect(result.temperature.value).toBeCloseTo(1655.106, 3);
     expect(result.carbon.mode).toBe("sample_anchored_literature");
     expect(result.carbon.rangeType).toBe("literature_scenario");
     expect(result.oxygenRemaining).toBe(10);
     expect(result.projectedRemainingMinutes).toBeCloseTo(1 / 30, 6);
     expect(result.basis.status).toBe("literature_reference");
     expect(result.basis.sourceIds).toEqual(expect.arrayContaining(["S12", "S44"]));
+    expect(result.phosphorus.available).toBe(true);
+    expect(result.manganese.available).toBe(true);
+    expect(result.silicon.available).toBe(true);
+    expect(result.sulfur.available).toBe(true);
+    expect(result.phosphorus.sourceIds).toContain("S46");
+    expect(result.manganese.confidence).toBe("low");
+    expect(result.sulfur.confidence).toBe("very_low");
   });
 
   it("uses planned endpoint oxygen for a heat without a sample", () => {
@@ -115,6 +122,22 @@ describe("endpoint calculation", () => {
     const calculation = calculateEndpoint(state.heats[0], state.settings);
     const rows = qualityRows(state.heats[0], state.settings, calculation);
     expect(rows.find((row) => row.key === "C").predictionState).toBe("within");
-    expect(rows.find((row) => row.key === "P").prediction.available).toBe(false);
+    expect(rows.find((row) => row.key === "P").prediction.available).toBe(true);
+    expect(rows.find((row) => row.key === "Mn").prediction.available).toBe(true);
+    expect(rows.find((row) => row.key === "Si").prediction.available).toBe(true);
+    expect(rows.find((row) => row.key === "S").prediction.available).toBe(true);
+  });
+
+  it("applies reviewed calibration offsets after literature and sample anchoring", () => {
+    const state = createDemoState();
+    const baseline = calculateEndpoint(state.heats[0], state.settings);
+    state.heats[0].referenceSnapshot.coefficientProfile.calibrationOffsets = { C: 0.002, temperature: -5, P: 0.001, Mn: -0.01, Si: 0.01, S: 0.0005 };
+    const corrected = calculateEndpoint(state.heats[0], state.settings);
+    expect(corrected.carbon.value - baseline.carbon.value).toBeCloseTo(0.002, 9);
+    expect(corrected.temperature.value - baseline.temperature.value).toBeCloseTo(-5, 9);
+    expect(corrected.phosphorus.value - baseline.phosphorus.value).toBeCloseTo(0.001, 9);
+    expect(corrected.manganese.value - baseline.manganese.value).toBeCloseTo(-0.01, 9);
+    expect(corrected.silicon.value - baseline.silicon.value).toBeCloseTo(0.01, 9);
+    expect(corrected.sulfur.value - baseline.sulfur.value).toBeCloseTo(0.0005, 9);
   });
 });

@@ -1,4 +1,4 @@
-import { COEFFICIENT_FIELDS } from "../calculation/coefficientProfile.js";
+import { COEFFICIENT_FIELDS, coefficientValueErrors } from "../calculation/coefficientProfile.js";
 
 const coefficientFieldKeys = new Set(COEFFICIENT_FIELDS.map((field) => field.key));
 const massUnits = new Set(["kg", "t", "g"]);
@@ -56,6 +56,8 @@ export function validateSettings(settings, locale = "ko") {
     if (Object.values(material.composition ?? {}).some((value) => value !== null && value !== undefined && (!finite(value) || Number(value) < 0 || Number(value) > 100))) {
       errors.push(locale === "ko" ? `${material.code} 조성은 0~100% 범위여야 합니다.` : `${material.code} composition must be between 0 and 100%.`);
     }
+    const compositionTotal = Object.values(material.composition ?? {}).filter(finite).reduce((sum, value) => sum + Number(value), 0);
+    if (compositionTotal > 100.000001) errors.push(locale === "ko" ? `${material.code} 조성 합계가 100%를 초과합니다.` : `${material.code} composition total exceeds 100%.`);
   });
   if (settings.equipmentProfiles.some((profile) => !profile.id?.trim() || !finite(profile.nominalCapacityT) || Number(profile.nominalCapacityT) <= 0)) {
     errors.push(locale === "ko" ? "설비 ID와 호칭 용량을 확인하십시오." : "Check equipment IDs and nominal capacities.");
@@ -82,6 +84,12 @@ export function validateSettings(settings, locale = "ko") {
     }
     if (profile.overrideStatus === "site_approved" && (!profile.approvedBy?.trim() || !profile.approvalReason?.trim() || !profile.approvedAt)) {
       errors.push(locale === "ko" ? `${profile.id} 현장 승인에는 승인자와 승인 근거가 필요합니다.` : `${profile.id} site approval requires an approver and approval basis.`);
+    }
+    if (coefficientValueErrors(values).length) errors.push(locale === "ko" ? `${profile.id} 계수 시나리오 순서·조성 합계·값 범위를 확인하십시오.` : `Check ${profile.id} coefficient ranges, scenario order, and composition total.`);
+    const offsets = profile.calibrationOffsets ?? {};
+    if (["C", "P", "Mn", "Si", "S"].some((key) => !finite(offsets[key]) || Math.abs(Number(offsets[key])) > 100)
+      || !finite(offsets.temperature) || Math.abs(Number(offsets.temperature)) > 500) {
+      errors.push(locale === "ko" ? `${profile.id} 학습 보정 오프셋을 확인하십시오.` : `Check ${profile.id} learning correction offsets.`);
     }
   });
   return errors;

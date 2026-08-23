@@ -9,6 +9,7 @@ import { ReportsScreen } from "./screens/ReportsScreen.jsx";
 import { HistoryScreen } from "./screens/HistoryScreen.jsx";
 import { EmptyDashboard } from "./screens/EmptyDashboard.jsx";
 import { HelpScreen } from "./screens/HelpScreen.jsx";
+import { LearningScreen } from "./screens/LearningScreen.jsx";
 import { OperatorModal } from "./components/OperatorModal.jsx";
 import { StageTransitionModal } from "./components/StageTransitionModal.jsx";
 import { HeatLifecycleModal } from "./components/HeatLifecycleModal.jsx";
@@ -73,6 +74,7 @@ export function App() {
   const [stageOpen, setStageOpen] = useState(false);
   const [lifecycle, setLifecycle] = useState(null);
   const [correction, setCorrection] = useState(null);
+  const [coefficientCandidate, setCoefficientCandidate] = useState(null);
   const now = useLiveClock();
   const { notice, showNotice, clearNotice } = useOperationNotice();
   const locale = state?.locale ?? "ko";
@@ -154,7 +156,8 @@ export function App() {
       {screen === "dashboard" && (currentHeat ? <Dashboard state={state} heat={currentHeat} locale={locale} t={t} selectHeat={selectHeat} saveStatus={saveStatus} canWrite={canWrite} onAction={setAction} onAdvance={() => setStageOpen(true)} onEditInitial={() => setInitialEditOpen(true)} onNewHeat={() => setNewHeatOpen(true)} onOpenTimeline={() => setScreen("heatDetail")} onOpenCorrection={openCorrection} onRollback={() => openCorrection({ mode: "rollback", target: timelineRecords(currentHeat).find((record) => record.kind === "stage" && record.status === "active" && record.stage === currentHeat.stage) })} /> : <EmptyDashboard locale={locale} onNewHeat={() => setNewHeatOpen(true)} onLoadDemo={() => { if (requireWritable()) resetWorkspace("demo"); }} onOpenSettings={() => setScreen("settings")} onOpenHelp={() => setScreen("help")} />)}
       {screen === "history" && <HistoryScreen state={state} locale={locale} t={t} canWrite={canWrite} onSelect={openHeatDetails} onLifecycle={(heat, lifecycleAction) => setLifecycle({ heat, action: lifecycleAction })} />}
       {screen === "heatDetail" && currentHeat && <HeatDetailScreen heat={currentHeat} locale={locale} onBack={() => setScreen("history")} onDashboard={() => setScreen("dashboard")} onCorrection={openCorrection} onAdopt={(analysisId) => openCorrection({ mode: "adopt", targetKind: "analysis", targetId: analysisId })} onActual={(analysisId) => openCorrection({ mode: "actual", targetKind: "analysis", targetId: analysisId })} />}
-      {screen === "settings" && <SettingsScreen key={state.settings.version} settings={state.settings} heats={state.heats} locale={locale} t={t} operatorName={state.operatorProfile?.displayName} canWrite={canWrite} onSave={(draft, reason) => { if (!requireWritable()) return false; updateSettings(draft, reason); showNotice(locale === "ko" ? "설정을 변경 이력과 함께 새 로컬 버전으로 저장했습니다." : "Settings were saved as a new local version with a change history."); return true; }} />}
+      {screen === "settings" && <SettingsScreen key={state.settings.version} settings={state.settings} heats={state.heats} locale={locale} t={t} operatorName={state.operatorProfile?.displayName} canWrite={canWrite} coefficientCandidate={coefficientCandidate} onCandidateConsumed={() => setCoefficientCandidate(null)} onSave={(draft, reason) => { if (!requireWritable()) return false; updateSettings(draft, reason); showNotice(locale === "ko" ? "설정을 변경 이력과 함께 새 로컬 버전으로 저장했습니다." : "Settings were saved as a new local version with a change history."); return true; }} />}
+      {screen === "learning" && <LearningScreen state={state} locale={locale} canWrite={canWrite} onBringCandidate={(candidate) => { setCoefficientCandidate(candidate); setScreen("settings"); showNotice(locale === "ko" ? "추천값을 설정 초안으로 옮겼습니다. 검토 후 변경 사유와 함께 저장하십시오." : "The candidate was moved to a settings draft. Review and save it with a reason."); }} />}
       {screen === "reports" && <ReportsScreen state={state} recovery={recovery} locale={locale} t={t} canWrite={canWrite} onRestore={(nextState) => { if (!requireWritable()) return false; replaceState(nextState); return true; }} onOperation={(type, payload) => { if (!canWrite) return false; recordOperation(type, payload); return true; }} onReset={(mode) => { if (!requireWritable()) return false; resetWorkspace(mode); return true; }} onRestoreRecovery={() => { if (!requireWritable()) return false; restoreRecovery(); return true; }} />}
       {(screen === "today" || screen === "alerts") && <SimpleScreen screen={screen} locale={locale} t={t} state={state} onSelect={navigateToHeat} />}
       {screen === "help" && <HelpScreen locale={locale} onStart={() => setScreen("dashboard")} onSettings={() => setScreen("settings")} />}

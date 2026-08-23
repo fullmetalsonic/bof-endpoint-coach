@@ -14,8 +14,17 @@ export const COEFFICIENT_FIELDS = [
   { key: "defaultHotMetalSiPercent", labelKo: "미입력 용선 Si 참고값", labelEn: "Fallback hot-metal Si", unit: "%", step: 0.001, sourceIds: ["S12"] },
   { key: "defaultHotMetalMnPercent", labelKo: "미입력 용선 Mn 참고값", labelEn: "Fallback hot-metal Mn", unit: "%", step: 0.001, sourceIds: ["S12"] },
   { key: "defaultHotMetalPPercent", labelKo: "미입력 용선 P 참고값", labelEn: "Fallback hot-metal P", unit: "%", step: 0.001, sourceIds: ["S12"] },
-  { key: "siliconOxidationFraction", labelKo: "Si 산화 가정", labelEn: "Silicon oxidation assumption", unit: "fraction", step: 0.001, sourceIds: ["S12"] },
+  { key: "defaultHotMetalSPercent", labelKo: "미입력 용선 S 참고값", labelEn: "Fallback hot-metal S", unit: "%", step: 0.001, sourceIds: ["S12"] },
+  { key: "siliconOxidationFractionLow", labelKo: "Si 산화율 저 시나리오", labelEn: "Silicon oxidation, low", unit: "fraction", step: 0.001, sourceIds: ["S12"] },
+  { key: "siliconOxidationFractionBase", labelKo: "Si 산화율 기준 시나리오", labelEn: "Silicon oxidation, base", unit: "fraction", step: 0.001, sourceIds: ["S12"] },
+  { key: "siliconOxidationFractionHigh", labelKo: "Si 산화율 고 시나리오", labelEn: "Silicon oxidation, high", unit: "fraction", step: 0.001, sourceIds: ["S12"] },
+  { key: "manganeseOxidationFraction", labelKo: "Mn 산소수지 산화 가정", labelEn: "Mn oxidation assumption for O balance", unit: "fraction", step: 0.001, sourceIds: ["S12", "S45"] },
+  { key: "phosphorusOxidationFraction", labelKo: "P 산소수지 산화 가정", labelEn: "P oxidation assumption for O balance", unit: "fraction", step: 0.001, sourceIds: ["S12"] },
   { key: "fluxToSlagFraction", labelKo: "플럭스 슬래그 이행 가정", labelEn: "Flux-to-slag assumption", unit: "fraction", step: 0.001, sourceIds: ["S12"] },
+  { key: "defaultFluxCaOPercent", labelKo: "미분류 Flux CaO 참고값", labelEn: "Fallback flux CaO", unit: "%", step: 0.1, sourceIds: ["S12"] },
+  { key: "defaultFluxMgOPercent", labelKo: "미분류 Flux MgO 참고값", labelEn: "Fallback flux MgO", unit: "%", step: 0.1, sourceIds: ["S12", "S46"] },
+  { key: "defaultFluxSiO2Percent", labelKo: "미분류 Flux SiO₂ 참고값", labelEn: "Fallback flux SiO2", unit: "%", step: 0.1, sourceIds: ["S12"] },
+  { key: "defaultFluxAl2O3Percent", labelKo: "미분류 Flux Al₂O₃ 참고값", labelEn: "Fallback flux Al2O3", unit: "%", step: 0.1, sourceIds: ["S12", "S46"] },
   { key: "slagTemperatureOffsetC", labelKo: "슬래그 온도 차", labelEn: "Slag temperature offset", unit: "°C", step: 1, sourceIds: ["S44"] },
   { key: "offGasTemperatureC", labelKo: "배가스 참고 온도", labelEn: "Reference off-gas temperature", unit: "°C", step: 1, sourceIds: ["S44"] },
 ];
@@ -38,8 +47,17 @@ export const LITERATURE_VALUES = Object.freeze({
   defaultHotMetalSiPercent: 0.641,
   defaultHotMetalMnPercent: 0.043,
   defaultHotMetalPPercent: 0.176,
-  siliconOxidationFraction: 1,
+  defaultHotMetalSPercent: 0.023,
+  siliconOxidationFractionLow: 0.97,
+  siliconOxidationFractionBase: 0.99,
+  siliconOxidationFractionHigh: 1,
+  manganeseOxidationFraction: 0.5,
+  phosphorusOxidationFraction: 0.907,
   fluxToSlagFraction: 1,
+  defaultFluxCaOPercent: 90,
+  defaultFluxMgOPercent: 5,
+  defaultFluxSiO2Percent: 2,
+  defaultFluxAl2O3Percent: 1,
   slagTemperatureOffsetC: 100,
   offGasTemperatureC: 1600,
 });
@@ -49,9 +67,14 @@ export function createLiteratureCoefficientProfile() {
     id: "COEF-LIT-001",
     nameKo: "공개 문헌 기본 시나리오",
     nameEn: "Public-literature base scenario",
-    formulaVersion: "BOF-REF-CALC 0.2.0",
+    formulaVersion: "BOF-REF-CALC 0.3.0",
+    versionId: "COEF-LIT-001-V1",
+    parentVersionId: null,
+    createdAt: "2026-08-23T00:00:00.000Z",
+    calibrationOffsets: { C: 0, temperature: 0, P: 0, Mn: 0, Si: 0, S: 0 },
+    versionHistory: [],
     basis: "literature_scenario",
-    sourceIds: ["S12", "S15", "S41", "S43", "S44"],
+    sourceIds: ["S12", "S15", "S41", "S43", "S44", "S45", "S46", "S47"],
     literatureValues: { ...LITERATURE_VALUES },
     overrideValues: {},
     overrideStatus: "none",
@@ -77,11 +100,25 @@ export function normalizeCoefficientProfile(profile) {
       legacyProfileArchived: profile ? structuredClone(profile) : null,
     };
   }
+  const legacySilicon = profile.literatureValues.siliconOxidationFraction;
+  const needsChemistryUpgrade = profile.literatureValues.defaultHotMetalSPercent === undefined
+    || profile.literatureValues.siliconOxidationFractionLow === undefined
+    || profile.literatureValues.defaultFluxMgOPercent === undefined;
   return {
     ...base,
     ...profile,
-    literatureValues: { ...base.literatureValues, ...profile.literatureValues },
+    formulaVersion: needsChemistryUpgrade ? base.formulaVersion : (profile.formulaVersion ?? base.formulaVersion),
+    sourceIds: needsChemistryUpgrade ? [...new Set([...(profile.sourceIds ?? []), ...base.sourceIds])] : (profile.sourceIds ?? base.sourceIds),
+    literatureValues: {
+      ...base.literatureValues,
+      ...profile.literatureValues,
+      ...(legacySilicon !== undefined && profile.literatureValues.siliconOxidationFractionBase === undefined
+        ? { siliconOxidationFractionBase: legacySilicon }
+        : {}),
+    },
     overrideValues: Object.fromEntries(Object.entries(profile.overrideValues ?? {}).filter(([key, value]) => COEFFICIENT_FIELD_KEYS.has(key) && finite(value)).map(([key, value]) => [key, Number(value)])),
+    calibrationOffsets: Object.fromEntries(["C", "temperature", "P", "Mn", "Si", "S"].map((key) => [key, finite(profile.calibrationOffsets?.[key]) ? Number(profile.calibrationOffsets[key]) : 0])),
+    versionHistory: Array.isArray(profile.versionHistory) ? profile.versionHistory : [],
   };
 }
 
@@ -116,6 +153,10 @@ export function coefficientValueErrors(values) {
       errors.push(`${prefix}_scenario_order_invalid`);
     }
   }
+  if (!(Number(values?.siliconOxidationFractionLow) <= Number(values?.siliconOxidationFractionBase)
+    && Number(values?.siliconOxidationFractionBase) <= Number(values?.siliconOxidationFractionHigh))) errors.push("siliconOxidationFraction_scenario_order_invalid");
+  const fluxCompositionTotal = ["defaultFluxCaOPercent", "defaultFluxMgOPercent", "defaultFluxSiO2Percent", "defaultFluxAl2O3Percent"].reduce((sum, key) => sum + Number(values?.[key] ?? 0), 0);
+  if (fluxCompositionTotal > 100) errors.push("default_flux_composition_exceeds_100");
   return errors;
 }
 

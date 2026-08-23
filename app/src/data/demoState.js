@@ -2,9 +2,9 @@ import { createReferenceSettings } from "./referenceSettings.js";
 import { normalizeSampleAnalyses } from "../domain/analysisRecords.js";
 import { captureHeatReferenceSnapshot } from "../domain/referenceSnapshot.js";
 
-export const APP_VERSION = "0.4.0";
-export const BACKUP_SCHEMA_VERSION = "0.3.0";
-export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", "0.2.0", "0.2.1", BACKUP_SCHEMA_VERSION];
+export const APP_VERSION = "0.5.0";
+export const BACKUP_SCHEMA_VERSION = "0.4.0";
+export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", "0.2.0", "0.2.1", "0.3.0", BACKUP_SCHEMA_VERSION];
 
 export function createEmptyState({ locale = "ko", operatorProfile = { displayName: "" }, onboardingCompleted = false } = {}) {
   return {
@@ -47,9 +47,14 @@ export function createDemoState(operatorProfile = { displayName: "" }) {
           hotMetalSi: 0.641,
           hotMetalMn: 0.043,
           hotMetalP: 0.176,
+          hotMetalS: 0.023,
           hotMetalTemperatureC: 1350,
           scrapKg: 30000,
           scrapC: 0.2,
+          scrapSi: 0.03,
+          scrapMn: 0.35,
+          scrapP: 0.02,
+          scrapS: 0.02,
           fluxKg: 12000,
           plannedTotalOxygenNm3: 13000,
         },
@@ -61,9 +66,9 @@ export function createDemoState(operatorProfile = { displayName: "" }) {
           plannedValuesIncluded: false,
         },
         samples: [
-          { id: "S-DEMO-01", sampledAt: atMinutes(-24), stage: "G3", method: "OES", adopted: false, processSnapshot: { cumulativeOxygenNm3: 4000 }, values: { C: 0.128, Si: 0.24, Mn: 1.52, P: 0.026, S: 0.006, temperature: 1768 } },
-          { id: "S-DEMO-02", sampledAt: atMinutes(-17), stage: "G4", method: "OES", adopted: false, processSnapshot: { cumulativeOxygenNm3: 9000 }, values: { C: 0.096, Si: 0.22, Mn: 1.48, P: 0.021, S: 0.005, temperature: 1712 } },
-          { id: "S-DEMO-03", sampledAt: atMinutes(-6), stage: "G5", method: "OES", adopted: true, processSnapshot: { cumulativeOxygenNm3: 12970 }, values: { C: 0.074, Si: 0.21, Mn: 1.38, P: 0.017, S: 0.005, temperature: 1654 } },
+          { id: "S-DEMO-01", sampledAt: atMinutes(-24), stage: "G3", method: "OES", adopted: false, processSnapshot: { cumulativeOxygenNm3: 4000 }, values: { C: 2.9, Si: 0.2, Mn: 0.036, P: 0.1, S: 0.017, temperature: 1465 } },
+          { id: "S-DEMO-02", sampledAt: atMinutes(-17), stage: "G4", method: "OES", adopted: false, processSnapshot: { cumulativeOxygenNm3: 9000 }, values: { C: 1.4, Si: 0.07, Mn: 0.034, P: 0.045, S: 0.009, temperature: 1605 } },
+          { id: "S-DEMO-03", sampledAt: atMinutes(-6), stage: "G5", method: "OES", adopted: true, processSnapshot: { cumulativeOxygenNm3: 12970 }, values: { C: 0.074, Si: 0.01, Mn: 0.032, P: 0.017, S: 0.005, temperature: 1654 } },
         ],
         events: [
           { id: "EV-DEMO-01", type: "charge", occurredAt: atMinutes(-42), summaryKo: "가상 장입 완료", summaryEn: "Synthetic charge complete" },
@@ -84,10 +89,10 @@ export function createDemoState(operatorProfile = { displayName: "" }) {
         stageLabelEn: "Mid blow",
         startedAt: atMinutes(-17),
         expectedTapAt: atMinutes(34),
-        initial: { hotMetalKg: 228000, hotMetalC: 4.45, hotMetalSi: 0.641, hotMetalMn: 0.043, hotMetalP: 0.176, hotMetalTemperatureC: 1348, scrapKg: 32000, scrapC: 0.18, fluxKg: 11800, plannedTotalOxygenNm3: 13200 },
+        initial: { hotMetalKg: 228000, hotMetalC: 4.45, hotMetalSi: 0.641, hotMetalMn: 0.043, hotMetalP: 0.176, hotMetalS: 0.023, hotMetalTemperatureC: 1348, scrapKg: 32000, scrapC: 0.18, scrapSi: 0.03, scrapMn: 0.35, scrapP: 0.02, scrapS: 0.02, fluxKg: 11800, plannedTotalOxygenNm3: 13200 },
         process: { cumulativeOxygenNm3: 9000, lanceHeightM: 2.1, oxygenFlowNm3PerMinute: 323.076923, remainingMinutes: 13, plannedValuesIncluded: true },
         samples: [
-          { id: "S-DEMO-11", sampledAt: atMinutes(-4), stage: "G3", method: "OES", adopted: true, processSnapshot: { cumulativeOxygenNm3: 8800 }, values: { C: 1.65, Si: 0.3, Mn: 1.62, P: 0.031, S: 0.006, temperature: 1540 } },
+          { id: "S-DEMO-11", sampledAt: atMinutes(-4), stage: "G3", method: "OES", adopted: true, processSnapshot: { cumulativeOxygenNm3: 8800 }, values: { C: 1.65, Si: 0.08, Mn: 0.035, P: 0.031, S: 0.01, temperature: 1540 } },
         ],
         events: [{ id: "EV-DEMO-11", type: "blow_start", occurredAt: atMinutes(-13), summaryKo: "취련 시작", summaryEn: "Blow started" }],
         stageHistory: stageHistory([[null, "G0", -17], ["G0", "G1", -13], ["G1", "G2", -8], ["G2", "G3", -5]]),

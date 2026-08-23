@@ -1,4 +1,6 @@
-const EXCLUDED_PATHS = new Set(["version", "revisionHistory", "lastRevision"]);
+import { versionCoefficientProfiles } from "./coefficientVersions.js";
+
+const EXCLUDED_PATHS = new Set(["version", "revisionHistory", "lastRevision", "versionHistory"]);
 
 function flatten(value, prefix = "", output = {}) {
   if (Array.isArray(value)) {
@@ -7,7 +9,7 @@ function flatten(value, prefix = "", output = {}) {
   }
   if (value && typeof value === "object") {
     Object.entries(value).forEach(([key, item]) => {
-      if (!prefix && EXCLUDED_PATHS.has(key)) return;
+      if (EXCLUDED_PATHS.has(key)) return;
       flatten(item, prefix ? `${prefix}.${key}` : key, output);
     });
     return output;
@@ -32,7 +34,11 @@ export function localSettingsVersion(at = new Date()) {
 }
 
 export function prepareSettingsRevision(current, draft, operatorProfile, reason, at = new Date()) {
-  const changes = diffSettings(current, draft);
+  const versionedDraft = {
+    ...structuredClone(draft),
+    coefficientProfiles: versionCoefficientProfiles(current.coefficientProfiles, draft.coefficientProfiles, operatorProfile, reason, at),
+  };
+  const changes = diffSettings(current, versionedDraft);
   if (!changes.length) return current;
   const changedAt = at.toISOString();
   const revision = {
@@ -45,7 +51,7 @@ export function prepareSettingsRevision(current, draft, operatorProfile, reason,
     changes,
   };
   return {
-    ...structuredClone(draft),
+    ...versionedDraft,
     version: revision.version,
     revisionHistory: [...(current.revisionHistory ?? []), revision],
     lastRevision: revision,

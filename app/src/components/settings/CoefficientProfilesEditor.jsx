@@ -1,11 +1,12 @@
 import { useMemo } from "react";
 import { COEFFICIENT_FIELDS, coefficientBasisLabel, resolveCoefficientProfile } from "../../calculation/coefficientProfile.js";
+import { CoefficientCalibrationEditor } from "./CoefficientCalibrationEditor.jsx";
 
 function valueOrBlank(value) {
   return value === null || value === undefined ? "" : value;
 }
 
-export function CoefficientProfilesEditor({ draft, setDraft, locale }) {
+export function CoefficientProfilesEditor({ draft, setDraft, locale, candidate }) {
   const profile = draft.coefficientProfiles[0];
   const resolved = useMemo(() => resolveCoefficientProfile(profile), [profile]);
   const updateProfile = (updater) => setDraft((previous) => ({
@@ -70,6 +71,7 @@ export function CoefficientProfilesEditor({ draft, setDraft, locale }) {
         <label className="approval-reason"><span>{locale === "ko" ? "승인 근거·사유" : "Approval basis / reason"}</span><input value={profile.approvalReason ?? ""} disabled={profile.overrideStatus !== "site_approved"} onChange={(event) => updateMetadata("approvalReason", event.target.value)} /></label>
         <button className="secondary-button" type="button" disabled={!hasOverrides} onClick={clearOverrides}>{locale === "ko" ? "수정값 전체 지우기" : "Clear overrides"}</button>
       </div>
+      <CoefficientCalibrationEditor profile={profile} updateProfile={updateProfile} locale={locale} candidate={candidate ?? profile.recommendationSource} />
       <div className="coefficient-table-wrap">
         <table className="coefficient-table">
           <thead><tr><th>{locale === "ko" ? "항목" : "Item"}</th><th>{locale === "ko" ? "문헌 원본" : "Literature original"}</th><th>{locale === "ko" ? "현장 수정값" : "Site override"}</th><th>{locale === "ko" ? "실제 적용값" : "Effective value"}</th><th>{locale === "ko" ? "근거" : "Sources"}</th></tr></thead>

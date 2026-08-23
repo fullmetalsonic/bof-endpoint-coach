@@ -21,6 +21,14 @@ export function HeatDetailScreen({ heat, locale, onBack, onDashboard, onCorrecti
   const records = timelineRecords(heat);
   const comparison = endpointValidationComparison(heat);
   const tap = latestActiveTapEvent(heat);
+  const comparisonItems = [
+    { key: "C", predictionKey: "carbon", errorKey: "carbonError", digits: 3, unit: "%" },
+    { key: "temperature", predictionKey: "temperature", errorKey: "temperatureError", digits: 0, unit: "°C" },
+    { key: "P", predictionKey: "phosphorus", errorKey: "phosphorusError", digits: 3, unit: "%" },
+    { key: "Mn", predictionKey: "manganese", errorKey: "manganeseError", digits: 3, unit: "%" },
+    { key: "Si", predictionKey: "silicon", errorKey: "siliconError", digits: 3, unit: "%" },
+    { key: "S", predictionKey: "sulfur", errorKey: "sulfurError", digits: 3, unit: "%" },
+  ];
   return (
     <main className="workspace-screen heat-detail-screen" data-testid="heat-detail-screen">
       <div className="workspace-heading heat-detail-heading">
@@ -37,8 +45,7 @@ export function HeatDetailScreen({ heat, locale, onBack, onDashboard, onCorrecti
         <div className="panel-title"><h2>{ko ? "종점 예상 대 실제값 검증" : "Endpoint prediction vs actual"}</h2></div>
         <div className="comparison-grid">
           <div><span>{ko ? "비교 예상 시점" : "Prediction checkpoint"}</span><strong>{comparison.prediction ? `${comparison.prediction.stage} · ${formatTime(comparison.prediction.calculatedAt, locale)}` : "–"}</strong></div>
-          <div><span>{ko ? "C 예상 / 실제 / 오차" : "C predicted / actual / error"}</span><strong>{formatValue(comparison.prediction?.carbon?.value)} / {formatValue(comparison.actual?.values?.C)} / {formatValue(comparison.carbonError)}</strong></div>
-          <div><span>{ko ? "T 예상 / 실제 / 오차" : "T predicted / actual / error"}</span><strong>{formatValue(comparison.prediction?.temperature?.value, 0)} / {formatValue(comparison.actual?.values?.temperature, 0)} / {formatValue(comparison.temperatureError, 0)}</strong></div>
+          {comparisonItems.map((item) => <div key={item.key}><span>{item.key === "temperature" ? (ko ? "온도 예상 / 실제 / 오차" : "Temperature predicted / actual / error") : `${item.key} ${ko ? "예상 / 실제 / 오차" : "predicted / actual / error"}`} ({item.unit})</span><strong>{formatValue(comparison.prediction?.[item.predictionKey]?.value, item.digits)} / {formatValue(comparison.actual?.values?.[item.key], item.digits)} / {formatValue(comparison[item.errorKey], item.digits)}</strong></div>)}
           <div className={comparison.actual ? "comparison-ready" : "comparison-missing"}>{comparison.actual ? <CheckCircle weight="fill" /> : <WarningCircle weight="fill" />}<span>{comparison.actual ? (ko ? `${comparison.sampleId} 분석을 종점 실제값으로 사용` : `${comparison.sampleId} selected as actual`) : ["G7", "G8"].includes(heat.stage) ? (ko ? "분석 결과에서 ‘종점 실제값 지정’을 선택하십시오." : "Select an analysis as the actual endpoint result.") : (ko ? "출강 이후 분석 결과를 종점 실제값으로 지정할 수 있습니다." : "An analysis can be set as actual after tapping.")}</span></div>
         </div>
       </section>

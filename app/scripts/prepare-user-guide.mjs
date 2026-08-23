@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, extname, resolve } from "node:path";
+import { basename, dirname, extname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repository = "fullmetalsonic/bof-endpoint-coach";
@@ -10,10 +10,10 @@ const { version } = JSON.parse(readFileSync(resolve(projectRoot, "app/package.js
 const sourcePath = resolve(projectRoot, "docs/user-guide.md");
 const outputPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_USER_GUIDE_v${version}.html`);
 const screenshotPaths = [
-  "docs/screenshots/dashboard-ko.png",
-  "docs/screenshots/correction-ledger-ko.png",
-  "docs/screenshots/settings-ko.png",
-  "docs/screenshots/dashboard-en.png",
+  "docs/manual/screenshots/v0.5.0/14-dashboard-1280-g6.png",
+  "docs/manual/screenshots/v0.5.0/03-learning-ledger.png",
+  "docs/manual/screenshots/v0.5.0/08-settings-coefficient-history.png",
+  "docs/manual/screenshots/v0.5.0/12-reports-backup-excel.png",
 ];
 
 const renderedGuide = execFileSync(
@@ -34,9 +34,11 @@ function imageDataUri(relativePath) {
 
 let articleHtml = renderedGuide;
 for (const imagePath of screenshotPaths) {
-  const rawUrl = `https://raw.githubusercontent.com/${repository}/main/${imagePath}`;
-  articleHtml = articleHtml.replaceAll(`src="${rawUrl}"`, `src="${imageDataUri(imagePath)}"`);
-  articleHtml = articleHtml.replaceAll(`src="${imagePath}"`, `src="${imageDataUri(imagePath)}"`);
+  const fileName = basename(imagePath).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  articleHtml = articleHtml.replace(
+    new RegExp(`src="[^"]*${fileName}[^"]*"`),
+    `src="${imageDataUri(imagePath)}"`,
+  );
 }
 
 articleHtml = articleHtml.replace(

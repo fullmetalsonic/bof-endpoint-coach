@@ -15,7 +15,7 @@ describe("state migration", () => {
     const migrated = normalizeCoachState(state);
     const profile = migrated.settings.coefficientProfiles[0];
     expect(profile.id).toBe(legacy.id);
-    expect(profile.formulaVersion).toBe("BOF-REF-CALC 0.2.0");
+    expect(profile.formulaVersion).toBe("BOF-REF-CALC 0.3.0");
     expect(profile.legacyProfileArchived.oxygenEfficiency).toBe(0.95);
     expect(migrated.operationLog.at(-1).type).toBe("legacy_coefficient_profile_archived");
   });

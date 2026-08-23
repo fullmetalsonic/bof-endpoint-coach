@@ -13,6 +13,7 @@ export function Header({ t, locale, screen, setScreen, setLocale, now, operatorN
     ["history", "heatHistory"],
     ["today", "today"],
     ["settings", "settings"],
+    ["learning", "learning"],
     ["reports", "reports"],
     ["alerts", "alerts"],
     ["help", "help"],

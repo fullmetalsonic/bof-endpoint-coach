@@ -55,11 +55,21 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
     hotMetalMnUnit: chemistryUnit,
     hotMetalP: optionalDisplay(heat?.initial?.hotMetalP, convertConcentrationFromPercent, chemistryUnit),
     hotMetalPUnit: chemistryUnit,
+    hotMetalS: optionalDisplay(heat?.initial?.hotMetalS, convertConcentrationFromPercent, chemistryUnit),
+    hotMetalSUnit: chemistryUnit,
     hotMetalTemperatureC: heat?.initial?.hotMetalTemperatureC ?? "",
     scrapKg: optionalDisplay(heat?.initial?.scrapKg, convertMassFromKg, massUnit),
     scrapMassUnit: massUnit,
     scrapC: optionalDisplay(heat?.initial?.scrapC, convertConcentrationFromPercent, chemistryUnit),
     scrapCUnit: chemistryUnit,
+    scrapSi: optionalDisplay(heat?.initial?.scrapSi, convertConcentrationFromPercent, chemistryUnit),
+    scrapSiUnit: chemistryUnit,
+    scrapMn: optionalDisplay(heat?.initial?.scrapMn, convertConcentrationFromPercent, chemistryUnit),
+    scrapMnUnit: chemistryUnit,
+    scrapP: optionalDisplay(heat?.initial?.scrapP, convertConcentrationFromPercent, chemistryUnit),
+    scrapPUnit: chemistryUnit,
+    scrapS: optionalDisplay(heat?.initial?.scrapS, convertConcentrationFromPercent, chemistryUnit),
+    scrapSUnit: chemistryUnit,
     fluxKg: optionalDisplay(heat?.initial?.fluxKg, convertMassFromKg, massUnit),
     fluxMassUnit: massUnit,
     plannedTotalOxygenNm3: heat?.initial?.plannedTotalOxygenNm3 ?? "",
@@ -79,8 +89,13 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
     hotMetalSi: convertOptional(form.hotMetalSi, convertConcentrationToPercent, form.hotMetalSiUnit),
     hotMetalMn: convertOptional(form.hotMetalMn, convertConcentrationToPercent, form.hotMetalMnUnit),
     hotMetalP: convertOptional(form.hotMetalP, convertConcentrationToPercent, form.hotMetalPUnit),
+    hotMetalS: convertOptional(form.hotMetalS, convertConcentrationToPercent, form.hotMetalSUnit),
     scrapKg: convertOptional(form.scrapKg, convertMassToKg, form.scrapMassUnit),
     scrapC: convertOptional(form.scrapC, convertConcentrationToPercent, form.scrapCUnit),
+    scrapSi: convertOptional(form.scrapSi, convertConcentrationToPercent, form.scrapSiUnit),
+    scrapMn: convertOptional(form.scrapMn, convertConcentrationToPercent, form.scrapMnUnit),
+    scrapP: convertOptional(form.scrapP, convertConcentrationToPercent, form.scrapPUnit),
+    scrapS: convertOptional(form.scrapS, convertConcentrationToPercent, form.scrapSUnit),
     fluxKg: convertOptional(form.fluxKg, convertMassToKg, form.fluxMassUnit),
     inputMetadata: {
       canonicalMassUnit: "kg",
@@ -91,8 +106,13 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
         hotMetalSi: { value: form.hotMetalSi, unit: form.hotMetalSiUnit },
         hotMetalMn: { value: form.hotMetalMn, unit: form.hotMetalMnUnit },
         hotMetalP: { value: form.hotMetalP, unit: form.hotMetalPUnit },
+        hotMetalS: { value: form.hotMetalS, unit: form.hotMetalSUnit },
         scrapKg: { value: form.scrapKg, unit: form.scrapMassUnit },
         scrapC: { value: form.scrapC, unit: form.scrapCUnit },
+        scrapSi: { value: form.scrapSi, unit: form.scrapSiUnit },
+        scrapMn: { value: form.scrapMn, unit: form.scrapMnUnit },
+        scrapP: { value: form.scrapP, unit: form.scrapPUnit },
+        scrapS: { value: form.scrapS, unit: form.scrapSUnit },
         fluxKg: { value: form.fluxKg, unit: form.fluxMassUnit },
       },
     },
@@ -116,7 +136,7 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
     <div className="modal-backdrop" role="presentation">
       <form ref={dialogRef} tabIndex="-1" className="event-modal heat-modal" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="heat-modal-title">
         <div className="modal-header"><div><span>G0 · {editing ? (locale === "ko" ? "기초 입력 관리" : "Initial input management") : t("initialInputs")}</span><h2 id="heat-modal-title">{editing ? (locale === "ko" ? "기초 입력값 확인·수정" : "Review initial inputs") : t("newHeat")}</h2></div><button type="button" onClick={onClose} aria-label={t("close")}><X /></button></div>
-        <div className="form-guidance"><strong>{locale === "ko" ? "입력 구분" : "Input guide"}</strong><span>{locale === "ko" ? "필수는 차지 식별, 계산 핵심은 C·온도 참고예상에 필요, 정확도 권장은 미입력 시 문헌값을 사용합니다." : "Required identifies the heat; Calculation fields enable C and temperature estimates; Recommended fields fall back to literature values when blank."}</span></div>
+        <div className="form-guidance"><strong>{locale === "ko" ? "입력 구분" : "Input guide"}</strong><span>{locale === "ko" ? "필수는 차지 식별, 계산 핵심은 6개 품질항목의 종점 참고예상에 필요, 정확도 권장은 미입력 시 문헌값을 사용합니다." : "Required identifies the heat; Calculation fields support all six endpoint reference estimates; Recommended fields fall back to literature values when blank."}</span></div>
         {dirty && <div className="draft-status" role="status"><strong>{restored ? (locale === "ko" ? "저장되지 않은 초안을 복구했습니다." : "Unsaved draft restored.") : (locale === "ko" ? "작성 중 초안이 이 PC에 자동 보관됩니다." : "This draft is preserved automatically on this PC.")}</strong><button type="button" onClick={() => { discard(); onClose(); }}>{locale === "ko" ? "초안 버리기" : "Discard draft"}</button></div>}
         <div className="form-section-title">{t("heatIdentity")}</div>
         <div className="form-grid">
@@ -128,14 +148,15 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
           <label><FieldLabel kind="optional" locale={locale}>{t("expectedDuration")} (min)</FieldLabel><input type="number" min="1" value={form.expectedDurationMinutes} onChange={(event) => set("expectedDurationMinutes", event.target.value)} placeholder={locale === "ko" ? "선택 입력" : "Optional"} /></label>
         </div>
         <div className="form-section-title">{t("chargeAndOperation")}</div>
-        <div className={`calculation-completeness ${calculationCoreCount === calculationCoreKeys.length ? "complete" : "incomplete"}`} role="status"><strong>{locale === "ko" ? `계산 핵심 ${calculationCoreCount}/6 입력` : `${calculationCoreCount}/6 calculation fields`}</strong><span>{calculationCoreCount === calculationCoreKeys.length ? (locale === "ko" ? "C·온도 종점 참고예상을 계산할 기본 조건이 갖춰졌습니다." : "Basic conditions are ready for C and temperature endpoint estimates.") : (locale === "ko" ? "차지는 생성할 수 있지만, 비어 있는 핵심값 때문에 C·온도 예상이 ‘–’로 표시될 수 있습니다." : "The heat can be created, but missing core values may leave C and temperature estimates unavailable.")}</span></div>
+        <div className={`calculation-completeness ${calculationCoreCount === calculationCoreKeys.length ? "complete" : "incomplete"}`} role="status"><strong>{locale === "ko" ? `계산 핵심 ${calculationCoreCount}/6 입력` : `${calculationCoreCount}/6 calculation fields`}</strong><span>{calculationCoreCount === calculationCoreKeys.length ? (locale === "ko" ? "C·온도·P·Mn·Si·S 종점 참고예상을 계산할 기본 조건이 갖춰졌습니다." : "Basic conditions are ready for C, temperature, P, Mn, Si, and S endpoint estimates.") : (locale === "ko" ? "차지는 생성할 수 있지만, 비어 있는 핵심값 때문에 종점 예상 일부 또는 전체가 ‘–’로 표시될 수 있습니다." : "The heat can be created, but missing core values may leave some or all endpoint estimates unavailable.")}</span></div>
         <div className="form-grid heat-input-grid">
           <label><FieldLabel kind="calculation" locale={locale}>{t("hotMetalMass")}</FieldLabel><div className="input-with-unit"><input type="number" min="0" value={form.hotMetalKg} onChange={(event) => set("hotMetalKg", event.target.value)} /><select aria-label={`${t("hotMetalMass")} ${t("unit")}`} value={form.hotMetalMassUnit} onChange={(event) => set("hotMetalMassUnit", event.target.value)}>{massUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
           <label><FieldLabel kind="calculation" locale={locale}>{t("hotMetalCarbon")}</FieldLabel><div className="input-with-unit"><input type="number" min="0" step="0.001" value={form.hotMetalC} onChange={(event) => set("hotMetalC", event.target.value)} /><select aria-label={`${t("hotMetalCarbon")} ${t("unit")}`} value={form.hotMetalCUnit} onChange={(event) => set("hotMetalCUnit", event.target.value)}>{concentrationUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
-          {[["hotMetalSi", locale === "ko" ? "용선 Si" : "Hot-metal Si"], ["hotMetalMn", locale === "ko" ? "용선 Mn" : "Hot-metal Mn"], ["hotMetalP", locale === "ko" ? "용선 P" : "Hot-metal P"]].map(([key, label]) => <label key={key}><FieldLabel kind="recommended" locale={locale}>{label}</FieldLabel><div className="input-with-unit"><input type="number" min="0" step="0.001" value={form[key]} onChange={(event) => set(key, event.target.value)} placeholder={locale === "ko" ? "미입력 시 문헌값" : "Literature fallback"} /><select aria-label={`${label} ${t("unit")}`} value={form[`${key}Unit`]} onChange={(event) => set(`${key}Unit`, event.target.value)}>{concentrationUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>)}
+          {[["hotMetalSi", locale === "ko" ? "용선 Si" : "Hot-metal Si"], ["hotMetalMn", locale === "ko" ? "용선 Mn" : "Hot-metal Mn"], ["hotMetalP", locale === "ko" ? "용선 P" : "Hot-metal P"], ["hotMetalS", locale === "ko" ? "용선 S" : "Hot-metal S"]].map(([key, label]) => <label key={key}><FieldLabel kind="recommended" locale={locale}>{label}</FieldLabel><div className="input-with-unit"><input type="number" min="0" step="0.001" value={form[key]} onChange={(event) => set(key, event.target.value)} placeholder={locale === "ko" ? "미입력 시 문헌값" : "Literature fallback"} /><select aria-label={`${label} ${t("unit")}`} value={form[`${key}Unit`]} onChange={(event) => set(`${key}Unit`, event.target.value)}>{concentrationUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>)}
           <label><FieldLabel kind="calculation" locale={locale}>{t("hotMetalTemperature")} (°C)</FieldLabel><input type="number" min="0" value={form.hotMetalTemperatureC} onChange={(event) => set("hotMetalTemperatureC", event.target.value)} /></label>
           <label><FieldLabel kind="calculation" locale={locale}>{t("scrapMass")}</FieldLabel><div className="input-with-unit"><input type="number" min="0" value={form.scrapKg} onChange={(event) => set("scrapKg", event.target.value)} /><select aria-label={`${t("scrapMass")} ${t("unit")}`} value={form.scrapMassUnit} onChange={(event) => set("scrapMassUnit", event.target.value)}>{massUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
           <label><FieldLabel kind="calculation" locale={locale}>{t("scrapCarbon")}</FieldLabel><div className="input-with-unit"><input type="number" min="0" step="0.001" value={form.scrapC} onChange={(event) => set("scrapC", event.target.value)} /><select aria-label={`${t("scrapCarbon")} ${t("unit")}`} value={form.scrapCUnit} onChange={(event) => set("scrapCUnit", event.target.value)}>{concentrationUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
+          {[["scrapSi", "Si"], ["scrapMn", "Mn"], ["scrapP", "P"], ["scrapS", "S"]].map(([key, element]) => <label key={key}><FieldLabel kind="optional" locale={locale}>{locale === "ko" ? `스크랩 ${element}` : `Scrap ${element}`}</FieldLabel><div className="input-with-unit"><input type="number" min="0" step="0.001" value={form[key]} onChange={(event) => set(key, event.target.value)} placeholder={locale === "ko" ? "미입력 시 0으로 계산" : "Blank is treated as 0"} /><select aria-label={`${locale === "ko" ? "스크랩" : "Scrap"} ${element} ${t("unit")}`} value={form[`${key}Unit`]} onChange={(event) => set(`${key}Unit`, event.target.value)}>{concentrationUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>)}
           <label><FieldLabel kind="recommended" locale={locale}>{t("initialFlux")}</FieldLabel><div className="input-with-unit"><input type="number" min="0" value={form.fluxKg} onChange={(event) => set("fluxKg", event.target.value)} /><select aria-label={`${t("initialFlux")} ${t("unit")}`} value={form.fluxMassUnit} onChange={(event) => set("fluxMassUnit", event.target.value)}>{massUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
           <label><FieldLabel kind="calculation" locale={locale}>{t("plannedOxygen")} (Nm³)</FieldLabel><input type="number" min="0" value={form.plannedTotalOxygenNm3} onChange={(event) => set("plannedTotalOxygenNm3", event.target.value)} /></label>
           {!editing && <><label><FieldLabel kind="optional" locale={locale}>{t("cumulativeOxygen")} (Nm³)</FieldLabel><input type="number" min="0" value={form.cumulativeOxygenNm3} onChange={(event) => set("cumulativeOxygenNm3", event.target.value)} /></label>

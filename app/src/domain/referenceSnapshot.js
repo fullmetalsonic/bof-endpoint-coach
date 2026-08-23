@@ -27,3 +27,12 @@ export function resolveHeatSettings(heat, currentSettings) {
 export function heatGradeProfile(heat, currentSettings) {
   return resolveHeatSettings(heat, currentSettings).gradeProfiles.find((item) => item.code === heat.gradeCode);
 }
+
+export function heatReferenceMode(heat, currentSettings) {
+  const effective = resolveHeatSettings(heat, currentSettings);
+  const grade = effective.gradeProfiles.find((item) => item.code === heat.gradeCode);
+  const equipment = effective.equipmentProfiles.find((item) => item.id === heat.equipmentProfileId);
+  if (heat.demo) return "demo_data";
+  if (grade?.status === "demo" || equipment?.status === "demo" || String(grade?.code ?? "").startsWith("DEMO-") || String(equipment?.id ?? "").includes("DEMO")) return "demo_reference";
+  return "manual_reference";
+}

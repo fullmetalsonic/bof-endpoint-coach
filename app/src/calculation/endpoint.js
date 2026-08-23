@@ -2,7 +2,7 @@ import { coefficientBasisLabel, resolveCoefficientProfile } from "./coefficientP
 import { calculateHeatBalance } from "./heatBalance.js";
 import { calculateMassBalance, scenarioParameters } from "./massBalance.js";
 import { latestAdoptedSample } from "../domain/analysisRecords.js";
-import { resolveHeatSettings } from "../domain/referenceSnapshot.js";
+import { heatReferenceMode, resolveHeatSettings } from "../domain/referenceSnapshot.js";
 
 function finite(value) {
   return value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
@@ -59,6 +59,7 @@ function applySampleAnchor(endpointRun, sampleRun, sample) {
 
 export function calculateEndpoint(heat, settings, calculatedAt = new Date().toISOString()) {
   const effectiveSettings = resolveHeatSettings(heat, settings);
+  const referenceMode = heatReferenceMode(heat, settings);
   const rawCoefficient = effectiveSettings.coefficientProfiles.find((item) => item.id === heat.coefficientProfileId);
   const equipment = effectiveSettings.equipmentProfiles.find((item) => item.id === heat.equipmentProfileId);
   const grade = effectiveSettings.gradeProfiles.find((item) => item.code === heat.gradeCode);
@@ -67,7 +68,7 @@ export function calculateEndpoint(heat, settings, calculatedAt = new Date().toIS
   const process = heat.process ?? {};
 
   if (!rawCoefficient) {
-    return { calculatedAt, formulaVersion: null, coefficient: null, equipment, carbon: unavailable("coefficient_profile_missing"), temperature: unavailable("coefficient_profile_missing") };
+    return { calculatedAt, formulaVersion: null, coefficient: null, equipment, basis: { status: "invalid", labelKo: "계수 프로필 없음", labelEn: "Coefficient profile missing", sourceIds: [] }, carbon: unavailable("coefficient_profile_missing"), temperature: unavailable("coefficient_profile_missing"), assumedInputs: [], usesPlannedValues: false, inputMode: "incomplete", referenceMode, demo: referenceMode !== "manual_reference" };
   }
 
   const resolved = resolveCoefficientProfile(rawCoefficient);
@@ -91,7 +92,9 @@ export function calculateEndpoint(heat, settings, calculatedAt = new Date().toIS
       temperature: unavailable("coefficient_profile_invalid"),
       assumedInputs: [],
       usesPlannedValues: false,
-      demo: Boolean(heat.demo || effectiveSettings.status === "demo"),
+      inputMode: "invalid_coefficients",
+      referenceMode,
+      demo: referenceMode !== "manual_reference",
     };
   }
   if (!finite(initial.plannedTotalOxygenNm3)) {
@@ -100,9 +103,21 @@ export function calculateEndpoint(heat, settings, calculatedAt = new Date().toIS
       formulaVersion: coefficient.formulaVersion,
       coefficient,
       equipment,
-      basis: resolved,
+      basis: {
+        status: resolved.status,
+        labelKo: coefficientBasisLabel(resolved.status, "ko"),
+        labelEn: coefficientBasisLabel(resolved.status, "en"),
+        approved: resolved.approved,
+        overrideFields: resolved.overrideFields,
+        sourceIds: resolved.sourceIds,
+      },
       carbon: unavailable("planned_oxygen_missing"),
       temperature: unavailable("planned_oxygen_missing"),
+      assumedInputs: [],
+      usesPlannedValues: false,
+      inputMode: "incomplete",
+      referenceMode,
+      demo: referenceMode !== "manual_reference",
     };
   }
 
@@ -154,7 +169,9 @@ export function calculateEndpoint(heat, settings, calculatedAt = new Date().toIS
     })),
     assumedInputs: baseRun?.mass?.assumedInputs ?? [],
     usesPlannedValues: true,
-    demo: Boolean(heat.demo || effectiveSettings.status === "demo"),
+    inputMode: sample ? "sample_anchored" : "static_balance",
+    referenceMode,
+    demo: referenceMode !== "manual_reference",
   };
 }
 

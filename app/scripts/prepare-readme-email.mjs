@@ -94,7 +94,7 @@ function wrapEmail(articleHtml) {
         <table role="presentation" width="960" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:960px;border-collapse:collapse;">
           <tr>
             <td style="padding:14px 18px;border:1px solid #d1d9e0;border-radius:6px 6px 0 0;background:#fff8c5;color:#633c01;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif;font-size:14px;line-height:1.5;">
-              <strong style="font-weight:700;">v${version} 배포 안내:</strong> 현재 해야 할 일·단계별 진행 순서·권장 입력 강조와 기초 입력 수정 기능을 보강했습니다. GitHub README 전체와 최신 화면을 본문에서 바로 볼 수 있습니다.
+              <strong style="font-weight:700;">v${version} 배포 안내:</strong> 다중 창 저장 충돌 차단, 입력 초안 복구, 설정 버전 이력, 자체 검증 백업, 이력 검색과 200% 상당 화면 재배치를 보강했습니다. GitHub README 전체와 최신 화면을 본문에서 바로 볼 수 있습니다.
             </td>
           </tr>
           <tr>

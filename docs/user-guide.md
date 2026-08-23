@@ -1,4 +1,6 @@
-# 취련 코치 v0.3.0 사용 설명서 / BOF Endpoint Coach v0.3.0 User Guide
+# 취련 코치 v0.4.0 사용 설명서 / BOF Endpoint Coach v0.4.0 User Guide
+
+> 각 화면의 모든 항목, 명칭, 단위, 입력 예시와 주의사항은 [세부화면 사용 설명서](manual/취련코치_세부화면_사용설명서_v0.4.0.md)를 참고하십시오. 메일·공용 PC용 이미지 포함 HTML은 `release/BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.4.0.html`입니다.
 
 이 문서는 회사 공용 PC에서 단일 HTML 파일을 열어 사용하는 초기 공개본의 조작 순서와 안전 경계를 설명합니다. 모든 화면과 예시는 합성 DEMO 데이터입니다.
 
@@ -6,9 +8,9 @@
 
 ## 1. 실행 전 준비
 
-1. `BOF_Endpoint_Coach_v0.3.0.html`과 이 사용 설명서를 공용 PC의 작업 폴더에 저장합니다.
+1. `BOF_Endpoint_Coach_v0.4.0.html`과 이 사용 설명서를 공용 PC의 작업 폴더에 저장합니다.
 2. 실행 파일을 Microsoft Edge 또는 Google Chrome으로 엽니다. 서버 설치나 인터넷 연결은 필요하지 않습니다.
-3. 브라우저 배율은 100%를 권장하며, 화면은 1280px 이상 데스크톱용입니다. 1920×1080 모니터에서 검증했습니다.
+3. 브라우저 배율은 100%를 권장합니다. 1920×1080 모니터의 100%와 200% 상당 표시영역까지 검증했습니다.
 4. 첫 화면에서 작업자 이름을 입력합니다. 합성 차지 없이 시작하려면 `빈 작업으로 시작`, 기능을 둘러보려면 `DEMO로 체험`을 선택합니다.
 5. 첫 실제 입력 전에 `기준 정보`의 강종·재료·설비·계수를 반드시 확인합니다.
 
@@ -18,7 +20,7 @@
 
 | 구역 | 확인 내용 |
 | --- | --- |
-| 상단 차지 탭 | 동시에 진행 중인 차지를 선택하고 `신규 차지`를 생성 |
+| 상단 차지 탭 | 동시에 진행 중인 차지를 선택하고 최근 입력 시각·확인 필요 수·위험 수를 비교한 뒤 `신규 차지`를 생성 |
 | 상단 요약 | 강종, 목표 C, 현재 단계, 경과시간, 누적 산소, 예상 출강시각, 다음 행동 |
 | 좌측 G0~G8 | 장입부터 후처리까지 현재 공정 게이트와 입력된 실제 전환 시각 |
 | 중앙 현재 해야 할 일 | 지금 눌러야 할 입력창과 입력 목적을 큰 버튼으로 표시 |
@@ -64,6 +66,7 @@ P·Mn·Si·S는 현장 승인 계산식이 없으므로 실측과 목표만 표�
 3. 현장 승인값으로 지정하려면 `현장 승인값`을 선택하고 승인자/역할과 승인 근거·사유를 모두 입력합니다.
 4. 승인된 값을 다시 수정하면 기존 승인은 자동 해제됩니다.
 5. `수정값 전체 지우기`를 누르면 문헌 기본값으로 돌아갑니다.
+6. 설정을 실제로 바꾸면 화면 상단에 변경 사유를 입력해야 `설정 저장`이 활성화됩니다. 저장하면 새 로컬 버전, 이전 버전, 변경자, 시각과 필드별 차이가 `버전 · 승인`에 남습니다.
 
 적용 순서는 `현장 승인 수정값 → 사용자 수정값(미승인) → 문헌 원본값`입니다. PCR, 열손실률, 종점 슬래그 FeO의 저·고값은 통계적 신뢰구간이 아니라 민감도 시나리오입니다.
 
@@ -76,6 +79,8 @@ P·Mn·Si·S는 현장 승인 계산식이 없으므로 실측과 목표만 표�
 5. 용선 Si·Mn·P를 알고 있으면 입력합니다. 비워 두면 계수 프로필의 문헌 참고값이 쓰이며 Data Ledger에 대체 입력으로 표시됩니다.
 
 차지를 만들면 G0에서 시작하며, 상단 탭을 클릭해 여러 진행 차지를 번갈아 볼 수 있습니다. 값이 비어 있으면 해당 계산은 `–`로 표시되며 실제 값을 입력하기 전까지 임의 수치를 만들지 않습니다. 생성 뒤 값을 고쳐야 하면 중앙 우측의 `기초 입력값 확인·수정`을 사용합니다. 차지 번호와 시작 시각은 이력 식별값이므로 수정하지 않고, 변경 작업자·시각은 자동으로 남깁니다.
+
+입력 중 창을 닫거나 다른 화면으로 이동해도 신규 차지·이벤트·단계 전환·정정·설정 초안은 이 PC에 임시 보관됩니다. 다시 열면 복구 안내가 보입니다. 잘못된 초안은 `초안 버리기`로 명시적으로 폐기하십시오. 초안은 정식 조업 이력이 아니므로 반드시 저장 버튼을 눌러야 실제 이력과 종점 참고예상에 반영됩니다.
 
 ## 6. 화면 안내를 따라 취련 중 입력하기
 
@@ -143,11 +148,14 @@ T_end = T_sample + T_literature(O_plan) - T_literature(O_sample)
 ## 9. 저장, 백업, 복원, 보고서
 
 - 입력 내용은 현재 브라우저의 IndexedDB에 자동 저장됩니다.
+- 같은 HTML을 여러 창에서 열었을 때 다른 창의 저장을 감지하면 현재 창은 읽기 전용으로 바뀝니다. 필요하면 `비상 백업`을 먼저 받은 뒤 `최신 상태 불러오기`를 두 번 확인해 계속 작업합니다.
+- 저장소를 읽지 못하면 기존 데이터를 보호하기 위해 빈 작업공간을 새로 저장하지 않습니다. 오류 화면의 `다시 읽기`를 사용하고 반복되면 브라우저 저장소 정책을 확인합니다.
+- 저장 실패 시 새 입력이 잠기고 상단에 `저장 재시도`와 `비상 백업`이 표시됩니다. 저장 상태가 회복되기 전에는 창을 닫지 마십시오.
 - 교대, PC 변경, 브라우저 초기화 전에는 `분석 · 리포트`에서 CSV 백업 ZIP을 저장합니다.
-- 백업 ZIP은 CSV 7종과 `manifest.csv`를 포함하고, 복원 전에 SHA-256 무결성을 검사합니다.
+- 백업 ZIP은 CSV 7종과 `manifest.csv`를 포함합니다. 다운로드 전에 프로그램이 방금 만든 ZIP을 다시 읽어 SHA-256·행 수·참조·공정 이력을 검사하고 마지막 검증 시각·차지 수·해시를 기록합니다.
 - 복원은 이 도구가 만든 ZIP만 사용합니다. 일부 CSV를 직접 수정하면 무결성 검사에 실패합니다.
 - XLSX는 사람이 확인하는 보고서이며 복원 파일로 사용할 수 없습니다.
-- v0.3.0은 백업 스키마 v0.3.0을 사용하며, 기존 v0.1.0·v0.2.0·v0.2.1 백업도 복원해 현재 구조로 변환합니다.
+- v0.4.0은 백업 스키마 v0.3.0을 유지하며, 기존 v0.1.0·v0.2.0·v0.2.1 백업도 복원해 현재 구조로 변환합니다.
 - 백업은 원본/정정/무효 상태, 복수 분석과 채택값, 예상 스냅샷, 종점 실제값, 차지별 기준 스냅샷을 함께 보존합니다.
 - XLSX 보고서에는 `Corrections`와 `Predictions` 시트가 추가되지만 복원 파일로 사용할 수 없습니다.
 - 복원 시 필수 CSV 7종, 중복 없는 manifest, SHA-256, 행 수, 참조 ID, 단계·샘플 시각과 수치 범위를 모두 확인합니다. 실패한 파일은 상태를 바꾸지 않으며 같은 파일을 다시 선택해 재시도할 수 있습니다.
@@ -167,21 +175,24 @@ T_end = T_sample + T_literature(O_plan) - T_literature(O_sample)
 | 증상 | 확인 순서 |
 | --- | --- |
 | 예상값이 `–`로 표시됨 | 계획 산소량, 필수 장입값, 계수 프로필 오류, 해당 원소 계산식 제공 여부 확인 |
-| 설정 저장 버튼 비활성 | 화면 상단 정합성 경고에서 코드 중복, 범위 역전, 계수 순서, 승인정보 누락 확인 |
+| 설정 저장 버튼 비활성 | 실제 변경 여부, 변경 사유 입력, 화면 상단 정합성 경고의 코드 중복·범위 역전·계수 순서·승인정보 누락 확인 |
 | 과거 데이터가 보이지 않음 | 같은 브라우저·같은 파일 위치인지 확인하고 저장한 CSV ZIP 복원 시도 |
 | 단계 전환 버튼이 비활성 | 현재 단계와 차지 상태를 확인하고, G5에서는 C·온도가 있는 채택 샘플 확인 |
 | 다음에 무엇을 입력할지 모름 | 중앙 `현재 해야 할 일`의 파란 버튼을 누르고, 저장 뒤 바뀐 진행 순서를 확인 |
 | 하단 입력 버튼이 비활성 | 해당 입력이 허용되는 단계인지 확인. 출강은 G6에서만 가능 |
 | 정정 적용 버튼이 비활성 | 정정 사유, 실제 발생 시각, 성분 범위, 샘플·분석 순서, 앞뒤 누적 산소 순서를 확인 |
 | 이전 단계로 여러 번 돌아가고 싶음 | 공정 단계는 한 번만 복귀. 더 오래된 오입력은 전체 이력에서 해당 기록만 정정 |
-| 화면이 잘리거나 너무 작음 | Edge/Chrome, 100% 배율, 1280px 이상 해상도 확인 |
+| 다른 창 변경 경고가 보임 | 현재 창에서 새 입력을 중지하고 필요 시 비상 백업 후 `최신 상태 불러오기` 확인 |
+| 저장 실패 경고가 보임 | `저장 재시도`; 반복되면 비상 백업을 받고 회사 브라우저 저장 허용·용량 정책 확인 |
+| 저장하지 않은 입력이 다시 보임 | 자동 복구된 초안입니다. 계속 입력하거나 `초안 버리기`로 폐기 |
+| 화면이 잘리거나 너무 작음 | Edge/Chrome과 1920×1080 권장 화면을 확인. 200% 상당에서도 핵심 조작은 아래쪽으로 재배치됨 |
 | 결과가 현장 경험과 다름 | 이 도구의 문헌 시나리오를 조업 기준으로 사용하지 말고 실제 분석·현장 표준을 우선 |
 
 ## 12. English quick guide
 
 ![BOF Endpoint Coach English dashboard](https://raw.githubusercontent.com/fullmetalsonic/bof-endpoint-coach/main/docs/screenshots/dashboard-en.png)
 
-1. Open `BOF_Endpoint_Coach_v0.3.0.html` in Edge or Chrome at 100% zoom.
+1. Open `BOF_Endpoint_Coach_v0.4.0.html` in Edge or Chrome at 100% zoom.
 2. Enter an operator display name and choose an empty workspace or optional synthetic DEMO.
 3. Review grade, material, equipment, and coefficient profiles before entering a real heat.
 4. Create a heat and follow the central **Do this now** panel. It advances the guidance from initial inputs to checkpoints, sampling, analysis, tap review, and post-treatment as each record is saved. G5→G6 requires an adopted sample with C and temperature; tap is recorded at G6.
@@ -189,7 +200,8 @@ T_end = T_sample + T_literature(O_plan) - T_literature(O_sample)
 6. Use **Full timeline** to correct or void a record without deleting its original. Use **Undo last stage** for exactly one transition, and **Correct tap record** after tapping.
 7. Select an adopted analysis for the current reference estimate and, after tapping, separately select an actual endpoint result for prediction-error review.
 8. Delete only DEMO/G0 drafts, cancel active heats with a reason, and archive closed heats from Heat history.
-9. Export a CSV ZIP backup before shift handover, browser reset, or PC change. XLSX is for viewing only.
-10. The tool is not plant-validated and does not replace controls, safety interlocks, SOPs, laboratory results, tap authorization, or operator judgment.
+9. Draft forms are preserved locally until saved or explicitly discarded. If another window changes the workspace, this window becomes read-only until the latest saved state is reloaded.
+10. Export a CSV ZIP backup before shift handover, browser reset, or PC change. Each new backup is read-verified before download; XLSX is for viewing only.
+11. The tool is not plant-validated and does not replace controls, safety interlocks, SOPs, laboratory results, tap authorization, or operator judgment.
 
 추가 계산 경계와 공개 근거는 [README](https://github.com/fullmetalsonic/bof-endpoint-coach/blob/main/README.md), [종점 참고 계산식](https://github.com/fullmetalsonic/bof-endpoint-coach/blob/main/docs/domain/%EC%A2%85%EC%A0%90%EC%B0%B8%EA%B3%A0%EA%B3%84%EC%82%B0%EC%8B%9D_%EC%B4%88%EC%95%88.md), [검증·승인 계획](https://github.com/fullmetalsonic/bof-endpoint-coach/blob/main/docs/product/%EC%A2%85%EC%A0%90%EC%B0%B8%EA%B3%A0%EC%98%88%EC%83%81_%EA%B2%80%EC%A6%9D%EB%B0%8F%EC%8A%B9%EC%9D%B8%EA%B3%84%ED%9A%8D_%EC%B4%88%EC%95%88.md)을 참고하십시오.

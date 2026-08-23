@@ -64,7 +64,10 @@ export function GradeProfilesEditor({ draft, setDraft, locale, t, usedGradeCodes
       <label><span>{t("englishName")}</span><input value={grade.nameEn} onChange={(event) => updateGrade("nameEn", event.target.value)} /></label>
     </div>
     <div className="settings-form-grid">
-      {["C", "temperature", "P", "Mn", "Si", "S"].map((key) => <div className="target-editor" key={key}><strong>{key === "temperature" ? (locale === "ko" ? "온도" : "Temperature") : key}</strong><label>{t("min")}<input type="number" step="0.001" value={grade.targets[key].min ?? ""} onChange={(event) => updateTarget(key, "min", event.target.value)} /></label><label>{t("max")}<input type="number" step="0.001" value={grade.targets[key].max ?? ""} onChange={(event) => updateTarget(key, "max", event.target.value)} /></label><span>{grade.targets[key].unit}</span></div>)}
+      {["C", "temperature", "P", "Mn", "Si", "S"].map((key) => {
+        const metricLabel = key === "temperature" ? (locale === "ko" ? "온도" : "Temperature") : key;
+        return <div className="target-editor" key={key}><strong>{metricLabel}</strong><label>{t("min")}<input aria-label={`${metricLabel} ${t("min")}`} type="number" step="0.001" value={grade.targets[key].min ?? ""} onChange={(event) => updateTarget(key, "min", event.target.value)} /></label><label>{t("max")}<input aria-label={`${metricLabel} ${t("max")}`} type="number" step="0.001" value={grade.targets[key].max ?? ""} onChange={(event) => updateTarget(key, "max", event.target.value)} /></label><span>{grade.targets[key].unit}</span></div>;
+      })}
     </div>
   </>;
 }

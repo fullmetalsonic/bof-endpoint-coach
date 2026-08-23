@@ -30,6 +30,27 @@ describe("endpoint calculation", () => {
     expect(result.carbon.high).toBeGreaterThanOrEqual(result.carbon.value);
   });
 
+  it("keeps the DEMO reference boundary visible for a manually created heat", () => {
+    const state = createDemoState();
+    const heat = structuredClone(state.heats[0]);
+    heat.id = "MANUAL-001";
+    heat.demo = false;
+    const result = calculateEndpoint(heat, state.settings);
+    expect(result.referenceMode).toBe("demo_reference");
+    expect(result.demo).toBe(true);
+  });
+
+  it("keeps coefficient provenance when required calculation inputs are missing", () => {
+    const state = createDemoState();
+    const heat = structuredClone(state.heats[0]);
+    delete heat.initial.plannedTotalOxygenNm3;
+    const result = calculateEndpoint(heat, state.settings);
+    expect(result.inputMode).toBe("incomplete");
+    expect(result.basis.status).toBe("literature_reference");
+    expect(result.basis.sourceIds).toContain("S12");
+    expect(result.usesPlannedValues).toBe(false);
+  });
+
   it("uses an override without changing the preserved literature value", () => {
     const state = createDemoState();
     const profile = state.heats[0].referenceSnapshot.coefficientProfile;

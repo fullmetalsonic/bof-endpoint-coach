@@ -1,7 +1,7 @@
 import { ArrowRight, WarningCircle } from "@phosphor-icons/react";
 import { getNextStage, validateStageAdvance } from "../domain/processStages.js";
 
-export function StageControls({ heat, locale, onAdvance, variant = "primary" }) {
+export function StageControls({ heat, locale, onAdvance, variant = "primary", writeLocked = false }) {
   const next = getNextStage(heat.stage);
   const validation = validateStageAdvance(heat);
   const ko = locale === "ko";
@@ -10,7 +10,7 @@ export function StageControls({ heat, locale, onAdvance, variant = "primary" }) 
   return (
     <div className={`stage-controls ${variant}`}>
       {reason && <span className="stage-blocked"><WarningCircle />{reason}</span>}
-      <button type="button" disabled={!validation.ok} onClick={onAdvance}>{heat.stage} → {next.code} · {ko ? `${next.labelKo} 단계로 전환` : `Advance to ${next.labelEn}`}<ArrowRight /></button>
+      <button type="button" disabled={writeLocked || !validation.ok} onClick={onAdvance}>{heat.stage} → {next.code} · {ko ? `${next.labelKo} 단계로 전환` : `Advance to ${next.labelEn}`}<ArrowRight /></button>
     </div>
   );
 }

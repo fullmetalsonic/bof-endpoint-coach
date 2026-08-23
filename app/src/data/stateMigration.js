@@ -8,7 +8,7 @@ export function normalizeCoachState(state) {
   if (!state?.settings) return state;
   const migratedProfileIds = (state.settings.coefficientProfiles ?? []).filter((profile) => !profile?.literatureValues).map((profile) => profile.id);
   const coefficientProfiles = (state.settings.coefficientProfiles ?? []).map(normalizeCoefficientProfile);
-  const normalizedSettings = { ...state.settings, coefficientProfiles };
+  const normalizedSettings = { ...state.settings, coefficientProfiles, revisionHistory: state.settings.revisionHistory ?? [], lastRevision: state.settings.lastRevision ?? null };
   return {
     ...state,
     schemaVersion: BACKUP_SCHEMA_VERSION,

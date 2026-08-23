@@ -4,7 +4,9 @@ import { normalizeCoachState } from "../data/stateMigration.js";
 import { advanceHeat, applyHeatEvent, archiveHeat, canDeleteHeat, cancelHeat, createHeatFromForm, updateHeatInputs } from "../domain/heatOperations.js";
 import { adoptAnalysisRecord, correctAnalysisRecord, correctEventRecord, correctTapRecord, invalidateAnalysisRecord, invalidateEventRecord, rollbackLastStage, setActualEndpointAnalysis } from "../domain/correctionOperations.js";
 import { capturePredictionSnapshot } from "../domain/predictionHistory.js";
-import { clearRecoveryState, clearState, loadRecoveryState, loadState, saveRecoveryState, saveState } from "../storage/indexedDb.js";
+import { clearRecoveryState, loadRecoveryState, loadState, saveRecoveryState, saveState, StorageConflictError } from "../storage/indexedDb.js";
+import { createWorkspaceSync } from "../storage/workspaceSync.js";
+import { prepareSettingsRevision } from "../domain/settingsRevision.js";
 
 function withLog(state, type, payload = {}) {
   const at = new Date().toISOString();
@@ -22,31 +24,76 @@ export function useCoachState() {
   const [state, setState] = useState(null);
   const [recovery, setRecovery] = useState(null);
   const [saveStatus, setSaveStatus] = useState("loading");
+  const [loadError, setLoadError] = useState(null);
+  const [retryTick, setRetryTick] = useState(0);
   const loaded = useRef(false);
+  const skipNextSave = useRef(false);
+  const persistedRevision = useRef(0);
+  const persistenceBlocked = useRef(false);
+  const instanceId = useRef(crypto.randomUUID());
+  const sync = useRef(null);
 
   useEffect(() => {
+    let active = true;
+    loaded.current = false;
+    persistenceBlocked.current = false;
     Promise.all([loadState(), loadRecoveryState()])
       .then(([saved, savedRecovery]) => {
-        setState(normalizeCoachState(saved ?? createEmptyState()));
-        setRecovery(savedRecovery);
-      })
-      .catch(() => setState(createEmptyState()))
-      .finally(() => {
+        if (!active) return;
+        const normalized = normalizeCoachState(saved ?? createEmptyState());
+        persistedRevision.current = Number(saved?.storageRevision ?? 0);
+        skipNextSave.current = true;
         loaded.current = true;
+        setState(normalized);
+        setRecovery(savedRecovery);
         setSaveStatus("saved");
+      })
+      .catch((error) => {
+        if (!active) return;
+        persistenceBlocked.current = true;
+        setLoadError(error?.message || "storage_load_failed");
+        setSaveStatus("load_error");
       });
+    return () => { active = false; };
+  }, [retryTick]);
+
+  useEffect(() => {
+    sync.current = createWorkspaceSync((message) => {
+      if (!message || message.sourceId === instanceId.current || message.type !== "workspace_saved") return;
+      if (Number(message.revision) <= persistedRevision.current) return;
+      persistenceBlocked.current = true;
+      setSaveStatus((current) => current === "saving" ? "conflict" : "stale");
+    });
+    return () => sync.current?.close();
   }, []);
 
   useEffect(() => {
+    function protectUnsavedWork(event) {
+      if (!["saving", "error", "conflict", "stale"].includes(saveStatus)) return;
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", protectUnsavedWork);
+    return () => window.removeEventListener("beforeunload", protectUnsavedWork);
+  }, [saveStatus]);
+
+  useEffect(() => {
     if (!state || !loaded.current) return undefined;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
+      return undefined;
+    }
+    if (persistenceBlocked.current) return undefined;
     setSaveStatus("saving");
     const timer = setTimeout(async () => {
-      const saved = { ...state, lastSavedAt: new Date().toISOString() };
       try {
-        await saveState(saved);
+        const saved = await saveState(state, persistedRevision.current);
+        persistedRevision.current = saved.storageRevision;
         setSaveStatus("saved");
-      } catch {
-        setSaveStatus("error");
+        sync.current?.publish({ type: "workspace_saved", revision: saved.storageRevision, sourceId: instanceId.current });
+      } catch (error) {
+        persistenceBlocked.current = true;
+        setSaveStatus(error instanceof StorageConflictError || error?.code === "storage_revision_conflict" ? "conflict" : "error");
       }
     }, 250);
     return () => clearTimeout(timer);
@@ -79,10 +126,17 @@ export function useCoachState() {
     });
   }, []);
 
-  const updateSettings = useCallback((settings) => setState((previous) => withLog({ ...previous, settings }, "settings_updated", {
-    settingsVersion: settings.version,
-    coefficientProfiles: structuredClone(settings.coefficientProfiles),
-  })), []);
+  const updateSettings = useCallback((settings, reason = "") => setState((previous) => {
+    const revised = prepareSettingsRevision(previous.settings, settings, previous.operatorProfile, reason);
+    if (revised === previous.settings) return previous;
+    return withLog({ ...previous, settings: revised }, "settings_updated", {
+      settingsVersion: revised.version,
+      previousSettingsVersion: previous.settings.version,
+      reason: revised.lastRevision?.reason ?? reason,
+      changes: structuredClone(revised.lastRevision?.changes ?? []),
+      coefficientProfiles: structuredClone(revised.coefficientProfiles),
+    });
+  }), []);
   const recordOperation = useCallback((type, payload = {}) => setState((previous) => withLog(previous, type, payload)), []);
 
   const createHeat = useCallback((form) => {
@@ -109,13 +163,24 @@ export function useCoachState() {
   const replaceState = useCallback((nextState) => setState(withLog(normalizeCoachState(nextState), "backup_restored")), []);
 
   const resetWorkspace = useCallback(async (mode = "empty") => {
-    if (state) {
-      await saveRecoveryState(state);
-      setRecovery({ state, savedAt: new Date().toISOString() });
+    try {
+      if (state) {
+        await saveRecoveryState(state);
+        setRecovery({ state, savedAt: new Date().toISOString() });
+      }
+      const profile = state?.operatorProfile ?? { displayName: "" };
+      const next = mode === "demo" ? createDemoState(profile) : createEmptyState({ operatorProfile: profile, onboardingCompleted: true });
+      const saved = await saveState(next, persistedRevision.current);
+      persistedRevision.current = saved.storageRevision;
+      persistenceBlocked.current = false;
+      skipNextSave.current = true;
+      setState(normalizeCoachState(saved));
+      setSaveStatus("saved");
+      sync.current?.publish({ type: "workspace_saved", revision: saved.storageRevision, sourceId: instanceId.current });
+    } catch (error) {
+      persistenceBlocked.current = true;
+      setSaveStatus(error instanceof StorageConflictError || error?.code === "storage_revision_conflict" ? "conflict" : "error");
     }
-    await clearState();
-    const profile = state?.operatorProfile ?? { displayName: "" };
-    setState(mode === "demo" ? createDemoState(profile) : createEmptyState({ operatorProfile: profile, onboardingCompleted: true }));
   }, [state]);
 
   const restoreRecovery = useCallback(async () => {
@@ -204,5 +269,14 @@ export function useCoachState() {
 
   const setLocale = useCallback((locale) => setState((previous) => ({ ...previous, locale })), []);
 
-  return { state, currentHeat, recovery, saveStatus, selectHeat, addEvent, advanceCurrentStage, createHeat, updateCurrentHeatInputs, updateSettings, recordOperation, replaceState, resetWorkspace, restoreRecovery, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, correctRecord, invalidateRecord, rollbackStage, correctTap, adoptAnalysis, selectActualEndpoint, setLocale };
+  const retryLoad = useCallback(() => { setLoadError(null); setSaveStatus("loading"); setRetryTick((value) => value + 1); }, []);
+  const reloadFromStorage = useCallback(() => { setLoadError(null); setSaveStatus("loading"); setRetryTick((value) => value + 1); }, []);
+  const retrySave = useCallback(() => {
+    persistenceBlocked.current = false;
+    setSaveStatus("saving");
+    setState((previous) => previous ? { ...previous } : previous);
+  }, []);
+  const canWrite = Boolean(state) && !["loading", "load_error", "error", "conflict", "stale"].includes(saveStatus);
+
+  return { state, currentHeat, recovery, saveStatus, loadError, canWrite, retryLoad, reloadFromStorage, retrySave, selectHeat, addEvent, advanceCurrentStage, createHeat, updateCurrentHeatInputs, updateSettings, recordOperation, replaceState, resetWorkspace, restoreRecovery, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, correctRecord, invalidateRecord, rollbackStage, correctTap, adoptAnalysis, selectActualEndpoint, setLocale };
 }

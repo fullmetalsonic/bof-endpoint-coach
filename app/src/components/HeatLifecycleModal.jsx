@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "@phosphor-icons/react";
+import { useDialogFocus } from "../hooks/useDialogFocus.js";
 
 export function HeatLifecycleModal({ heat, action, locale, onClose, onConfirm }) {
   const [reason, setReason] = useState("");
@@ -11,9 +12,10 @@ export function HeatLifecycleModal({ heat, action, locale, onClose, onConfirm })
   };
   const [title, description] = labels[action];
   const ready = action !== "cancel" || reason.trim();
+  const dialogRef = useDialogFocus({ onClose });
   return (
-    <div className="modal-backdrop" role="presentation"><form className="event-modal lifecycle-modal" role="dialog" aria-modal="true" onSubmit={(event) => { event.preventDefault(); if (ready) onConfirm(reason.trim()); }}>
-      <div className="modal-header"><div><span>{heat.id}</span><h2>{title}</h2></div><button type="button" onClick={onClose}><X /></button></div>
+    <div className="modal-backdrop" role="presentation"><form ref={dialogRef} tabIndex="-1" className="event-modal lifecycle-modal" role="dialog" aria-modal="true" aria-labelledby="lifecycle-modal-title" onSubmit={(event) => { event.preventDefault(); if (ready) onConfirm(reason.trim()); }}>
+      <div className="modal-header"><div><span>{heat.id}</span><h2 id="lifecycle-modal-title">{title}</h2></div><button type="button" onClick={onClose} aria-label={ko ? "닫기" : "Close"}><X /></button></div>
       <div className="lifecycle-content"><p>{description}</p>{action === "cancel" && <label><span>{ko ? "취소 사유" : "Cancellation reason"}</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} required /></label>}</div>
       <div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>{ko ? "돌아가기" : "Back"}</button><button type="submit" className={action === "delete" ? "danger-button" : "primary"} disabled={!ready}>{title}</button></div>
     </form></div>

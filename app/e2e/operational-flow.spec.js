@@ -12,6 +12,7 @@ test("빈 목표값의 신규 강종으로 차지를 만들어도 화면이 중�
 
   await page.getByRole("button", { name: "기준 정보" }).click();
   await page.getByRole("button", { name: /강종 추가/ }).click();
+  await page.getByLabel("변경 사유").fill("빈 목표 강종 추가 시험");
   await page.getByRole("button", { name: "설정 저장" }).click();
   await page.locator(".main-nav").getByRole("button", { name: "대시보드" }).click();
   await page.getByRole("button", { name: /신규 차지 시작/ }).click();
@@ -98,7 +99,7 @@ test("수동 단위 환산부터 G8 완료까지 실제 입력 흐름과 재실�
   await page.getByRole("spinbutton", { name: /누적 산소량/ }).fill("4900");
   await expect(page.getByRole("alert")).toContainText("누적 산소량은 이전 기록보다 작아질 수 없습니다");
   await expect(page.getByRole("button", { name: "저장" })).toBeDisabled();
-  await page.getByRole("button", { name: "취소", exact: true }).click();
+  await page.getByRole("button", { name: "초안 버리기", exact: true }).click();
 
   await advance(page, "G1", "G2");
   await advance(page, "G2", "G3");
@@ -236,7 +237,7 @@ test("미래·역행 시각과 중복 차지는 화면에서 저장되지 않는
   await page.getByLabel("시각").fill("2099-01-01T00:00");
   await expect(page.getByRole("alert")).toContainText("미래인 시각");
   await expect(page.getByRole("button", { name: "차지 시작", exact: true })).toBeDisabled();
-  await page.getByRole("button", { name: "취소", exact: true }).click();
+  await page.getByRole("button", { name: "초안 버리기", exact: true }).click();
 
   await createHeat(page, "E2E-TIME");
   await page.getByRole("button", { name: /G0 → G1/ }).click();
@@ -270,6 +271,9 @@ test("상단 메뉴와 기준 정보의 모든 탭이 실제 화면으로 전환
     await page.locator(".settings-tabs").getByRole("button", { name }).click();
     await expect(page.locator(".settings-content")).toBeVisible();
   }
+  await page.locator(".settings-tabs").getByRole("button", { name: "강종군" }).click();
+  await page.getByLabel("한글 명칭").fill("가상 저탄소강 검증");
+  await page.getByLabel("변경 사유").fill("메뉴 저장 흐름 검증");
   await page.getByRole("button", { name: "설정 저장" }).click();
   const state = await waitForState(page, (stored) => stored.operationLog.some((entry) => entry.type === "settings_updated"));
   expect(state.operatorProfile.displayName).toBe("메뉴 검증자");

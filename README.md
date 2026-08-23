@@ -12,7 +12,16 @@
 
 ## 한국어
 
-### v0.3.0에서 할 수 있는 것
+### v0.4.0에서 할 수 있는 것
+
+- 같은 HTML을 여러 창에서 열어도 저장 revision을 비교해 오래된 창의 덮어쓰기를 막고, 변경을 감지한 창은 최신 저장소를 다시 읽기 전까지 읽기 전용으로 전환
+- IndexedDB 읽기 실패 시 빈 작업공간을 만들지 않는 안전 정지 화면, 쓰기 실패·충돌 시 지속 경고·재시도·비상 CSV ZIP 백업 제공
+- 신규 차지·이벤트·단계 전환·정정·설정 입력을 폼별 로컬 초안으로 자동 보관하고 다시 열 때 복구하거나 `초안 버리기`로 폐기
+- 설정 변경 시 변경 사유를 필수로 받고 새 버전·이전 버전·변경자·시각·필드별 차이를 이력에 보존
+- 진행 차지 탭에 최근 입력 시각과 확인 필요 수·위험 수를 표시하고, 차지 이력에서 검색·상태·강종·기간 필터와 최근/위험/차지/단계 정렬·페이지 탐색
+- 1920×1080의 200% 상당 표시영역까지 헤더·공정 단계·Ledger·입력 버튼을 재배치하고, 모달 Escape·포커스 순환·호출 위치 복귀 지원
+- 백업을 다운로드하기 전에 프로그램이 ZIP을 다시 읽어 해시·행 수·참조 정합성을 검증하고 마지막 검증 시각·차지 수·SHA-256을 기록
+- 계산 입력이 부족해도 `DEMO 데이터`, `DEMO 기준`, `문헌 기본`, `사용자 수정·미승인`, `현장 승인값`의 근거 경계를 계속 표시
 
 - 중앙 `현재 해야 할 일`에서 지금 입력할 값, 이 단계의 진행 순서, 완료 수, 다음 단계와 종점 예상 상태를 한 번에 확인
 - 현재 작업과 같은 하단 입력 버튼에만 `지금 입력`을 표시하고, 아직 수행하지 않은 단계 전환은 보조 버튼으로 구분
@@ -44,7 +53,7 @@
 
 ### 바로 사용하기
 
-1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.3.0.html`을 받습니다.
+1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.4.0.html`을 받습니다.
 2. 회사 공용 PC의 Edge 또는 Chrome에서 파일을 엽니다. 서버 설치와 인터넷 연결은 필요하지 않습니다.
 3. 작업자 이름을 입력하고 `빈 작업으로 시작`을 선택합니다. 합성 데이터를 보려면 `DEMO로 체험`을 선택합니다.
 4. `기준 정보`에서 강종·재료·설비·계수를 검토합니다.
@@ -52,9 +61,9 @@
 6. G6에서 출강을 기록하고 G7 후처리 입력이 끝나면 G8로 전환합니다.
 7. 교대·브라우저 초기화 전에 `분석 · 리포트`에서 CSV 백업 ZIP을 저장합니다.
 
-단계별 조작은 [한영 사용 설명서](docs/user-guide.md)에서 확인할 수 있습니다.
+단계별 조작은 [한영 사용 설명서](docs/user-guide.md)에서, 화면별 명칭·단위·입력 예시·주의사항은 [세부화면 사용 설명서](docs/manual/취련코치_세부화면_사용설명서_v0.4.0.md)에서 확인할 수 있습니다. 오프라인에서 GitHub처럼 볼 수 있는 [이미지 포함 HTML 설명서](release/BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.4.0.html)도 제공합니다.
 
-초기 공개본은 1280px 이상 데스크톱 화면을 기준으로 설계했습니다. 브라우저 확대/축소는 100%를 권장합니다.
+1920×1080 데스크톱의 100% 표시를 기본으로 권장하며, 200% 상당 표시영역에서도 핵심 조작이 재배치되도록 검증했습니다.
 
 ### 화면 설명
 
@@ -75,7 +84,7 @@
 
 ![강종 목표와 기준 정보 설정](docs/screenshots/settings-ko.png)
 
-강종·재료 설정은 계속 추가할 수 있고 사용되지 않은 항목은 삭제할 수 있습니다. 차지나 이벤트에서 참조 중인 항목과 마지막 남은 항목은 삭제를 막습니다. 코드 중복, 빈 코드, 최소값이 최대값보다 큰 경우에도 저장을 막습니다. 재료 조성은 백업 이력에 보존되지만 합금 수율 계산에는 아직 사용하지 않습니다. `flux` 분류의 투입 중량만 열수지 입력에 반영됩니다.
+강종·재료 설정은 계속 추가할 수 있고 사용되지 않은 항목은 삭제할 수 있습니다. 차지나 이벤트에서 참조 중인 항목과 마지막 남은 항목은 삭제를 막습니다. 코드 중복, 빈 코드, 최소값이 최대값보다 큰 경우에도 저장을 막습니다. 변경된 설정은 사유를 입력해야 새 로컬 버전으로 저장되며 변경자·시각·필드별 차이를 보존합니다. 재료 조성은 백업 이력에 보존되지만 합금 수율 계산에는 아직 사용하지 않습니다. `flux` 분류의 투입 중량만 열수지 입력에 반영됩니다.
 
 ### 계산 경계
 
@@ -99,7 +108,10 @@ effective coefficient = site-approved override > user override > literature orig
 ### 데이터와 보안
 
 - 운영 데이터는 브라우저의 로컬 IndexedDB에만 자동 저장됩니다.
+- 동일 파일의 여러 창은 저장 revision과 창 간 변경 알림을 사용합니다. 오래된 창은 최신 저장소를 다시 읽기 전까지 입력을 막습니다.
+- 입력 중인 폼 초안은 같은 PC 브라우저의 localStorage에 임시 보관되며 정식 조업 이력이 되려면 반드시 저장 버튼을 눌러야 합니다.
 - 복원 기준 파일은 CSV 7종과 `manifest.csv`를 묶은 ZIP이며, 정정·분석·예상 스냅샷·차지별 기준을 포함하고 복원 전에 SHA-256과 참조 무결성을 검증합니다.
+- 새 백업은 다운로드 직전 자체 재읽기 검사를 통과해야 하며 마지막 검증 결과를 화면에 남깁니다.
 - XLSX는 열람·보고용이며 복원 입력으로 사용하지 않습니다.
 - 실제 회사 차지, 사내 기준, 개인 정보 또는 기밀 계수를 이 공개 저장소에 커밋하지 마십시오.
 - 공개 DEMO 데이터는 모두 합성이며 실제 회사·설비·작업자를 나타내지 않습니다.
@@ -119,17 +131,17 @@ npm run test:e2e
 npm run test:sites
 ```
 
-설치된 브라우저를 별도로 확인하려면 Windows에서 `npm run test:e2e:chrome`과 `npm run test:e2e:edge`를 실행합니다. `npm run build:single`은 `app/package.json`의 버전에 맞춰 루트의 `release/BOF_Endpoint_Coach_v0.3.0.html`을 생성합니다.
+설치된 브라우저를 별도로 확인하려면 Windows에서 `npm run test:e2e:chrome`과 `npm run test:e2e:edge`를 실행합니다. `npm run build:single`은 `app/package.json`의 버전에 맞춰 루트의 `release/BOF_Endpoint_Coach_v0.4.0.html`을 생성합니다.
 
-검증된 v0.3.0 기준:
+검증된 v0.4.0 후보 기준:
 
 - ESLint: PASS
-- Vitest: 18개 파일, 91개 테스트 PASS
+- Vitest: 20개 파일, 99개 테스트 PASS
 - 일반 Vite 빌드: PASS
 - 단일 오프라인 HTML 빌드: PASS
 - 오프라인 호스팅/라우팅: 4개 테스트 PASS
-- Chromium·설치된 Google Chrome·Microsoft Edge에서 각각 17개 시나리오 PASS
-- 브라우저별 17개에는 실제 조업·정정 흐름 11개, 인간공학·영문 화면 2개, 서버 없는 단일 HTML 1개, 사용 설명서·GitHub형 README·메일 미리보기 3개가 포함
+- Chromium·설치된 Google Chrome·Microsoft Edge에서 각각 22개 시나리오 PASS
+- 브라우저별 22개에는 기존 조업·정정·문서 흐름 17개, 저장 충돌·초안·200%·이력 탐색 4개, 서버 없는 단일 HTML 두 창 충돌 1개가 포함
 - 작업자 설정→빈 시작→단위 환산→G0~G8→보관·삭제→초기화·복구 흐름: PASS
 - DEMO 차지 2건 개별 삭제와 Data Ledger 장식용 새로고침 부재: PASS
 - 손상 백업·불가능한 이력·잘못된 단위·시간·값의 저장/복원 차단: PASS
@@ -153,13 +165,13 @@ The current source uses synthetic DEMO heats and public-literature scenarios. It
 
 ### Quick start
 
-1. Download `BOF_Endpoint_Coach_v0.3.0.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
+1. Download `BOF_Endpoint_Coach_v0.4.0.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
 2. Open it in Microsoft Edge or Google Chrome on a desktop PC. No server or internet connection is required.
 3. Enter an operator display name and choose an empty workspace or optional synthetic DEMO.
 4. Review reference profiles, create a heat, and follow the central **Do this now** panel from G0 through G8. It changes from initial inputs to checkpoints, sampling, analysis, tap review, and post-treatment as records are saved.
 5. Export a CSV ZIP backup before browser reset, workstation handover, or shift change.
 
-See the [bilingual user guide](docs/user-guide.md) for the complete operating sequence.
+See the [bilingual user guide](docs/user-guide.md) for the operating sequence and the [detailed screen guide](docs/manual/취련코치_세부화면_사용설명서_v0.4.0.md) for field meanings, units, examples, and cautions. A self-contained [offline HTML guide with embedded screenshots](release/BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.4.0.html) is also included.
 
 ### Current limitations
 
@@ -171,8 +183,8 @@ See the [bilingual user guide](docs/user-guide.md) for the complete operating se
 - Material composition is retained, but alloy-yield prediction is not implemented.
 - There is no PLC, HMI, SCC, MES, or LIMS integration.
 - Historical correction is enabled, but automatic model training, automatic redeployment, and automatic target changes are not.
-- Each heat freezes its starting grade/equipment/coefficient snapshot. A full settings release/diff/approval workflow remains a later feature.
-- The UI targets desktop widths of 1280px or wider.
+- Each heat freezes its starting grade/equipment/coefficient snapshot. Local settings revisions now retain reasons and field-level differences; a full publish/withdraw approval workflow remains a later feature.
+- The UI is optimized for 1920×1080 at 100% and reflows through a 960×540 viewport, equivalent to 200% display scaling.
 
 ### Source layout
 

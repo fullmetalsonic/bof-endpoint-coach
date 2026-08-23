@@ -9,7 +9,7 @@ import { capturePredictionSnapshot } from "../src/domain/predictionHistory.js";
 
 describe("backup package", () => {
   it("uses the correction-ledger v0.3.0 backup schema", () => {
-    expect(APP_VERSION).toBe("0.3.0");
+    expect(APP_VERSION).toBe("0.4.0");
     expect(BACKUP_SCHEMA_VERSION).toBe("0.3.0");
     expect(createDemoState().schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
   });

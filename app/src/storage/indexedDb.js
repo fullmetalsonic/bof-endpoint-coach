@@ -4,6 +4,16 @@ const STORE_NAME = "state";
 const STATE_KEY = "application";
 const RECOVERY_KEY = "recovery";
 
+export class StorageConflictError extends Error {
+  constructor(expectedRevision, actualRevision) {
+    super("storage_revision_conflict");
+    this.name = "StorageConflictError";
+    this.code = "storage_revision_conflict";
+    this.expectedRevision = expectedRevision;
+    this.actualRevision = actualRevision;
+  }
+}
+
 function openDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -28,16 +38,41 @@ export async function loadState() {
   });
 }
 
-export async function saveState(state) {
+export async function saveState(state, expectedRevision = null) {
   const database = await openDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).put(state, STATE_KEY);
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(STATE_KEY);
+    let saved = null;
+    let conflict = null;
+    request.onsuccess = () => {
+      const currentRevision = Number(request.result?.storageRevision ?? 0);
+      if (expectedRevision !== null && currentRevision !== Number(expectedRevision)) {
+        conflict = new StorageConflictError(Number(expectedRevision), currentRevision);
+        transaction.abort();
+        return;
+      }
+      saved = {
+        ...state,
+        storageRevision: currentRevision + 1,
+        lastSavedAt: new Date().toISOString(),
+      };
+      store.put(saved, STATE_KEY);
+    };
+    request.onerror = () => reject(request.error);
     transaction.oncomplete = () => {
       database.close();
-      resolve();
+      resolve(saved);
     };
-    transaction.onerror = () => reject(transaction.error);
+    transaction.onerror = () => {
+      database.close();
+      reject(conflict ?? transaction.error);
+    };
+    transaction.onabort = () => {
+      database.close();
+      reject(conflict ?? transaction.error ?? new Error("storage_transaction_aborted"));
+    };
   });
 }
 

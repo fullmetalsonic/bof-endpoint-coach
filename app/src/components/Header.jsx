@@ -15,15 +15,16 @@ export function Header({ t, locale, screen, setScreen, setLocale, now, operatorN
     ["settings", "settings"],
     ["reports", "reports"],
     ["alerts", "alerts"],
+    ["help", "help"],
   ];
   return (
     <>
       <header className="app-header">
-        <button className="brand" type="button" onClick={() => setScreen("dashboard")} aria-label={t("dashboard")}>
+        <button className="brand" type="button" onClick={() => setScreen("dashboard")} aria-label={locale === "ko" ? "대시보드로 이동" : "Go to dashboard"}>
           <span className="brand-mark"><Factory weight="fill" /></span>
           <span><strong>{t("appName")}</strong><small>{t("appSubtitle")}</small></span>
         </button>
-        <nav className="main-nav" aria-label="Main navigation">
+        <nav className="main-nav" aria-label={locale === "ko" ? "주요 메뉴" : "Main navigation"}>
           {navigation.map(([id, key]) => (
             <button key={id} type="button" className={screen === id ? "active" : ""} onClick={() => setScreen(id)}>{t(key)}</button>
           ))}

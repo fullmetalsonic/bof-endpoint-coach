@@ -1,8 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { X } from "@phosphor-icons/react";
 import { concentrationUnits, convertConcentrationFromPercent, convertConcentrationToPercent, convertMassFromKg, convertMassToKg, isSupportedConcentrationUnit, isSupportedMassUnit, massUnits } from "../units/conversion.js";
 import { validateNewHeatInput, validationMessage } from "../domain/operationalValidation.js";
 import { FieldLabel } from "./FieldLabel.jsx";
+import { usePersistentDraft } from "../hooks/usePersistentDraft.js";
+import { useDialogFocus } from "../hooks/useDialogFocus.js";
+import { TermHelp } from "./TermHelp.jsx";
 
 function localDateTimeValue() {
   const now = new Date();
@@ -64,7 +67,9 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
     lanceHeightM: heat?.process?.lanceHeightM ?? "",
     oxygenFlowNm3PerMinute: heat?.process?.oxygenFlowNm3PerMinute ?? "",
   }), [chemistryUnit, expectedDuration, heat, massUnit, settings]);
-  const [form, setForm] = useState(defaults);
+  const draftKey = editing ? `heat-${heat.id}-initial` : "new-heat";
+  const { value: form, setValue: setForm, dirty, restored, commit, discard } = usePersistentDraft({ key: draftKey, baseVersion: settings.version, defaults });
+  const dialogRef = useDialogFocus({ onClose });
   const convertOptional = (value, converter, unit) => value === "" ? "" : converter(value, unit);
   const normalizedForm = {
     ...form,
@@ -95,20 +100,24 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
   const validation = validateNewHeatInput(normalizedForm, editing ? existingHeatIds.filter((id) => id !== heat.id) : existingHeatIds);
   const duplicate = validation.reason === "duplicate_heat_id";
   const ready = form.gradeCode && form.equipmentProfileId && form.coefficientProfileId && validation.ok;
+  const calculationCoreKeys = ["hotMetalKg", "hotMetalC", "hotMetalTemperatureC", "scrapKg", "scrapC", "plannedTotalOxygenNm3"];
+  const calculationCoreCount = calculationCoreKeys.filter((key) => form[key] !== "" && Number.isFinite(Number(form[key]))).length;
   const set = (key, value) => setForm((previous) => ({ ...previous, [key]: value }));
 
   function submit(event) {
     event.preventDefault();
     if (!ready) return;
-    onSave({ ...normalizedForm, id: form.id.trim() });
+    if (onSave({ ...normalizedForm, id: form.id.trim() }) === false) return;
+    commit();
     onClose();
   }
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <form className="event-modal heat-modal" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="heat-modal-title">
+      <form ref={dialogRef} tabIndex="-1" className="event-modal heat-modal" onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="heat-modal-title">
         <div className="modal-header"><div><span>G0 · {editing ? (locale === "ko" ? "기초 입력 관리" : "Initial input management") : t("initialInputs")}</span><h2 id="heat-modal-title">{editing ? (locale === "ko" ? "기초 입력값 확인·수정" : "Review initial inputs") : t("newHeat")}</h2></div><button type="button" onClick={onClose} aria-label={t("close")}><X /></button></div>
         <div className="form-guidance"><strong>{locale === "ko" ? "입력 구분" : "Input guide"}</strong><span>{locale === "ko" ? "필수는 차지 식별, 계산 핵심은 C·온도 참고예상에 필요, 정확도 권장은 미입력 시 문헌값을 사용합니다." : "Required identifies the heat; Calculation fields enable C and temperature estimates; Recommended fields fall back to literature values when blank."}</span></div>
+        {dirty && <div className="draft-status" role="status"><strong>{restored ? (locale === "ko" ? "저장되지 않은 초안을 복구했습니다." : "Unsaved draft restored.") : (locale === "ko" ? "작성 중 초안이 이 PC에 자동 보관됩니다." : "This draft is preserved automatically on this PC.")}</strong><button type="button" onClick={() => { discard(); onClose(); }}>{locale === "ko" ? "초안 버리기" : "Discard draft"}</button></div>}
         <div className="form-section-title">{t("heatIdentity")}</div>
         <div className="form-grid">
           <label><FieldLabel kind="required" locale={locale}>{t("heatNo")}</FieldLabel><input value={form.id} onChange={(event) => set("id", event.target.value)} required disabled={editing} />{duplicate && <small className="field-error">{t("duplicateHeat")}</small>}</label>
@@ -119,6 +128,7 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
           <label><FieldLabel kind="optional" locale={locale}>{t("expectedDuration")} (min)</FieldLabel><input type="number" min="1" value={form.expectedDurationMinutes} onChange={(event) => set("expectedDurationMinutes", event.target.value)} placeholder={locale === "ko" ? "선택 입력" : "Optional"} /></label>
         </div>
         <div className="form-section-title">{t("chargeAndOperation")}</div>
+        <div className={`calculation-completeness ${calculationCoreCount === calculationCoreKeys.length ? "complete" : "incomplete"}`} role="status"><strong>{locale === "ko" ? `계산 핵심 ${calculationCoreCount}/6 입력` : `${calculationCoreCount}/6 calculation fields`}</strong><span>{calculationCoreCount === calculationCoreKeys.length ? (locale === "ko" ? "C·온도 종점 참고예상을 계산할 기본 조건이 갖춰졌습니다." : "Basic conditions are ready for C and temperature endpoint estimates.") : (locale === "ko" ? "차지는 생성할 수 있지만, 비어 있는 핵심값 때문에 C·온도 예상이 ‘–’로 표시될 수 있습니다." : "The heat can be created, but missing core values may leave C and temperature estimates unavailable.")}</span></div>
         <div className="form-grid heat-input-grid">
           <label><FieldLabel kind="calculation" locale={locale}>{t("hotMetalMass")}</FieldLabel><div className="input-with-unit"><input type="number" min="0" value={form.hotMetalKg} onChange={(event) => set("hotMetalKg", event.target.value)} /><select aria-label={`${t("hotMetalMass")} ${t("unit")}`} value={form.hotMetalMassUnit} onChange={(event) => set("hotMetalMassUnit", event.target.value)}>{massUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
           <label><FieldLabel kind="calculation" locale={locale}>{t("hotMetalCarbon")}</FieldLabel><div className="input-with-unit"><input type="number" min="0" step="0.001" value={form.hotMetalC} onChange={(event) => set("hotMetalC", event.target.value)} /><select aria-label={`${t("hotMetalCarbon")} ${t("unit")}`} value={form.hotMetalCUnit} onChange={(event) => set("hotMetalCUnit", event.target.value)}>{concentrationUnits.map((unit) => <option key={unit}>{unit}</option>)}</select></div></label>
@@ -133,6 +143,13 @@ export function HeatModal({ heat = null, settings, existingHeatIds, locale, t, o
           <label><FieldLabel kind="optional" locale={locale}>{t("oxygenFlow")} (Nm³/min)</FieldLabel><input type="number" min="0" value={form.oxygenFlowNm3PerMinute} onChange={(event) => set("oxygenFlowNm3PerMinute", event.target.value)} /></label></>}
         </div>
         {editing && <div className="form-inline-note">{locale === "ko" ? "누적 산소·랜스·유량은 현재 단계의 ‘체크포인트 기록’에서 갱신합니다. 수정 이력과 작업자 이름은 자동 보존됩니다." : "Update cumulative oxygen, lance height, and flow through Checkpoint entry. The correction history and operator name are preserved automatically."}</div>}
+        <TermHelp locale={locale} items={[
+          { term: locale === "ko" ? "계획 총 산소 / 누적 산소" : "Planned / cumulative O₂", ko: "계획 총 산소는 종점까지의 계획 총량, 누적 산소는 현재까지 실제 공급된 양입니다. 둘 다 Nm³입니다.", en: "Planned oxygen is the endpoint plan; cumulative oxygen is the actual amount supplied so far. Both use Nm³." },
+          { term: "Nm³ / Nm³/min", ko: "표준 상태 기체 체적 / 1분당 표준 상태 산소 유량입니다. 실제 배관 체적 m³와 구분합니다.", en: "Normalized gas volume / normalized oxygen volume per minute; different from actual pipe-volume m³." },
+          { term: locale === "ko" ? "초기 부원료" : "Initial flux", ko: "G0에서 이미 투입된 flux 계열 부원료의 합계 질량입니다. 재료별 투입은 자재 투입 기록에 남깁니다.", en: "Total mass of flux-category materials already charged at G0. Record individual additions as material events." },
+          { term: locale === "ko" ? "랜스 높이" : "Lance height", ko: "현장 기준점에서 랜스까지의 거리입니다. 기준점과 허용 범위는 사업소 표준을 따릅니다.", en: "Distance from the site-defined reference point to the lance. Follow the site reference and limits." },
+          { term: "% / wt% / ppm", ko: "%와 wt%는 질량비로 동일하게 취급하며 1% = 10,000 ppm입니다. 선택 단위는 내부에서 %로 환산됩니다.", en: "% and wt% are treated as mass percent; 1% = 10,000 ppm. Inputs are normalized to percent." },
+        ]} />
         <div className="settings-warning heat-warning">{t("predictionCaution")}</div>
         {!validation.ok && <p className="modal-validation" role="alert">{validationMessage(validation.reason, locale)}</p>}
         <div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>{t("cancel")}</button><button type="submit" className="primary" disabled={!ready}>{editing ? (locale === "ko" ? "변경값 저장" : "Save changes") : t("createHeat")}</button></div>

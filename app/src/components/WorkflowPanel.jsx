@@ -11,12 +11,12 @@ const statusIcons = {
   blocked: WarningCircle,
 };
 
-function ActionButton({ step, onAction, onAdvance, onEditInitial, locale }) {
+function ActionButton({ step, onAction, onAdvance, onEditInitial, locale, writeLocked }) {
   if (!step || step.kind === "complete") return null;
-  if (step.kind === "advance") return <StageControls heat={step.heat} locale={locale} onAdvance={onAdvance} variant="primary" />;
+  if (step.kind === "advance") return <StageControls heat={step.heat} locale={locale} onAdvance={onAdvance} variant="primary" writeLocked={writeLocked} />;
   const click = step.kind === "edit_initial" ? onEditInitial : () => onAction(step.action);
   return (
-    <button type="button" className="workflow-primary-button" onClick={click}>
+    <button type="button" className="workflow-primary-button" onClick={click} disabled={writeLocked}>
       {step.kind === "edit_initial" && <PencilSimple weight="bold" />}
       {step.buttonLabel}
       <ArrowRight weight="bold" />
@@ -36,7 +36,7 @@ function PredictionNotice({ rows, locale, t }) {
   );
 }
 
-export function WorkflowPanel({ heat, locale, rows, t, onAction, onAdvance, onEditInitial }) {
+export function WorkflowPanel({ heat, locale, rows, t, onAction, onAdvance, onEditInitial, writeLocked = false }) {
   const workflow = getStageWorkflow(heat, locale);
   const current = { ...workflow.current, heat };
   const next = workflow.nextStage;
@@ -48,7 +48,7 @@ export function WorkflowPanel({ heat, locale, rows, t, onAction, onAdvance, onEd
         <div className="workflow-eyebrow"><span>{ko ? "현재 해야 할 일" : "Do this now"}</span><b>{workflow.completedCount}/{workflow.totalCount}</b></div>
         <h2 id="workflow-title">{current.title}</h2>
         <p>{current.body}</p>
-        <ActionButton step={current} onAction={onAction} onAdvance={onAdvance} onEditInitial={onEditInitial} locale={locale} />
+        <ActionButton step={current} onAction={onAction} onAdvance={onAdvance} onEditInitial={onEditInitial} locale={locale} writeLocked={writeLocked} />
         <div className="workflow-live" role="status" aria-live="polite">{ko ? `현재 단계 ${heat.stage}. ${current.title}` : `Current stage ${heat.stage}. ${current.title}`}</div>
       </div>
 
@@ -68,10 +68,10 @@ export function WorkflowPanel({ heat, locale, rows, t, onAction, onAdvance, onEd
           <span>{next ? (ko ? "다음 단계" : "Next stage") : (ko ? "진행 상태" : "Progress")}</span>
           <strong>{next ? `${next.code} ${ko ? next.labelKo : next.labelEn}` : (ko ? "작업 완료" : "Complete")}</strong>
           {heat.stage === "G6" && <p>{ko ? "출강 기록을 저장하면 G7로 자동 이동합니다." : "Saving the tap record automatically moves to G7."}</p>}
-          {next && heat.stage !== "G6" && !currentIsAdvance && <StageControls heat={heat} locale={locale} onAdvance={onAdvance} variant="secondary" />}
+          {next && heat.stage !== "G6" && !currentIsAdvance && <StageControls heat={heat} locale={locale} onAdvance={onAdvance} variant="secondary" writeLocked={writeLocked} />}
           {heat.stage === "G8" && <p>{ko ? "모든 단계 이력이 로컬에 저장됐습니다." : "All stage history is saved locally."}</p>}
         </div>
-        {heat.stage !== "G0" && <button type="button" className="workflow-edit-initial" onClick={onEditInitial}><PencilSimple />{ko ? "기초 입력값 확인·수정" : "Review initial inputs"}</button>}
+        {heat.stage !== "G0" && <button type="button" className="workflow-edit-initial" onClick={onEditInitial} disabled={writeLocked}><PencilSimple />{ko ? "기초 입력값 확인·수정" : "Review initial inputs"}</button>}
       </div>
     </section>
   );

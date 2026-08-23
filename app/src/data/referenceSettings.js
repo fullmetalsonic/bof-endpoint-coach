@@ -39,5 +39,7 @@ export function createReferenceSettings() {
     gates: ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"],
     unitPolicy: { mass: "kg", oxygen: "Nm³", temperature: "°C", chemistry: "%" },
     version: "DEMO-REF-001",
+    revisionHistory: [],
+    lastRevision: null,
   };
 }

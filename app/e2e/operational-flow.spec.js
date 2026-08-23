@@ -185,6 +185,7 @@ test("백업 다운로드 후 빈 작업공간에 같은 파일을 복원하고 
 
   await page.getByRole("button", { name: "작업공간 초기화" }).click();
   await page.getByRole("button", { name: "빈 작업으로 초기화" }).click();
+  await waitForState(page, (stored) => stored.heats.length === 0);
   await page.locator('input[type="file"]').setInputFiles(await backup.path());
   await expect(page.getByText(/해시 검증 후 전체 복원을 완료했습니다/)).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("button", { name: /백업 묶음 복원/ })).toBeEnabled();

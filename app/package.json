@@ -1,6 +1,6 @@
 {
   "name": "bof-endpoint-coach",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,8 @@
     "build:readme-html": "node scripts/prepare-readme-html.mjs",
     "build:user-guide": "node scripts/prepare-user-guide.mjs",
     "build:detailed-guide": "node scripts/prepare-detailed-guide.mjs",
+    "build:presentation-guide": "node scripts/prepare-presentation-guide.mjs",
+    "capture:v061-recovery": "node scripts/capture-v061-recovery-screenshots.mjs",
     "build:single": "vite build --config vite.single.config.mjs && node scripts/prepare-standalone.mjs",
     "check": "npm run lint && npm run test && npm run build && npm run build:single && npm run test:sites",
     "lint": "eslint src tests e2e scripts playwright.config.mjs vite.config.mjs vite.single.config.mjs",

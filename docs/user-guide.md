@@ -1,6 +1,6 @@
-# 취련 코치 v0.6.0 사용 설명서 / BOF Endpoint Coach v0.6.0 User Guide
+# 취련 코치 v0.6.1 사용 설명서 / BOF Endpoint Coach v0.6.1 User Guide
 
-이 문서는 현장에서 작업 순서를 빠르게 확인하는 한영 요약 설명서입니다. 모든 필드·단위·입력 예·오류 조건·정정·학습·JSON 복구 설명은 [초상세 처음사용자 설명서](manual/취련코치_초상세_처음사용자_설명서_v0.6.0.md)를 사용하십시오. 이미지가 포함된 오프라인 설명서는 `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.6.0.html`입니다.
+이 문서는 현장에서 작업 순서를 빠르게 확인하는 한영 요약 설명서입니다. 모든 필드·단위·입력 예·오류 조건·정정·학습·비상복구 카드·JSON 복구 설명은 [상세 설명서](manual/취련코치_상세_설명서_v0.6.1.md)를 사용하십시오. 사람에게 제품을 소개할 때는 [발표용 설명서](manual/취련코치_발표용_설명서_v0.6.1.md)를 사용하십시오. 이미지가 포함된 오프라인 문서는 `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.6.1.html`과 `BOF_Endpoint_Coach_PRESENTATION_GUIDE_v0.6.1.html`입니다.
 
 > **안전·품질 경계:** C·온도·P·Mn·Si·S는 공개 문헌 시나리오와 수동 입력으로 계산한 참고예상입니다. 실제 BOF 정확도는 아직 검증되지 않았습니다. 설비 제어, 인터록, 표준작업, 실험실 분석, 출강 승인, 취련사의 판단을 대체하지 않습니다.
 
@@ -8,7 +8,7 @@
 
 ### 1. 실행 전 준비
 
-1. `BOF_Endpoint_Coach_v0.6.0.html`을 회사 PC의 고정 작업 폴더에 저장합니다.
+1. `BOF_Endpoint_Coach_v0.6.1.html`을 회사 PC의 고정 작업 폴더에 저장합니다.
 2. Microsoft Edge 또는 Google Chrome에서 파일을 엽니다. 설치·서버·인터넷 연결은 필요하지 않습니다.
 3. 1920×1080, 브라우저 배율 100%를 권장합니다.
 4. 첫 화면에서 기록에 표시할 작업자 이름을 입력합니다. 로그인 계정이나 조직명이 아닙니다.
@@ -93,7 +93,20 @@
 
 각 학습 실행은 사용 데이터, 제외 이유, 학습/검증 성능, 후보 오프셋, SHA-256을 저장합니다. 새 데이터가 들어오면 과거 실행은 삭제하지 않고 `오래됨`으로 표시합니다. 추천은 자동 적용되지 않으며 설정 초안·작업자 검토·현장 승인·새 버전 저장을 거쳐야 합니다.
 
-### 8. 자동저장·JSON·복구점
+### 8. 보정계수 비상복구 카드
+
+![핵심 6개 비상복구 카드](manual/screenshots/v0.6.1/02-recovery-card-core.png)
+
+- `학습 · 계수` 또는 `기준 정보 → 계산 · 보정 계수`에서 엽니다.
+- 핵심값은 현재 적용 중인 C·온도·P·Mn·Si·S 오프셋 6개입니다. 성분은 `%p`, 온도는 `°C`입니다.
+- `상세 최대 24개`는 선택한 학습 실행의 `당시값·추천 증감·추천 후보값` 18개를 더해 보여줍니다.
+- 복구문자열, 프로필·계수버전·계산식, 기준지문 12자리, 확인코드 8자리를 함께 보관하십시오.
+- 수동 복구는 검사와 현재값 비교 후 설정 **초안**으로만 들어갑니다. `설정 저장` 전에는 적용되지 않습니다.
+- 카드는 전체 JSON을 대신하지 않으며 차지·샘플·오차·학습 근거를 복원하지 않습니다.
+
+![비상복구 값 검증](manual/screenshots/v0.6.1/05-recovery-card-validated-comparison.png)
+
+### 9. 자동저장·JSON·복구점
 
 ![저장·복구·보고서](manual/screenshots/v0.6.0/01-storage-recovery.png)
 
@@ -108,17 +121,18 @@
 
 JSON 불러오기는 자동 병합하지 않고 전체 교체합니다. 현재/백업 요약과 해시를 비교하고 확인 체크를 해야 적용됩니다. 적용 직전 현재 상태를 보호 복구점으로 만들며 7일 동안 `마지막 불러오기 취소`를 사용할 수 있습니다.
 
-### 9. 데이터와 보안
+### 10. 데이터와 보안
 
 - 네트워크 전송과 PLC·HMI·SCC·MES·LIMS 연동은 없습니다.
 - 자동저장은 같은 브라우저 안의 편의 기능일 뿐 외부 백업이 아닙니다.
 - 교대·계수변경·브라우저 초기화·PC 이동 전에 전체 JSON을 저장하십시오.
 - 실제 회사 차지, 사내 기준, 개인정보, 현장 계수, 자격증명을 공개 저장소에 올리지 마십시오.
+- 비상복구 카드·복구문자열·사진·출력물에도 현장 보정계수가 포함될 수 있으므로 승인된 장소에 보관하고 정해진 절차로 폐기하십시오.
 - 같은 HTML을 여러 창에서 열어 충돌이 감지되면 오래된 창은 쓰기가 막힙니다. 최신 상태를 다시 읽으십시오.
 
 ## English quick guide
 
-1. Open `BOF_Endpoint_Coach_v0.6.0.html` in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
+1. Open `BOF_Endpoint_Coach_v0.6.1.html` in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
 2. Enter a local operator display name. It is not a login or a fixed department label.
 3. Choose synthetic **DEMO** for practice or an empty workspace for manual field entry.
 4. Review grade, material, equipment, gate, unit, and coefficient settings before creating a heat.
@@ -128,7 +142,8 @@ JSON 불러오기는 자동 병합하지 않고 전체 교체합니다. 현재/�
 8. Read the estimate as **literature baseline + adopted-sample adjustment + approved site offset**.
 9. After tapping, explicitly mark a confirmed analysis as the actual endpoint before it can enter learning.
 10. Review reproducible learning runs and coefficient candidates. No candidate is applied automatically.
-11. Routine work is autosaved to IndexedDB. Export the full integrity-checked JSON before handover, settings changes, browser cleanup, or PC transfer.
-12. JSON restore is a verified full replacement, not a merge. A protected pre-restore point enables a seven-day undo.
+11. Keep the emergency recovery card when a screenshot, print, or handwritten copy of the six applied offsets is needed. The optional 18 details do not recreate lost training evidence.
+12. Routine work is autosaved to IndexedDB. Export the full integrity-checked JSON before handover, settings changes, browser cleanup, or PC transfer.
+13. JSON restore is a verified full replacement, not a merge. A protected pre-restore point enables a seven-day undo.
 
 **Field limits:** all six endpoint values remain unvalidated public-literature reference estimates. Scenario ranges are not confidence intervals. Always prioritize plant standards, laboratory results, interlocks, tap authorization, and operator judgment.

@@ -2,7 +2,7 @@ import { createReferenceSettings } from "./referenceSettings.js";
 import { normalizeSampleAnalyses } from "../domain/analysisRecords.js";
 import { captureHeatReferenceSnapshot } from "../domain/referenceSnapshot.js";
 
-export const APP_VERSION = "0.6.0";
+export const APP_VERSION = "0.6.1";
 export const BACKUP_SCHEMA_VERSION = "0.6.0";
 export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", "0.2.0", "0.2.1", "0.3.0", "0.4.0", BACKUP_SCHEMA_VERSION];
 

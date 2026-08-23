@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, Database, Flask, Funnel, TrendUp, WarningCircle } from "@phosphor-icons/react";
+import { ArrowRight, Database, Flask, Funnel, Lifebuoy, TrendUp, WarningCircle } from "@phosphor-icons/react";
 import { buildResidualLedger } from "../calibration/residualLedger.js";
 import { buildStateCalibrationRecommendations } from "../calibration/stateRecommendations.js";
 import { learningEligibilitySummary } from "../calibration/trainingRun.js";
@@ -33,7 +33,7 @@ function elementLabel(element, locale) {
   return element;
 }
 
-export function LearningScreen({ state, locale, canWrite, onBringCandidate }) {
+export function LearningScreen({ state, locale, canWrite, onBringCandidate, onOpenRecoveryCard }) {
   const [elementFilter, setElementFilter] = useState("all");
   const ledger = useMemo(() => buildResidualLedger(state), [state]);
   const recommendations = useMemo(() => buildStateCalibrationRecommendations(state, ledger), [state, ledger]);
@@ -44,7 +44,7 @@ export function LearningScreen({ state, locale, canWrite, onBringCandidate }) {
   const ko = locale === "ko";
 
   return <main className="workspace-screen learning-screen" data-testid="learning-screen">
-    <div className="workspace-heading"><div><span>LITERATURE MODEL → RESIDUAL DATA → REVIEWED CORRECTION</span><h1>{ko ? "학습 · 계수 추천" : "Learning · coefficient recommendations"}</h1><p>{ko ? "완료 차지의 종점 예상과 확정 실측 차이를 재현 가능한 데이터셋으로 고정해 보정 후보를 만듭니다. 추천값은 자동 적용되지 않습니다." : "Completed-heat residuals are frozen into reproducible datasets to create correction candidates. Recommendations are never auto-applied."}</p></div></div>
+    <div className="workspace-heading"><div><span>LITERATURE MODEL → RESIDUAL DATA → REVIEWED CORRECTION</span><h1>{ko ? "학습 · 계수 추천" : "Learning · coefficient recommendations"}</h1><p>{ko ? "완료 차지의 종점 예상과 확정 실측 차이를 재현 가능한 데이터셋으로 고정해 보정 후보를 만듭니다. 추천값은 자동 적용되지 않습니다." : "Completed-heat residuals are frozen into reproducible datasets to create correction candidates. Recommendations are never auto-applied."}</p></div><button type="button" className="recovery-card-entry-button" onClick={onOpenRecoveryCard}><Lifebuoy /><strong>{ko ? "보정계수 비상복구 카드" : "Coefficient recovery card"}</strong><span>{ko ? "핵심 6개 · 상세 최대 24개" : "Core 6 · detailed up to 24"}</span></button></div>
 
     <section className="learning-flow panel" aria-label={ko ? "학습 흐름" : "Learning flow"}><div><Flask /><strong>{ko ? "문헌 모델" : "Literature model"}</strong><span>BOF-REF-CALC 0.3.0</span></div><ArrowRight /><div><Funnel /><strong>{ko ? "학습 적격" : "Eligible heats"}</strong><span>{eligibility.eligibleHeatCount} / {eligibility.heatCount}</span></div><ArrowRight /><div><Database /><strong>{ko ? "오차 대장" : "Residual ledger"}</strong><span>{ledger.length} {ko ? "성분 행" : "element rows"}</span></div><ArrowRight /><div><TrendUp /><strong>{ko ? "현재 학습 실행" : "Current runs"}</strong><span>{currentRuns.length}</span></div></section>
 

@@ -12,6 +12,7 @@ const previewPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_EMAIL_PREVI
 
 const images = [
   { path: "docs/manual/screenshots/v0.6.0/03-dashboard-g6.png", cid: "bof-dashboard-g6" },
+  { path: "docs/manual/screenshots/v0.6.1/02-recovery-card-core.png", cid: "bof-recovery-card-core" },
   { path: "docs/manual/screenshots/v0.6.0/01-storage-recovery.png", cid: "bof-storage-recovery" },
   { path: "docs/manual/screenshots/v0.6.0/04-prediction-explanation.png", cid: "bof-prediction-explanation" },
   { path: "docs/manual/screenshots/v0.6.0/05-learning-coefficient-runs.png", cid: "bof-learning-runs" },

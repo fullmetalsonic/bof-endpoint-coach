@@ -3,10 +3,11 @@ import { pathToFileURL } from "node:url";
 import { expect, test } from "@playwright/test";
 
 const documents = [
-  ["사용 설명서", "BOF_Endpoint_Coach_USER_GUIDE_v0.6.0.html", /v0\.6\.0/],
-  ["초상세 처음사용자 설명서", "BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.6.0.html", /v0\.6\.0/],
-  ["GitHub형 README", "BOF_Endpoint_Coach_README_v0.6.0.html", /BOF Endpoint Coach/],
-  ["메일 미리보기", "BOF_Endpoint_Coach_EMAIL_PREVIEW_v0.6.0.html", /BOF Endpoint Coach/],
+  ["사용 설명서", "BOF_Endpoint_Coach_USER_GUIDE_v0.6.1.html", /v0\.6\.1/],
+  ["상세 설명서", "BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.6.1.html", /v0\.6\.1/],
+  ["발표용 설명서", "BOF_Endpoint_Coach_PRESENTATION_GUIDE_v0.6.1.html", /v0\.6\.1/],
+  ["GitHub형 README", "BOF_Endpoint_Coach_README_v0.6.1.html", /BOF Endpoint Coach/],
+  ["메일 미리보기", "BOF_Endpoint_Coach_EMAIL_PREVIEW_v0.6.1.html", /BOF Endpoint Coach/],
 ];
 
 for (const [label, filename, heading] of documents) {

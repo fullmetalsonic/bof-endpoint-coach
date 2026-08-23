@@ -1,6 +1,7 @@
 import { COEFFICIENT_FIELDS, coefficientValueErrors } from "../calculation/coefficientProfile.js";
 
 const coefficientFieldKeys = new Set(COEFFICIENT_FIELDS.map((field) => field.key));
+const calibrationFieldKeys = new Set(["C", "temperature", "P", "Mn", "Si", "S"]);
 const massUnits = new Set(["kg", "t", "g"]);
 const chemistryUnits = new Set(["%", "wt%", "ppm"]);
 
@@ -15,6 +16,31 @@ function duplicates(values) {
 
 function finite(value) {
   return value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value));
+}
+
+function manualRecoverySourceValid(source, calibrationOffsets) {
+  if (source === undefined || source === null) return true;
+  if (!source || typeof source !== "object" || Array.isArray(source)) return false;
+  if (source.cardVersion !== "BOFRC1"
+    || !Number.isFinite(new Date(source.enteredAt).getTime())
+    || !source.enteredBy?.trim()
+    || String(source.reason ?? "").trim().length < 3
+    || !source.sourceProfileId?.trim()
+    || !source.sourceCoefficientVersionId?.trim()
+    || !source.formulaVersion?.trim()
+    || !/^[A-F0-9]{12}$/.test(source.baseFingerprint ?? "")
+    || !/^[A-F0-9]{8}$/.test(source.coreCheckCode ?? "")
+    || source.evidenceRestored !== false) return false;
+  const offsets = source.coreOffsets ?? {};
+  if (["C", "P", "Mn", "Si", "S"].some((key) => !finite(offsets[key]) || Math.abs(Number(offsets[key])) > 100)
+    || !finite(offsets.temperature) || Math.abs(Number(offsets.temperature)) > 500) return false;
+  if (calibrationFieldKeys.size !== Object.keys(offsets).filter((key) => calibrationFieldKeys.has(key)).length
+    || [...calibrationFieldKeys].some((key) => Math.abs(Number(offsets[key]) - Number(calibrationOffsets?.[key])) > 1e-10)) return false;
+  const details = source.referenceLearningValues;
+  if (!Array.isArray(details) || details.length > 6 || new Set(details.map((row) => row.element)).size !== details.length) return false;
+  return details.every((row) => calibrationFieldKeys.has(row.element)
+    && [row.currentOffset, row.recommendedDelta, row.candidateOffset].every(finite)
+    && Math.abs(Number(row.currentOffset) + Number(row.recommendedDelta) - Number(row.candidateOffset)) < 1e-8);
 }
 
 export function validateSettings(settings, locale = "ko") {
@@ -90,6 +116,9 @@ export function validateSettings(settings, locale = "ko") {
     if (["C", "P", "Mn", "Si", "S"].some((key) => !finite(offsets[key]) || Math.abs(Number(offsets[key])) > 100)
       || !finite(offsets.temperature) || Math.abs(Number(offsets.temperature)) > 500) {
       errors.push(locale === "ko" ? `${profile.id} 학습 보정 오프셋을 확인하십시오.` : `Check ${profile.id} learning correction offsets.`);
+    }
+    if (!manualRecoverySourceValid(profile.manualRecoverySource, offsets)) {
+      errors.push(locale === "ko" ? `${profile.id} 비상 수동복구 출처의 형식과 확인코드를 확인하십시오.` : `Check ${profile.id} emergency manual-recovery source metadata.`);
     }
   });
   return errors;

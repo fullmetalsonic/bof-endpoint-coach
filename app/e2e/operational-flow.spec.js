@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { advance, clearWorkspace, createHeat, startEmpty, waitForState } from "./helpers.js";
+import { advance, clearWorkspace, createHeat, openNewHeat, startEmpty, waitForState } from "./helpers.js";
 
 test.beforeEach(async ({ page }) => {
   await clearWorkspace(page);
@@ -10,12 +10,12 @@ test("빈 목표값의 신규 강종으로 차지를 만들어도 화면이 중�
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await startEmpty(page);
 
-  await page.getByRole("button", { name: "기준 정보" }).click();
+  await page.locator(".main-nav").getByRole("button", { name: "기준 정보" }).click();
   await page.getByRole("button", { name: /강종 추가/ }).click();
   await page.getByLabel("변경 사유").fill("빈 목표 강종 추가 시험");
   await page.getByRole("button", { name: "설정 저장" }).click();
   await page.locator(".main-nav").getByRole("button", { name: "대시보드" }).click();
-  await page.getByRole("button", { name: /신규 차지 시작/ }).click();
+  await openNewHeat(page);
   await page.getByLabel("강종").selectOption("GRADE-2");
   await page.getByRole("button", { name: "차지 시작", exact: true }).click();
 
@@ -232,7 +232,7 @@ test("작업자 변경, 차지 취소·보관, 초기화 복구와 금일 현황
 
 test("미래·역행 시각과 중복 차지는 화면에서 저장되지 않는다", async ({ page }) => {
   await startEmpty(page);
-  await page.getByRole("button", { name: /신규 차지 시작/ }).click();
+  await openNewHeat(page);
   await page.getByLabel("차지 번호").fill("E2E-TIME");
   await page.getByLabel("시각").fill("2099-01-01T00:00");
   await expect(page.getByRole("alert")).toContainText("미래인 시각");
@@ -246,7 +246,7 @@ test("미래·역행 시각과 중복 차지는 화면에서 저장되지 않는
   await expect(page.getByRole("button", { name: /기록하고 이동$/ })).toBeDisabled();
   await page.getByRole("button", { name: "취소", exact: true }).click();
 
-  await page.getByRole("button", { name: /신규 차지/ }).last().click();
+  await openNewHeat(page);
   await page.getByLabel("차지 번호").fill("E2E-TIME");
   await expect(page.getByRole("alert")).toContainText("이미 존재하는 차지 번호");
   await expect(page.getByRole("button", { name: "차지 시작", exact: true })).toBeDisabled();

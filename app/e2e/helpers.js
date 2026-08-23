@@ -19,8 +19,12 @@ export async function startEmpty(page, operator = "E2E 작업자") {
   await expect(page.getByText("진행 중인 차지가 없습니다")).toBeVisible();
 }
 
+export async function openNewHeat(page) {
+  await page.getByRole("button", { name: /실제 수동 입력 시작|신규 차지/ }).last().click();
+}
+
 export async function createHeat(page, id, { fullInputs = false } = {}) {
-  await page.getByRole("button", { name: /신규 차지/ }).last().click();
+  await openNewHeat(page);
   await page.getByLabel("차지 번호").fill(id);
   if (fullInputs) {
     const fillField = async (label, value) => page.locator("label").filter({ hasText: label }).getByRole("spinbutton").fill(String(value));

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { clearWorkspace, createHeat, startEmpty, waitForState } from "./helpers.js";
+import { clearWorkspace, createHeat, openNewHeat, startEmpty, waitForState } from "./helpers.js";
 
 test.beforeEach(async ({ page }) => {
   await clearWorkspace(page);
@@ -7,17 +7,17 @@ test.beforeEach(async ({ page }) => {
 
 test("작성 중인 신규 차지 초안은 닫은 뒤 복구하거나 명시적으로 버릴 수 있다", async ({ page }) => {
   await startEmpty(page, "초안 검증자");
-  await page.getByRole("button", { name: /신규 차지/ }).last().click();
+  await openNewHeat(page);
   const dialog = page.getByRole("dialog", { name: "신규 차지" });
   await dialog.getByLabel("차지 번호").fill("DRAFT-RECOVER");
   await dialog.getByRole("button", { name: "닫기" }).click();
 
-  await page.getByRole("button", { name: /신규 차지/ }).last().click();
+  await openNewHeat(page);
   await expect(page.getByLabel("차지 번호")).toHaveValue("DRAFT-RECOVER");
   await expect(page.getByText("저장되지 않은 초안을 복구했습니다.")).toBeVisible();
   await page.getByRole("button", { name: "초안 버리기" }).click();
 
-  await page.getByRole("button", { name: /신규 차지/ }).last().click();
+  await openNewHeat(page);
   await expect(page.getByLabel("차지 번호")).not.toHaveValue("DRAFT-RECOVER");
 });
 

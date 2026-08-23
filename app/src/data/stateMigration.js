@@ -16,6 +16,9 @@ export function normalizeCoachState(state) {
     onboardingCompleted: state.onboardingCompleted ?? true,
     currentHeatId: state.heats?.some((heat) => heat.id === state.currentHeatId) ? state.currentHeatId : state.heats?.[0]?.id ?? null,
     settings: normalizedSettings,
+    modelRegistry: state.modelRegistry ?? [{ id: "BOF-REF-CALC 0.3.0", type: "literature_hybrid", status: "reference", source: "public_literature", createdAt: "2026-08-23T00:00:00.000Z" }],
+    trainingRuns: state.trainingRuns ?? [],
+    restoreMetadata: state.restoreMetadata ?? null,
     heats: (state.heats ?? []).map((heat) => {
       const stage = getStageDefinition(heat.stage);
       const initialStageAt = heat.events?.find((event) => event.type === "charge" || event.type === "heat_created")?.occurredAt ?? heat.startedAt;

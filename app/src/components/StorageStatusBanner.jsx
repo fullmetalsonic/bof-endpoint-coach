@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Archive, ArrowClockwise, WarningCircle } from "@phosphor-icons/react";
-import { createBackupBlob, downloadBlob } from "../reports/backup.js";
+import { downloadBlob } from "../reports/backup.js";
+import { createJsonBackup } from "../reports/jsonBackup.js";
 
 const labels = {
   error: {
@@ -27,10 +28,10 @@ export function StorageStatusBanner({ status, state, locale, onRetrySave, onRelo
     if (!state) return;
     try {
       const at = new Date().toISOString();
-      const filename = `bof-endpoint-coach-emergency-${at.replaceAll(":", "-").slice(0, 19)}.zip`;
-      const blob = await createBackupBlob(state);
-      downloadBlob(blob, filename);
-      setBackupMessage(locale === "ko" ? "비상 백업을 저장했습니다." : "Emergency backup saved.");
+      const created = await createJsonBackup(state, [], { createdAt: at });
+      const filename = created.filename.replace("Backup_", "Emergency_");
+      downloadBlob(created.blob, filename);
+      setBackupMessage(locale === "ko" ? `비상 JSON 생성·검증 완료 · SHA-256 ${created.sha256.slice(0, 12)}…` : `Emergency JSON created and verified · SHA-256 ${created.sha256.slice(0, 12)}…`);
     } catch (error) {
       setBackupMessage(`${locale === "ko" ? "비상 백업 실패" : "Emergency backup failed"}: ${error.message}`);
     }

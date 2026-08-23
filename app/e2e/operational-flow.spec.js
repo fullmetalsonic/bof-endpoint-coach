@@ -47,31 +47,31 @@ test("현재 작업 안내가 G0 기초값부터 G3 샘플·분석·체크포인
   await expect(page.getByRole("button", { name: "체크포인트 기록 · 지금 입력" })).toBeVisible();
   await workflow.getByRole("button", { name: "체크포인트 입력창 열기" }).click();
   await page.getByRole("spinbutton", { name: /누적 산소량/ }).fill("1000");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(workflow.getByRole("heading", { name: "G2 용해 초기 단계로 이동" })).toBeVisible();
   await expect(page.getByRole("button", { name: "체크포인트 기록 · 지금 입력" })).toHaveCount(0);
 
   await advance(page, "G1", "G2");
   await workflow.getByRole("button", { name: "체크포인트 입력창 열기" }).click();
   await page.getByRole("spinbutton", { name: /누적 산소량/ }).fill("3000");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await advance(page, "G2", "G3");
 
   await expect(workflow.getByRole("heading", { name: "공정 샘플 채취" })).toBeVisible();
   await workflow.getByRole("button", { name: "샘플 채취 입력창 열기" }).click();
   await page.getByLabel("샘플 ID").fill("GUIDE-SAMPLE-01");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(workflow.getByRole("heading", { name: "샘플 분석값 입력" })).toBeVisible();
 
   await workflow.getByRole("button", { name: "분석 결과 입력창 열기" }).click();
   await page.getByRole("spinbutton", { name: /^C / }).fill("0.08");
   await page.getByRole("spinbutton", { name: "T (°C)" }).fill("1650");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(workflow.getByRole("heading", { name: "조업 체크포인트 갱신" })).toBeVisible();
 
   await workflow.getByRole("button", { name: "체크포인트 입력창 열기" }).click();
   await page.getByRole("spinbutton", { name: /누적 산소량/ }).fill("7000");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(workflow.getByRole("heading", { name: "G4 용해 후기 단계로 이동" })).toBeVisible();
   await expect(workflow.locator("li.done")).toHaveCount(3);
 });
@@ -94,11 +94,11 @@ test("수동 단위 환산부터 G8 완료까지 실제 입력 흐름과 재실�
   await advance(page, "G0", "G1");
   await page.getByRole("button", { name: "체크포인트 기록" }).click();
   await page.getByRole("spinbutton", { name: /누적 산소량/ }).fill("5000");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await page.getByRole("button", { name: "체크포인트 기록" }).click();
   await page.getByRole("spinbutton", { name: /누적 산소량/ }).fill("4900");
   await expect(page.getByRole("alert")).toContainText("누적 산소량은 이전 기록보다 작아질 수 없습니다");
-  await expect(page.getByRole("button", { name: "저장" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "저장", exact: true })).toBeDisabled();
   await page.getByRole("button", { name: "초안 버리기", exact: true }).click();
 
   await advance(page, "G1", "G2");
@@ -108,27 +108,27 @@ test("수동 단위 환산부터 G8 완료까지 실제 입력 흐름과 재실�
 
   await page.getByRole("button", { name: "샘플 채취 기록" }).click();
   await page.getByLabel("샘플 ID").fill("FINAL-001");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await page.locator(".workflow-panel").getByRole("button", { name: "분석 결과 입력창 열기" }).click();
   await page.getByRole("spinbutton", { name: /^C / }).fill("0.06");
   await page.getByRole("spinbutton", { name: /^P / }).fill("200");
   await page.getByRole("combobox", { name: "P 단위" }).selectOption("ppm");
   await page.getByRole("spinbutton", { name: "T (°C)" }).fill("1670");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await page.getByRole("button", { name: "재취련 기록" }).click();
   await page.getByRole("spinbutton", { name: /추가 산소/ }).fill("200");
   await page.getByRole("spinbutton", { name: /시간 \(min\)/ }).fill("1");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await advance(page, "G5", "G6");
 
   await page.getByRole("button", { name: "출강 기록" }).click();
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.getByRole("heading", { name: /^G7 / })).toBeVisible();
 
   await page.getByRole("button", { name: "자재 투입 기록" }).click();
   await page.getByRole("spinbutton", { name: /수량/ }).fill("1");
   await page.getByRole("combobox", { name: "단위" }).selectOption("t");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await advance(page, "G7", "G8");
 
   await page.waitForTimeout(500);
@@ -155,7 +155,7 @@ test("여러 차지의 공정값은 서로 섞이지 않고 초안 삭제 후에
   await advance(page, "G0", "G1");
   await page.getByRole("button", { name: "체크포인트 기록" }).click();
   await page.getByRole("spinbutton", { name: /누적 산소량/ }).fill("3200");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await createHeat(page, "E2E-B");
 
   let state = await waitForState(page, (stored) => stored.heats.some((heat) => heat.id === "E2E-B"));
@@ -173,24 +173,28 @@ test("여러 차지의 공정값은 서로 섞이지 않고 초안 삭제 후에
   expect(state.heats.map((heat) => heat.id)).toEqual(["E2E-A"]);
 });
 
-test("백업 다운로드 후 빈 작업공간에 같은 파일을 복원하고 Excel도 생성한다", async ({ page }) => {
+test("검증된 JSON으로 전체 교체·취소하고 Excel도 생성한다", async ({ page }) => {
   await startEmpty(page);
   await createHeat(page, "E2E-BACKUP");
   await page.locator(".main-nav").getByRole("button", { name: "분석 · 리포트" }).click();
 
   const backupDownload = page.waitForEvent("download");
-  await page.getByRole("button", { name: /전체 CSV 백업/ }).click();
+  await page.getByRole("button", { name: /전체 데이터 JSON으로 저장/ }).click();
   const backup = await backupDownload;
-  expect(backup.suggestedFilename()).toMatch(/bof-endpoint-coach-backup-.*\.zip/);
+  expect(backup.suggestedFilename()).toMatch(/BOF_Coach_Backup_.*\.json/);
 
   await page.getByRole("button", { name: "작업공간 초기화" }).click();
   await page.getByRole("button", { name: "빈 작업으로 초기화" }).click();
   await waitForState(page, (stored) => stored.heats.length === 0);
-  await page.locator('input[type="file"]').setInputFiles(await backup.path());
-  await expect(page.getByText(/해시 검증 후 전체 복원을 완료했습니다/)).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole("button", { name: /백업 묶음 복원/ })).toBeEnabled();
+  await page.locator('input[type="file"][accept*=".json"]').setInputFiles(await backup.path());
+  await expect(page.getByText("파일 검증 통과")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("checkbox", { name: /전체 교체를 진행/ }).check();
+  await page.getByRole("button", { name: "검증된 백업으로 전체 교체" }).click();
   let state = await waitForState(page, (stored) => stored.heats.some((heat) => heat.id === "E2E-BACKUP"));
   expect(state.heats.map((heat) => heat.id)).toContain("E2E-BACKUP");
+  await expect(page.getByRole("button", { name: "마지막 불러오기 취소" })).toBeVisible();
+  await page.getByRole("button", { name: "마지막 불러오기 취소" }).click();
+  await expect(page.getByText(/직전 작업공간을 복원했습니다/)).toBeVisible();
 
   const excelDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: /Excel 보고서/ }).click();
@@ -202,7 +206,7 @@ test("작업자 변경, 차지 취소·보관, 초기화 복구와 금일 현황
   await startEmpty(page, "초기작업자");
   await page.getByRole("button", { name: "초기작업자" }).click();
   await page.getByLabel("작업자 이름").fill("교대작업자");
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await createHeat(page, "E2E-CANCEL");
   await advance(page, "G0", "G1");
 
@@ -222,8 +226,9 @@ test("작업자 변경, 차지 취소·보관, 초기화 복구와 금일 현황
   await page.locator(".main-nav").getByRole("button", { name: "분석 · 리포트" }).click();
   await page.getByRole("button", { name: "작업공간 초기화" }).click();
   await page.getByRole("button", { name: "빈 작업으로 초기화" }).click();
-  await expect(page.getByRole("button", { name: /직전 상태 복구/ })).toBeVisible();
-  await page.getByRole("button", { name: /직전 상태 복구/ }).click();
+  const resetRecovery = page.getByRole("row").filter({ hasText: "작업공간 초기화 전" }).first();
+  await resetRecovery.getByRole("button", { name: "복원" }).click();
+  await resetRecovery.getByRole("button", { name: "복원 확인" }).click();
 
   const state = await waitForState(page, (stored) => stored.heats.some((heat) => heat.id === "E2E-CANCEL" && heat.status === "archived"));
   const restored = state.heats.find((heat) => heat.id === "E2E-CANCEL");
@@ -339,7 +344,7 @@ test("출강 이후에는 출강 시각 정정과 종점 실제값 지정이 별
   await page.getByLabel("작업자 이름").fill("출강 검증자");
   await page.getByRole("button", { name: "DEMO로 체험" }).click();
   await page.locator(".action-bar").getByRole("button", { name: /^출강 기록/ }).click();
-  await page.getByRole("button", { name: "저장" }).click();
+  await page.getByRole("button", { name: "저장", exact: true }).click();
   await expect(page.getByRole("heading", { name: /^G7 / })).toBeVisible();
 
   let state = await waitForState(page, (stored) => stored.heats[0].stage === "G7");

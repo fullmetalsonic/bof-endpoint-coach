@@ -65,7 +65,7 @@ function SimpleScreen({ screen, locale, t, state, onSelect }) {
 }
 
 export function App() {
-  const { state, currentHeat, recovery, saveStatus, loadError, canWrite, retryLoad, reloadFromStorage, retrySave, selectHeat, addEvent, advanceCurrentStage, createHeat, updateCurrentHeatInputs, updateSettings, recordOperation, replaceState, resetWorkspace, restoreRecovery, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, correctRecord, invalidateRecord, rollbackStage, correctTap, adoptAnalysis, selectActualEndpoint, setLocale } = useCoachState();
+  const { state, currentHeat, recoveryPoints, recoveryError, storageMeta, saveStatus, loadError, canWrite, retryLoad, reloadFromStorage, retrySave, selectHeat, addEvent, advanceCurrentStage, createHeat, updateCurrentHeatInputs, updateSettings, recordOperation, replaceState, restoreJsonBackup, resetWorkspace, restoreRecoveryPoint, undoLastJsonRestore, createManualRecoveryPoint, setRecoveryPointProtected, removeRecoveryPoint, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, correctRecord, invalidateRecord, rollbackStage, correctTap, adoptAnalysis, selectActualEndpoint, setLocale } = useCoachState();
   const [screen, setScreen] = useState("dashboard");
   const [action, setAction] = useState(null);
   const [newHeatOpen, setNewHeatOpen] = useState(false);
@@ -105,25 +105,27 @@ export function App() {
     if (target) setCorrection({ ...request, target });
   }
 
-  function confirmLifecycle(reason) {
+  async function confirmLifecycle(reason) {
     if (!requireWritable()) return;
-    if (lifecycle.action === "delete") deleteHeat(lifecycle.heat.id);
-    else changeHeatLifecycle(lifecycle.heat.id, lifecycle.action, reason);
-    setLifecycle(null);
+    const ok = lifecycle.action === "delete" ? await deleteHeat(lifecycle.heat.id) : await changeHeatLifecycle(lifecycle.heat.id, lifecycle.action, reason);
+    if (ok) setLifecycle(null);
+    return ok;
   }
 
-  function saveEvent(type, form) {
+  async function saveEvent(type, form) {
     if (!requireWritable()) return false;
-    addEvent(type, form);
+    const ok = await addEvent(type, form);
+    if (!ok) { showNotice(locale === "ko" ? "안전 복구점을 만들지 못해 기록을 적용하지 않았습니다." : "The record was not applied because the safety recovery point could not be created."); return false; }
     const name = eventNames[type] ?? [type, type];
     showNotice(locale === "ko" ? `${name[0]} 기록을 저장했습니다. 화면의 다음 행동을 확인하십시오.` : `${name[1]} saved. Check the next action on screen.`);
     return true;
   }
 
-  function saveStageTransition(form) {
+  async function saveStageTransition(form) {
     if (!requireWritable()) return false;
     const from = currentHeat?.stage;
-    advanceCurrentStage(form);
+    const ok = await advanceCurrentStage(form);
+    if (!ok) { showNotice(locale === "ko" ? "안전 복구점을 만들지 못해 단계 전환을 적용하지 않았습니다." : "The stage was not changed because the safety recovery point could not be created."); return false; }
     showNotice(locale === "ko" ? `${from} 단계 기록을 저장하고 다음 단계로 이동했습니다.` : `${from} was saved and the heat advanced to the next stage.`);
     return true;
   }
@@ -135,15 +137,17 @@ export function App() {
     return true;
   }
 
-  function confirmCorrection({ changes, reason }) {
+  async function confirmCorrection({ changes, reason }) {
     if (!currentHeat || !correction) return false;
     if (!requireWritable()) return false;
+    let result = true;
     if (correction.mode === "correct") correctRecord(currentHeat.id, correction.target.kind, correction.target.id, changes, reason);
     if (correction.mode === "void") invalidateRecord(currentHeat.id, correction.target.kind, correction.target.id, reason);
     if (correction.mode === "rollback") rollbackStage(currentHeat.id, reason);
-    if (correction.mode === "tap") correctTap(currentHeat.id, changes.occurredAt, reason);
+    if (correction.mode === "tap") result = await correctTap(currentHeat.id, changes.occurredAt, reason);
     if (correction.mode === "adopt") adoptAnalysis(currentHeat.id, correction.target.id, reason);
-    if (correction.mode === "actual") selectActualEndpoint(currentHeat.id, correction.target.id, reason);
+    if (correction.mode === "actual") result = await selectActualEndpoint(currentHeat.id, correction.target.id, reason);
+    if (!result) { showNotice(locale === "ko" ? "안전 복구점을 만들지 못해 변경을 적용하지 않았습니다." : "The change was not applied because the safety recovery point could not be created."); return false; }
     showNotice(locale === "ko" ? "정정 내용을 저장하고 영향받는 예상값과 이력을 다시 계산했습니다." : "The correction was saved and affected predictions and history were recalculated.");
     setCorrection(null);
     return true;
@@ -151,14 +155,14 @@ export function App() {
 
   return (
     <div className="app-shell" lang={locale}>
-      <Header t={t} locale={locale} screen={screen} setScreen={setScreen} setLocale={(nextLocale) => { if (requireWritable()) setLocale(nextLocale); }} now={now} operatorName={state.operatorProfile?.displayName} onEditOperator={() => setOperatorOpen(true)} />
+      <Header t={t} locale={locale} screen={screen} setScreen={setScreen} setLocale={(nextLocale) => { if (requireWritable()) setLocale(nextLocale); }} now={now} operatorName={state.operatorProfile?.displayName} onEditOperator={() => setOperatorOpen(true)} saveStatus={saveStatus} storageMeta={storageMeta} recoveryPointCount={recoveryPoints.length} />
       <StorageStatusBanner status={saveStatus} state={state} locale={locale} onRetrySave={retrySave} onReload={reloadFromStorage} />
-      {screen === "dashboard" && (currentHeat ? <Dashboard state={state} heat={currentHeat} locale={locale} t={t} selectHeat={selectHeat} saveStatus={saveStatus} canWrite={canWrite} onAction={setAction} onAdvance={() => setStageOpen(true)} onEditInitial={() => setInitialEditOpen(true)} onNewHeat={() => setNewHeatOpen(true)} onOpenTimeline={() => setScreen("heatDetail")} onOpenCorrection={openCorrection} onRollback={() => openCorrection({ mode: "rollback", target: timelineRecords(currentHeat).find((record) => record.kind === "stage" && record.status === "active" && record.stage === currentHeat.stage) })} /> : <EmptyDashboard locale={locale} onNewHeat={() => setNewHeatOpen(true)} onLoadDemo={() => { if (requireWritable()) resetWorkspace("demo"); }} onOpenSettings={() => setScreen("settings")} onOpenHelp={() => setScreen("help")} />)}
+      {screen === "dashboard" && (currentHeat ? <Dashboard state={state} heat={currentHeat} locale={locale} t={t} selectHeat={selectHeat} saveStatus={saveStatus} storageMeta={storageMeta} recoveryPointCount={recoveryPoints.length} canWrite={canWrite} onAction={setAction} onAdvance={() => setStageOpen(true)} onEditInitial={() => setInitialEditOpen(true)} onNewHeat={() => setNewHeatOpen(true)} onOpenTimeline={() => setScreen("heatDetail")} onOpenCorrection={openCorrection} onRollback={() => openCorrection({ mode: "rollback", target: timelineRecords(currentHeat).find((record) => record.kind === "stage" && record.status === "active" && record.stage === currentHeat.stage) })} /> : <EmptyDashboard locale={locale} onNewHeat={() => setNewHeatOpen(true)} onLoadDemo={() => { if (requireWritable()) resetWorkspace("demo"); }} onOpenSettings={() => setScreen("settings")} onOpenHelp={() => setScreen("help")} />)}
       {screen === "history" && <HistoryScreen state={state} locale={locale} t={t} canWrite={canWrite} onSelect={openHeatDetails} onLifecycle={(heat, lifecycleAction) => setLifecycle({ heat, action: lifecycleAction })} />}
       {screen === "heatDetail" && currentHeat && <HeatDetailScreen heat={currentHeat} locale={locale} onBack={() => setScreen("history")} onDashboard={() => setScreen("dashboard")} onCorrection={openCorrection} onAdopt={(analysisId) => openCorrection({ mode: "adopt", targetKind: "analysis", targetId: analysisId })} onActual={(analysisId) => openCorrection({ mode: "actual", targetKind: "analysis", targetId: analysisId })} />}
-      {screen === "settings" && <SettingsScreen key={state.settings.version} settings={state.settings} heats={state.heats} locale={locale} t={t} operatorName={state.operatorProfile?.displayName} canWrite={canWrite} coefficientCandidate={coefficientCandidate} onCandidateConsumed={() => setCoefficientCandidate(null)} onSave={(draft, reason) => { if (!requireWritable()) return false; updateSettings(draft, reason); showNotice(locale === "ko" ? "설정을 변경 이력과 함께 새 로컬 버전으로 저장했습니다." : "Settings were saved as a new local version with a change history."); return true; }} />}
+      {screen === "settings" && <SettingsScreen key={state.settings.version} settings={state.settings} heats={state.heats} locale={locale} t={t} operatorName={state.operatorProfile?.displayName} canWrite={canWrite} coefficientCandidate={coefficientCandidate} onCandidateConsumed={() => setCoefficientCandidate(null)} onSave={async (draft, reason) => { if (!requireWritable()) return false; const ok = await updateSettings(draft, reason); if (ok) showNotice(locale === "ko" ? "설정을 변경 이력과 함께 새 로컬 버전으로 저장했습니다." : "Settings were saved as a new local version with a change history."); else showNotice(locale === "ko" ? "안전 복구점을 만들지 못해 설정을 저장하지 않았습니다." : "Settings were not saved because the safety recovery point could not be created."); return ok; }} />}
       {screen === "learning" && <LearningScreen state={state} locale={locale} canWrite={canWrite} onBringCandidate={(candidate) => { setCoefficientCandidate(candidate); setScreen("settings"); showNotice(locale === "ko" ? "추천값을 설정 초안으로 옮겼습니다. 검토 후 변경 사유와 함께 저장하십시오." : "The candidate was moved to a settings draft. Review and save it with a reason."); }} />}
-      {screen === "reports" && <ReportsScreen state={state} recovery={recovery} locale={locale} t={t} canWrite={canWrite} onRestore={(nextState) => { if (!requireWritable()) return false; replaceState(nextState); return true; }} onOperation={(type, payload) => { if (!canWrite) return false; recordOperation(type, payload); return true; }} onReset={(mode) => { if (!requireWritable()) return false; resetWorkspace(mode); return true; }} onRestoreRecovery={() => { if (!requireWritable()) return false; restoreRecovery(); return true; }} />}
+      {screen === "reports" && <ReportsScreen state={state} storageMeta={storageMeta} recoveryPoints={recoveryPoints} recoveryError={recoveryError} locale={locale} t={t} canWrite={canWrite} onRestore={async (nextState) => { if (!requireWritable()) return false; return replaceState(nextState); }} onRestoreJson={async (parsed) => { if (!requireWritable()) return false; return restoreJsonBackup(parsed); }} onOperation={(type, payload) => { if (!canWrite) return false; recordOperation(type, payload); return true; }} onReset={async (mode) => { if (!requireWritable()) return false; return resetWorkspace(mode); }} onUndoJsonRestore={undoLastJsonRestore} onCreateRecovery={createManualRecoveryPoint} onProtectRecovery={setRecoveryPointProtected} onRemoveRecovery={removeRecoveryPoint} onRestoreRecoveryPoint={restoreRecoveryPoint} />}
       {(screen === "today" || screen === "alerts") && <SimpleScreen screen={screen} locale={locale} t={t} state={state} onSelect={navigateToHeat} />}
       {screen === "help" && <HelpScreen locale={locale} onStart={() => setScreen("dashboard")} onSettings={() => setScreen("settings")} />}
       {action && currentHeat && <EventModal action={action} heat={currentHeat} settings={state.settings} locale={locale} t={t} onClose={() => setAction(null)} onSave={saveEvent} />}

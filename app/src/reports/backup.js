@@ -11,7 +11,7 @@ const BASE_REQUIRED_FILES = ["heats.csv", "events.csv", "samples.csv", "analysis
 const V040_REQUIRED_FILES = [...BASE_REQUIRED_FILES, "coefficient_versions.csv", "calibration_residuals.csv"];
 
 function requiredFilesForSchema(schemaVersion) {
-  return schemaVersion === "0.4.0" ? V040_REQUIRED_FILES : BASE_REQUIRED_FILES;
+  return ["0.4.0", "0.6.0"].includes(schemaVersion) ? V040_REQUIRED_FILES : BASE_REQUIRED_FILES;
 }
 
 function csvRowCount(content) {

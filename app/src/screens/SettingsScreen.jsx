@@ -15,6 +15,7 @@ export function SettingsScreen({ settings, heats, locale, t, operatorName, onSav
   const defaults = useMemo(() => structuredClone(settings), [settings]);
   const { value: draft, setValue: setDraft, dirty, restored, commit, discard } = usePersistentDraft("settings", settings.version, defaults);
   const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
   const equipment = draft.equipmentProfiles[0];
   const coefficient = draft.coefficientProfiles[0];
   const coefficientBasis = resolveCoefficientProfile(coefficient);
@@ -42,16 +43,19 @@ export function SettingsScreen({ settings, heats, locale, t, operatorName, onSav
     setTab("coefficients");
     onCandidateConsumed?.();
   }
-  function save() {
-    if (validationErrors.length || !dirty || !reason.trim() || !canWrite) return;
-    if (onSave(draft, reason.trim()) === false) return;
+  async function save() {
+    if (validationErrors.length || !dirty || !reason.trim() || !canWrite || busy) return;
+    setBusy(true);
+    const ok = await onSave(draft, reason.trim());
+    setBusy(false);
+    if (!ok) return;
     commit();
     setReason("");
   }
   const lastRevision = settings.lastRevision;
   return (
     <main className="workspace-screen settings-screen" data-testid="settings-screen">
-      <div className="workspace-heading settings-heading"><div><span>{t("demoOnly")}</span><h1>{t("settingsTitle")}</h1><p>{locale === "ko" ? "계수와 기준은 프로필·버전별로 분리되며 변경 이력을 남깁니다." : "Targets and coefficients are versioned with a change history."}</p></div><div className="settings-save-controls"><label><span>{locale === "ko" ? "변경 사유" : "Change reason"}</span><input value={reason} onChange={(event) => setReason(event.target.value)} placeholder={locale === "ko" ? "예: 강종 목표 범위 검토" : "e.g. Grade target review"} /></label><button className="primary-button" type="button" onClick={save} disabled={!canWrite || validationErrors.length > 0 || !dirty || !reason.trim()}><FloppyDisk />{t("applySettings")}</button></div></div>
+      <div className="workspace-heading settings-heading"><div><span>{t("demoOnly")}</span><h1>{t("settingsTitle")}</h1><p>{locale === "ko" ? "계수와 기준은 프로필·버전별로 분리되며 변경 이력을 남깁니다." : "Targets and coefficients are versioned with a change history."}</p></div><div className="settings-save-controls"><label><span>{locale === "ko" ? "변경 사유" : "Change reason"}</span><input value={reason} disabled={busy} onChange={(event) => setReason(event.target.value)} placeholder={locale === "ko" ? "예: 강종 목표 범위 검토" : "e.g. Grade target review"} /></label><button className="primary-button" type="button" onClick={save} disabled={!canWrite || busy || validationErrors.length > 0 || !dirty || !reason.trim()}><FloppyDisk />{busy ? (locale === "ko" ? "안전 복구점 생성 중…" : "Creating safety point…") : t("applySettings")}</button></div></div>
       {coefficientCandidate && <div className="candidate-review-banner" role="status"><div><strong>{locale === "ko" ? "학습 화면에서 가져온 계수 추천이 있습니다." : "A coefficient recommendation is waiting for review."}</strong><span>{coefficientCandidate.element}: {coefficientCandidate.currentOffset} → {coefficientCandidate.candidateOffset.toFixed(coefficientCandidate.element === "temperature" ? 1 : 5)} {coefficientCandidate.unit} · {coefficientCandidate.count}{locale === "ko" ? "건 근거" : " rows"}</span></div><div><button type="button" className="secondary-button" onClick={onCandidateConsumed}>{locale === "ko" ? "추천 닫기" : "Dismiss"}</button><button type="button" className="primary-button" onClick={applyCoefficientCandidate}>{locale === "ko" ? "계수 초안에 반영" : "Apply to coefficient draft"}</button></div></div>}
       {dirty && <div className="draft-status" role="status"><WarningCircle weight="fill" /><div><strong>{restored ? (locale === "ko" ? "미저장 설정 초안을 복구했습니다." : "Unsaved settings draft restored.") : (locale === "ko" ? "저장되지 않은 설정 변경이 있습니다." : "There are unsaved settings changes.")}</strong><span>{locale === "ko" ? "다른 화면으로 이동해도 이 PC에 임시 보관됩니다. 정식 저장에는 변경 사유가 필요합니다." : "The draft remains on this PC if you leave this screen. A reason is required to save a new version."}</span></div><button type="button" onClick={() => { discard(); setReason(""); }}>{locale === "ko" ? "초안 버리기" : "Discard draft"}</button></div>}
       {validationErrors.length > 0 && <div className="validation-errors" role="alert"><strong>{locale === "ko" ? "설정 정합성을 확인하십시오." : "Check settings consistency."}</strong><ul>{validationErrors.map((error) => <li key={error}>{error}</li>)}</ul></div>}

@@ -21,11 +21,21 @@ function trimmedMean(values, trimFraction = 0.1) {
 
 function metrics(rows, offset = 0) {
   const errors = rows.map((row) => row.actual - (row.predicted + offset));
+  const rowsWithTargets = rows.filter((row) => Number.isFinite(Number(row.target?.min)) || Number.isFinite(Number(row.target?.max)));
+  const targetHits = rowsWithTargets.filter((row) => {
+    const prediction = row.predicted + offset;
+    return (!Number.isFinite(Number(row.target?.min)) || prediction >= Number(row.target.min))
+      && (!Number.isFinite(Number(row.target?.max)) || prediction <= Number(row.target.max));
+  });
   return {
     count: rows.length,
     bias: mean(errors),
     mae: mean(errors.map(Math.abs)),
     medianError: median(errors),
+    medianAbsoluteError: median(errors.map(Math.abs)),
+    targetHitCount: targetHits.length,
+    targetEvaluableCount: rowsWithTargets.length,
+    targetHitRate: rowsWithTargets.length ? targetHits.length / rowsWithTargets.length : null,
   };
 }
 
@@ -49,7 +59,7 @@ export function buildCalibrationRecommendations(rows, currentOffsets = {}, curre
     const delta = trimmedMean(residuals);
     const versionCurrent = !currentVersionId || group.coefficientVersionId === currentVersionId;
     const groupOffset = group.rows.at(-1)?.calibrationOffset;
-    const currentOffset = Number(versionCurrent ? currentOffsets[group.element] ?? 0 : groupOffset ?? 0);
+    const currentOffset = Number(currentVersionId ? (versionCurrent ? currentOffsets[group.element] ?? 0 : groupOffset ?? 0) : groupOffset ?? 0);
     const candidateOffset = currentOffset + delta;
     const trainingBaseline = metrics(trainingRows);
     const trainingCandidate = metrics(trainingRows, delta);

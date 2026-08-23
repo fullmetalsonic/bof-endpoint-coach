@@ -4,6 +4,7 @@ import { useDialogFocus } from "../hooks/useDialogFocus.js";
 
 export function HeatLifecycleModal({ heat, action, locale, onClose, onConfirm }) {
   const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
   const ko = locale === "ko";
   const labels = {
     delete: [ko ? "차지 삭제" : "Delete heat", ko ? "이 차지의 입력 이력을 이 PC에서 삭제합니다." : "Remove this heat and its local entries."],
@@ -14,10 +15,10 @@ export function HeatLifecycleModal({ heat, action, locale, onClose, onConfirm })
   const ready = action !== "cancel" || reason.trim();
   const dialogRef = useDialogFocus({ onClose });
   return (
-    <div className="modal-backdrop" role="presentation"><form ref={dialogRef} tabIndex="-1" className="event-modal lifecycle-modal" role="dialog" aria-modal="true" aria-labelledby="lifecycle-modal-title" onSubmit={(event) => { event.preventDefault(); if (ready) onConfirm(reason.trim()); }}>
+    <div className="modal-backdrop" role="presentation"><form ref={dialogRef} tabIndex="-1" className="event-modal lifecycle-modal" role="dialog" aria-modal="true" aria-labelledby="lifecycle-modal-title" onSubmit={async (event) => { event.preventDefault(); if (!ready || busy) return; setBusy(true); await onConfirm(reason.trim()); setBusy(false); }}>
       <div className="modal-header"><div><span>{heat.id}</span><h2 id="lifecycle-modal-title">{title}</h2></div><button type="button" onClick={onClose} aria-label={ko ? "닫기" : "Close"}><X /></button></div>
       <div className="lifecycle-content"><p>{description}</p>{action === "cancel" && <label><span>{ko ? "취소 사유" : "Cancellation reason"}</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} required /></label>}</div>
-      <div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>{ko ? "돌아가기" : "Back"}</button><button type="submit" className={action === "delete" ? "danger-button" : "primary"} disabled={!ready}>{title}</button></div>
+      <div className="modal-actions"><button type="button" className="secondary" disabled={busy} onClick={onClose}>{ko ? "돌아가기" : "Back"}</button><button type="submit" className={action === "delete" ? "danger-button" : "primary"} disabled={!ready || busy}>{busy ? (ko ? "안전 복구 중…" : "Creating safety point…") : title}</button></div>
     </form></div>
   );
 }

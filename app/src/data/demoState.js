@@ -2,9 +2,9 @@ import { createReferenceSettings } from "./referenceSettings.js";
 import { normalizeSampleAnalyses } from "../domain/analysisRecords.js";
 import { captureHeatReferenceSnapshot } from "../domain/referenceSnapshot.js";
 
-export const APP_VERSION = "0.5.0";
-export const BACKUP_SCHEMA_VERSION = "0.4.0";
-export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", "0.2.0", "0.2.1", "0.3.0", BACKUP_SCHEMA_VERSION];
+export const APP_VERSION = "0.6.0";
+export const BACKUP_SCHEMA_VERSION = "0.6.0";
+export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", "0.2.0", "0.2.1", "0.3.0", "0.4.0", BACKUP_SCHEMA_VERSION];
 
 export function createEmptyState({ locale = "ko", operatorProfile = { displayName: "" }, onboardingCompleted = false } = {}) {
   return {
@@ -16,6 +16,9 @@ export function createEmptyState({ locale = "ko", operatorProfile = { displayNam
     settings: createReferenceSettings(),
     heats: [],
     operationLog: [],
+    modelRegistry: [{ id: "BOF-REF-CALC 0.3.0", type: "literature_hybrid", status: "reference", source: "public_literature", createdAt: "2026-08-23T00:00:00.000Z" }],
+    trainingRuns: [],
+    restoreMetadata: null,
     lastSavedAt: null,
   };
 }

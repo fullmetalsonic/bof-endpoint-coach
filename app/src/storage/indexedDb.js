@@ -1,6 +1,6 @@
-const DB_NAME = "bof-endpoint-coach";
-const DB_VERSION = 1;
-const STORE_NAME = "state";
+import { openCoachDatabase, RECOVERY_STORE_NAME, STATE_STORE_NAME } from "./database.js";
+
+const STORE_NAME = STATE_STORE_NAME;
 const STATE_KEY = "application";
 const RECOVERY_KEY = "recovery";
 
@@ -14,21 +14,8 @@ export class StorageConflictError extends Error {
   }
 }
 
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE_NAME)) {
-        request.result.createObjectStore(STORE_NAME);
-      }
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 export async function loadState() {
-  const database = await openDatabase();
+  const database = await openCoachDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readonly");
     const request = transaction.objectStore(STORE_NAME).get(STATE_KEY);
@@ -39,7 +26,7 @@ export async function loadState() {
 }
 
 export async function saveState(state, expectedRevision = null) {
-  const database = await openDatabase();
+  const database = await openCoachDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");
     const store = transaction.objectStore(STORE_NAME);
@@ -77,7 +64,7 @@ export async function saveState(state, expectedRevision = null) {
 }
 
 export async function clearState() {
-  const database = await openDatabase();
+  const database = await openCoachDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");
     transaction.objectStore(STORE_NAME).delete(STATE_KEY);
@@ -90,7 +77,7 @@ export async function clearState() {
 }
 
 export async function saveRecoveryState(state) {
-  const database = await openDatabase();
+  const database = await openCoachDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");
     transaction.objectStore(STORE_NAME).put({ state, savedAt: new Date().toISOString() }, RECOVERY_KEY);
@@ -100,7 +87,7 @@ export async function saveRecoveryState(state) {
 }
 
 export async function loadRecoveryState() {
-  const database = await openDatabase();
+  const database = await openCoachDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readonly");
     const request = transaction.objectStore(STORE_NAME).get(RECOVERY_KEY);
@@ -111,11 +98,43 @@ export async function loadRecoveryState() {
 }
 
 export async function clearRecoveryState() {
-  const database = await openDatabase();
+  const database = await openCoachDatabase();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");
     transaction.objectStore(STORE_NAME).delete(RECOVERY_KEY);
     transaction.oncomplete = () => { database.close(); resolve(); };
     transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+export async function replaceWorkspace(state, recoveryPoints, expectedRevision = null) {
+  const database = await openCoachDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STORE_NAME, RECOVERY_STORE_NAME], "readwrite");
+    const stateStore = transaction.objectStore(STORE_NAME);
+    const recoveryStore = transaction.objectStore(RECOVERY_STORE_NAME);
+    const request = stateStore.get(STATE_KEY);
+    let saved = null;
+    let conflict = null;
+    request.onsuccess = () => {
+      const currentRevision = Number(request.result?.storageRevision ?? 0);
+      if (expectedRevision !== null && currentRevision !== Number(expectedRevision)) {
+        conflict = new StorageConflictError(Number(expectedRevision), currentRevision);
+        transaction.abort();
+        return;
+      }
+      saved = {
+        ...state,
+        storageRevision: currentRevision + 1,
+        lastSavedAt: new Date().toISOString(),
+      };
+      stateStore.put(saved, STATE_KEY);
+      recoveryStore.clear();
+      (recoveryPoints ?? []).forEach((point) => recoveryStore.put(structuredClone(point)));
+    };
+    request.onerror = () => reject(request.error);
+    transaction.oncomplete = () => { database.close(); resolve(saved); };
+    transaction.onerror = () => { database.close(); reject(conflict ?? transaction.error); };
+    transaction.onabort = () => { database.close(); reject(conflict ?? transaction.error ?? new Error("workspace_replace_aborted")); };
   });
 }

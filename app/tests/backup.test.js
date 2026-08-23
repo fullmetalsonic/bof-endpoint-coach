@@ -8,9 +8,9 @@ import { correctAnalysisRecord, setActualEndpointAnalysis } from "../src/domain/
 import { capturePredictionSnapshot } from "../src/domain/predictionHistory.js";
 
 describe("backup package", () => {
-  it("uses the learning-ledger v0.4.0 backup schema", () => {
-    expect(APP_VERSION).toBe("0.5.0");
-    expect(BACKUP_SCHEMA_VERSION).toBe("0.4.0");
+  it("uses the offline-learning v0.6.0 backup schema", () => {
+    expect(APP_VERSION).toBe("0.6.0");
+    expect(BACKUP_SCHEMA_VERSION).toBe("0.6.0");
     expect(createDemoState().schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
   });
 

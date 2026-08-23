@@ -1,4 +1,4 @@
-import { Factory, CalendarBlank, UserCircle, Translate } from "@phosphor-icons/react";
+import { Factory, CalendarBlank, Database, UserCircle, Translate } from "@phosphor-icons/react";
 
 function formatClock(value) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -7,7 +7,7 @@ function formatClock(value) {
   return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
-export function Header({ t, locale, screen, setScreen, setLocale, now, operatorName, onEditOperator }) {
+export function Header({ t, locale, screen, setScreen, setLocale, now, operatorName, onEditOperator, saveStatus, storageMeta, recoveryPointCount = 0 }) {
   const navigation = [
     ["dashboard", "dashboard"],
     ["history", "heatHistory"],
@@ -31,6 +31,7 @@ export function Header({ t, locale, screen, setScreen, setLocale, now, operatorN
           ))}
         </nav>
         <div className="header-tools">
+          <button className={`header-storage-button ${saveStatus}`} type="button" onClick={() => setScreen("reports")} title={`${locale === "ko" ? "브라우저 자동저장" : "Browser autosave"} · revision ${storageMeta?.revision ?? 0} · ${locale === "ko" ? "복구점" : "recovery points"} ${recoveryPointCount}`}><Database weight="fill" />{saveStatus === "saved" ? (locale === "ko" ? "자동저장 완료" : "Autosaved") : saveStatus === "saving" ? (locale === "ko" ? "저장 중" : "Saving") : (locale === "ko" ? "저장 확인" : "Check storage")}</button>
           <span className="header-clock"><CalendarBlank /> {formatClock(now)}</span>
           <button className="language-button" type="button" onClick={() => setLocale(locale === "ko" ? "en" : "ko")}><Translate /> {t("language")}</button>
           <button className="operator-button" type="button" onClick={onEditOperator}><UserCircle /> {operatorName || (locale === "ko" ? "작업자 설정" : "Set operator")}</button>

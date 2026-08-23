@@ -50,7 +50,7 @@ export async function createHeat(page, id, { fullInputs = false } = {}) {
 
 export async function readState(page) {
   return page.evaluate(async () => new Promise((resolve, reject) => {
-    const request = indexedDB.open("bof-endpoint-coach", 1);
+    const request = indexedDB.open("bof-endpoint-coach", 2);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const database = request.result;

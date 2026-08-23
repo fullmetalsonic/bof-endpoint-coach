@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { X } from "@phosphor-icons/react";
 import { concentrationUnits, convertConcentrationToPercent, convertMassToKg, isSupportedConcentrationUnit, isSupportedMassUnit, massUnits } from "../units/conversion.js";
 import { validateHeatEventInput, validationMessage } from "../domain/operationalValidation.js";
@@ -46,6 +46,7 @@ function eventHelp(locale) {
 }
 
 export function EventModal({ action, heat, settings, locale, t, onClose, onSave }) {
+  const [busy, setBusy] = useState(false);
   const activeHeatSamples = useMemo(() => heat.samples.filter((sample) => (sample.status ?? "active") === "active"), [heat.samples]);
   const defaultChemistryUnit = isSupportedConcentrationUnit(settings.unitPolicy.chemistry) ? settings.unitPolicy.chemistry : "%";
   const defaults = useMemo(() => ({
@@ -88,10 +89,13 @@ export function EventModal({ action, heat, settings, locale, t, onClose, onSave 
   };
   const validation = validateHeatEventInput(heat, action, payload);
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
-    if (!validation.ok) return;
-    if (onSave(action, payload) === false) return;
+    if (!validation.ok || busy) return;
+    setBusy(true);
+    const ok = await onSave(action, payload);
+    setBusy(false);
+    if (!ok) return;
     commit();
     onClose();
   }
@@ -124,7 +128,7 @@ export function EventModal({ action, heat, settings, locale, t, onClose, onSave 
         </div>
         <TermHelp locale={locale} items={eventHelp(locale)[action] ?? []} />
         {!validation.ok && <p className="modal-validation" role="alert">{validationMessage(validation.reason, locale)}</p>}
-        <div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>{t("cancel")}</button><button type="submit" className="primary" disabled={!validation.ok}>{t("save")}</button></div>
+        <div className="modal-actions"><button type="button" className="secondary" disabled={busy} onClick={onClose}>{t("cancel")}</button><button type="submit" className="primary" disabled={!validation.ok || busy}>{busy ? (locale === "ko" ? "저장 준비 중…" : "Preparing save…") : t("save")}</button></div>
       </form>
     </div>
   );

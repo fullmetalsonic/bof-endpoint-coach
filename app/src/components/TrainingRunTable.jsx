@@ -1,0 +1,12 @@
+function format(value, element) {
+  return Number.isFinite(Number(value)) ? Number(value).toFixed(element === "temperature" ? 1 : 5) : "–";
+}
+
+export function TrainingRunTable({ runs, locale }) {
+  const ko = locale === "ko";
+  const visible = [...runs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 60);
+  return <section className="panel training-run-panel"><div className="panel-title"><div><h2>{ko ? "재현 가능한 학습 실행" : "Reproducible training runs"}</h2><span>{ko ? "같은 데이터셋 해시는 같은 결과를 재사용하며, 원본 정정 시 이전 실행은 삭제하지 않고 오래된 결과로 표시합니다." : "The same dataset hash reuses the same result. Source corrections mark prior runs stale instead of deleting them."}</span></div></div><div className="table-scroll"><table><thead><tr><th>{ko ? "상태" : "Status"}</th><th>{ko ? "비교군·성분" : "Group · element"}</th><th>{ko ? "데이터" : "Data"}</th><th>{ko ? "후보 오프셋" : "Candidate offset"}</th><th>{ko ? "검증" : "Validation"}</th><th>{ko ? "재현 근거" : "Reproduction trace"}</th></tr></thead><tbody>
+    {visible.map((run) => <tr key={run.id} className={run.status === "stale" ? "stale-run" : ""}><td><span className={`run-status ${run.status}`}>{run.status === "current" ? (ko ? "현재" : "Current") : (ko ? "오래된 결과" : "Stale")}</span><small>{new Date(run.createdAt).toLocaleString(ko ? "ko-KR" : "en-GB")}</small></td><td><strong>{run.element}</strong><small>{run.groupKey}</small></td><td>{run.usedHeatIds?.length ?? 0}{ko ? "차지" : " heats"}<small>{run.split.trainingCount}+{run.split.validationCount} · {run.stage}</small></td><td>{format(run.candidateOffset, run.element)} {run.unit}<small>Δ {format(run.recommendedDelta, run.element)}</small></td><td>{run.split.validationCount ? `${format(run.metrics.validationBaseline.mae, run.element)} → ${format(run.metrics.validationCandidate.mae, run.element)}` : (ko ? "검증표본 대기" : "Awaiting holdout")}</td><td><details><summary>{ko ? "해시·포함/제외 보기" : "Show hash and inclusion"}</summary><code>{run.datasetSha256}</code><span>{run.dataPeriod.from} → {run.dataPeriod.to}</span><span>{ko ? `포함 ${run.usedRowIds.length}행 · 제외 ${run.excludedHeats.length}차지` : `${run.usedRowIds.length} rows used · ${run.excludedHeats.length} heats excluded`}</span>{run.staleReason && <span>{run.staleReason}</span>}</details></td></tr>)}
+    {!visible.length && <tr><td colSpan="6">{ko ? "완료 차지에서 확정 종점 분석을 지정하면 첫 학습 실행이 생성됩니다." : "Set a confirmed endpoint analysis on a completed heat to create the first training run."}</td></tr>}
+  </tbody></table></div></section>;
+}

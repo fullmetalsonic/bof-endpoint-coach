@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { WarningCircle, X } from "@phosphor-icons/react";
 import { correctionImpact } from "../domain/correctionOperations.js";
 import { validateCorrectionRequest } from "../domain/correctionValidation.js";
@@ -36,6 +36,7 @@ const standardReasons = {
 };
 
 export function CorrectionModal({ heat, target, mode, locale, onClose, onConfirm }) {
+  const [busy, setBusy] = useState(false);
   const ko = locale === "ko";
   const payload = useMemo(() => target?.payload ?? {}, [target]);
   const sourceValues = useMemo(() => target?.kind === "analysis" ? payload.values ?? {} : {}, [payload, target?.kind]);
@@ -79,10 +80,13 @@ export function CorrectionModal({ heat, target, mode, locale, onClose, onConfirm
           : mode === "actual" ? (ko ? "종점 실제값 지정" : "Set actual endpoint result")
         : (ko ? "입력 기록 수정" : "Correct input record");
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
-    if (!ready) return;
-    if (onConfirm({ changes: changes(), reason: form.reason.trim() }) === false) return;
+    if (!ready || busy) return;
+    setBusy(true);
+    const ok = await onConfirm({ changes: changes(), reason: form.reason.trim() });
+    setBusy(false);
+    if (!ok) return;
     commit();
   }
 
@@ -106,7 +110,7 @@ export function CorrectionModal({ heat, target, mode, locale, onClose, onConfirm
         </div> : <p className="correction-warning">{mode === "rollback" ? (ko ? "현재 단계에서 만든 기록은 삭제하지 않고 무효 상태로 보존한 뒤 이전 단계로 돌아갑니다." : "Records created in the current stage will be kept as voided before returning to the previous stage.") : mode === "adopt" ? (ko ? "선택한 분석 결과가 현재 종점 참고예상에 사용됩니다. 다른 샘플의 채택 상태는 해제됩니다." : "The selected result will be used for the current endpoint estimate and other adopted samples will be cleared.") : mode === "actual" ? (ko ? "선택한 분석 결과를 예상 정확도 검증에 사용하는 실제 종점값으로 지정합니다." : "The selected result will be used as the actual endpoint value for prediction validation.") : (ko ? "원본 기록은 삭제하지 않고 무효 상태와 사유를 보존합니다." : "The original record will be preserved with a void status and reason.")}</p>}
         <label className="correction-standard-reason"><span>{ko ? "표준 사유" : "Standard reason"}</span><select value={standardReasons[ko ? "ko" : "en"].includes(form.reason) ? form.reason : ""} onChange={(event) => set("reason", event.target.value)}><option value="">{ko ? "직접 입력" : "Type a custom reason"}</option>{standardReasons[ko ? "ko" : "en"].map((reason) => <option key={reason} value={reason}>{reason}</option>)}</select></label><label className="correction-reason"><span>{ko ? "정정·취소 사유" : "Correction reason"}</span><textarea value={form.reason} onChange={(event) => set("reason", event.target.value)} required /></label>
         {!validation.ok && <p className="field-error" role="alert">{validationMessage(validation.reason, locale)}</p>}
-        <div className="modal-actions"><button type="button" className="secondary" onClick={onClose}>{ko ? "닫기" : "Close"}</button><button type="submit" className={mode === "void" || mode === "rollback" ? "danger-button" : "primary"} disabled={!ready}>{ko ? "영향 확인 후 적용" : "Apply after review"}</button></div>
+        <div className="modal-actions"><button type="button" className="secondary" disabled={busy} onClick={onClose}>{ko ? "닫기" : "Close"}</button><button type="submit" className={mode === "void" || mode === "rollback" ? "danger-button" : "primary"} disabled={!ready || busy}>{busy ? (ko ? "적용 준비 중…" : "Preparing…") : (ko ? "영향 확인 후 적용" : "Apply after review")}</button></div>
       </form>
     </div>
   );

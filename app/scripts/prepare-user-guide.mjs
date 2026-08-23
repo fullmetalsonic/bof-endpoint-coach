@@ -10,10 +10,12 @@ const { version } = JSON.parse(readFileSync(resolve(projectRoot, "app/package.js
 const sourcePath = resolve(projectRoot, "docs/user-guide.md");
 const outputPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_USER_GUIDE_v${version}.html`);
 const screenshotPaths = [
-  "docs/manual/screenshots/v0.5.0/14-dashboard-1280-g6.png",
-  "docs/manual/screenshots/v0.5.0/03-learning-ledger.png",
-  "docs/manual/screenshots/v0.5.0/08-settings-coefficient-history.png",
-  "docs/manual/screenshots/v0.5.0/12-reports-backup-excel.png",
+  "docs/manual/screenshots/v0.6.0/28-first-run.png",
+  "docs/manual/screenshots/v0.6.0/03-dashboard-g6.png",
+  "docs/manual/screenshots/v0.6.0/04-prediction-explanation.png",
+  "docs/manual/screenshots/v0.6.0/05-learning-coefficient-runs.png",
+  "docs/manual/screenshots/v0.6.0/01-storage-recovery.png",
+  "docs/manual/screenshots/v0.6.0/02-json-restore-compare.png",
 ];
 
 const renderedGuide = execFileSync(

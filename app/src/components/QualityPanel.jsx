@@ -1,6 +1,6 @@
 import { QualityBar } from "./QualityBar.jsx";
 
-export function QualityPanel({ rows, locale, t }) {
+export function QualityPanel({ rows, explanations = {}, locale, t }) {
   return (
     <section className="quality-panel panel">
       <div className="panel-title quality-title-row">
@@ -8,7 +8,7 @@ export function QualityPanel({ rows, locale, t }) {
         <div className="legend"><span><i className="dot actual" />{t("currentActual")}</span><span><i className="dot predicted" />{t("endpointEstimate")}</span><span><i className="line" />{t("targetRange")}</span></div>
       </div>
       <div className="quality-list">
-        {rows.map((row) => <QualityBar key={row.key} row={row} locale={locale} t={t} />)}
+        {rows.map((row) => <QualityBar key={row.key} row={row} explanation={explanations[row.key]} locale={locale} t={t} />)}
       </div>
     </section>
   );

@@ -51,6 +51,7 @@ export function buildResidualLedger(state) {
         calibrationOffset: Number(predicted.calibrationOffset ?? comparison.prediction.calibrationOffsets?.[element.key] ?? 0),
         referenceMode: heat.referenceSnapshot?.mode ?? (heat.demo ? "demo_snapshot" : "manual_reference"),
         synthetic: Boolean(heat.demo || heat.referenceSnapshot?.mode !== "manual_reference"),
+        target: structuredClone(heat.referenceSnapshot?.gradeProfile?.targets?.[element.key] ?? null),
       };
       row.groupKey = groupKey(row);
       rows.push(row);

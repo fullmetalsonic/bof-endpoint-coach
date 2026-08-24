@@ -9,6 +9,7 @@ const documents = [
   ["사용 설명서", `BOF_Endpoint_Coach_USER_GUIDE_v${version}.html`, versionHeading],
   ["상세 설명서", `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v${version}.html`, versionHeading],
   ["발표용 설명서", `BOF_Endpoint_Coach_PRESENTATION_GUIDE_v${version}.html`, versionHeading],
+  ["구두 기능 소개서", `BOF_Endpoint_Coach_ORAL_FEATURE_INTRO_v${version}.html`, versionHeading],
   ["GitHub형 README", `BOF_Endpoint_Coach_README_v${version}.html`, /BOF Endpoint Coach/],
   ["메일 미리보기", `BOF_Endpoint_Coach_EMAIL_PREVIEW_v${version}.html`, /BOF Endpoint Coach/],
 ];

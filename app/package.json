@@ -11,6 +11,8 @@
     "build:user-guide": "node scripts/prepare-user-guide.mjs",
     "build:detailed-guide": "node scripts/prepare-detailed-guide.mjs",
     "build:presentation-guide": "node scripts/prepare-presentation-guide.mjs",
+    "build:oral-intro": "node scripts/prepare-oral-feature-intro.mjs",
+    "build:oral-email": "node scripts/prepare-oral-email.mjs",
     "capture:v061-recovery": "node scripts/capture-v061-recovery-screenshots.mjs",
     "capture:v072-addition": "node scripts/capture-v072-addition-screenshots.mjs",
     "build:single": "vite build --config vite.single.config.mjs && node scripts/prepare-standalone.mjs",

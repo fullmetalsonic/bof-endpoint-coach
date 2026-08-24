@@ -1,4 +1,5 @@
 import { versionCoefficientProfiles } from "./coefficientVersions.js";
+import { versionAdditionProfiles } from "./addition/additionVersions.js";
 
 const EXCLUDED_PATHS = new Set(["version", "revisionHistory", "lastRevision", "versionHistory"]);
 
@@ -37,6 +38,7 @@ export function prepareSettingsRevision(current, draft, operatorProfile, reason,
   const versionedDraft = {
     ...structuredClone(draft),
     coefficientProfiles: versionCoefficientProfiles(current.coefficientProfiles, draft.coefficientProfiles, operatorProfile, reason, at),
+    additionModelProfiles: versionAdditionProfiles(current.additionModelProfiles, draft.additionModelProfiles, operatorProfile, reason, at),
   };
   const changes = diffSettings(current, versionedDraft);
   if (!changes.length) return current;

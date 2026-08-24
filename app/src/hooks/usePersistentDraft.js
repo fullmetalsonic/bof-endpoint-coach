@@ -7,10 +7,11 @@ function copy(value) {
 
 export function usePersistentDraft(keyOrOptions, baseVersionArg, defaultsArg) {
   const options = typeof keyOrOptions === "object" ? keyOrOptions : { key: keyOrOptions, baseVersion: baseVersionArg, defaults: defaultsArg };
-  const { key, baseVersion, defaults } = options;
+  const { key, baseVersion, defaults, validate } = options;
   const [initial] = useState(() => {
     const found = loadDraft(key, baseVersion);
-    return { value: copy(found?.value ?? defaults), baseline: JSON.stringify(defaults), restored: Boolean(found) };
+    const compatible = Boolean(found && (!validate || validate(found.value)));
+    return { value: copy(compatible ? found.value : defaults), baseline: JSON.stringify(defaults), restored: compatible };
   });
   const [value, setValue] = useState(initial.value);
   const [committedSnapshot, setCommittedSnapshot] = useState(initial.baseline);

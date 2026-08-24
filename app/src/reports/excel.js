@@ -5,6 +5,8 @@ import { getAnalysisResults, latestAdoptedSample } from "../domain/analysisRecor
 import { endpointValidationComparison } from "../domain/predictionHistory.js";
 import { buildResidualLedger } from "../calibration/residualLedger.js";
 import { buildStateCalibrationRecommendations } from "../calibration/stateRecommendations.js";
+import { buildAdditionEvidenceLedger } from "../calibration/additionEvidence.js";
+import { buildAdditionCorrectionRecommendations } from "../calibration/additionRecommendations.js";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -127,6 +129,14 @@ export function buildExcelSheets(state) {
     { "Coefficient ID": profile.id, "Version ID": profile.versionId ?? "legacy", "Parent version": profile.parentVersionId ?? "", Status: "current", "Created at": profile.createdAt ?? "", "Archived at": "", Operator: profile.approvedBy ?? "", Reason: profile.approvalReason ?? "", "Offsets JSON": JSON.stringify(profile.calibrationOffsets ?? {}) },
     ...(profile.versionHistory ?? []).map((version) => ({ "Coefficient ID": profile.id, "Version ID": version.versionId, "Parent version": version.profile?.parentVersionId ?? "", Status: "archived", "Created at": version.profile?.createdAt ?? "", "Archived at": version.archivedAt ?? "", Operator: version.archivedBy ?? "", Reason: version.changeReason ?? "", "Offsets JSON": JSON.stringify(version.profile?.calibrationOffsets ?? {}) })),
   ]);
+  const additionPlans = state.heats.flatMap((heat) => (heat.additionCoach?.operatorPlans ?? []).map((plan) => ({ "Heat ID": heat.id, "Plan ID": plan.id, Status: plan.status ?? "active", Stage: plan.stage, Action: plan.operationType, "Material code": plan.materialCode ?? "", Amount: plan.amount, Unit: plan.unit, "Timing mode": plan.timingMode, "Planned at": plan.plannedAt ?? "", "Elapsed minutes": plan.elapsedMinutes ?? "", "Cumulative oxygen (Nm3)": plan.cumulativeOxygenNm3 ?? "", "Recorded at": plan.recordedAt, Operator: plan.recordedBy?.displayName ?? "", Note: plan.note ?? "" })));
+  const additionProposals = state.heats.flatMap((heat) => (heat.additionCoach?.proposals ?? []).map((proposal) => ({ "Heat ID": heat.id, "Proposal ID": proposal.id, Status: proposal.status ?? "active", Mode: proposal.mode, Trigger: proposal.triggerType, "Trigger ID": proposal.triggerId ?? "", Stage: proposal.stage, "Calculated at": proposal.calculatedAt, Available: proposal.result?.available ?? false, "Profile ID": proposal.result?.profile?.id ?? "", "Profile version": proposal.result?.profile?.versionId ?? "", "Formula version": proposal.result?.profile?.formulaVersion ?? "", "Primary model": proposal.result?.primary?.model ?? "", "Primary material": proposal.result?.primary?.materialCode ?? "", "Amount low": proposal.result?.primary?.amount?.low ?? "", "Amount midpoint": proposal.result?.primary?.amount?.midpoint ?? "", "Amount high": proposal.result?.primary?.amount?.high ?? "", "Amount unit": proposal.result?.primary?.amount?.unit ?? "" })));
+  const additionEvidence = buildAdditionEvidenceLedger(state);
+  const additionCandidates = buildAdditionCorrectionRecommendations(state, additionEvidence).map((item) => ({ Group: item.groupKey, Model: item.model, Material: item.materialCode ?? "OXYGEN", Correction: item.correctionKey, Stage: item.stage, "Evidence count": item.count, "Training count": item.trainingCount, "Validation count": item.validationCount, "Distinct days": item.distinctDates, "Distinct operators": item.distinctOperators, "Amount bands": item.distinctAmountBands, Current: item.currentValue, Candidate: item.candidateValue, Delta: item.recommendedDelta, "Baseline validation MAE": item.validationBaseline.mae, "Candidate validation MAE": item.validationCandidate.mae, "Eligible for approval": item.eligibleForApproval, Reason: item.reason }));
+  const additionVersions = state.settings.additionModelProfiles.flatMap((profile) => [
+    { "Profile ID": profile.id, "Version ID": profile.versionId, "Parent version": profile.parentVersionId ?? "", Status: "current", "Created at": profile.createdAt ?? "", Basis: profile.status, Operator: profile.approval?.approvedBy ?? "", Reason: profile.approval?.reason ?? "", "Corrections JSON": JSON.stringify(profile.corrections ?? {}) },
+    ...(profile.versionHistory ?? []).map((version) => ({ "Profile ID": profile.id, "Version ID": version.versionId, "Parent version": version.profile?.parentVersionId ?? "", Status: "archived", "Created at": version.profile?.createdAt ?? "", "Archived at": version.archivedAt ?? "", Operator: version.archivedBy ?? "", Reason: version.changeReason ?? "", "Corrections JSON": JSON.stringify(version.profile?.corrections ?? {}) })),
+  ]);
   const readMe = [
     ["Warning"],
     ["Manual or synthetic operating data with public-literature calculation scenarios. Not plant-validated."],
@@ -144,6 +154,11 @@ export function buildExcelSheets(state) {
     { name: "Residual ledger", rows: objectRows(residuals) },
     { name: "Calibration candidates", rows: objectRows(recommendations) },
     { name: "Coefficient versions", rows: objectRows(coefficientVersions) },
+    { name: "Addition plans", rows: objectRows(additionPlans) },
+    { name: "Addition proposals", rows: objectRows(additionProposals) },
+    { name: "Addition evidence", rows: objectRows(additionEvidence) },
+    { name: "Addition candidates", rows: objectRows(additionCandidates) },
+    { name: "Addition versions", rows: objectRows(additionVersions) },
     { name: "Read me", rows: readMe },
   ];
 }

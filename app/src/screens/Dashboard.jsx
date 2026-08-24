@@ -11,8 +11,9 @@ import { getStageWorkflow } from "../domain/workflowGuidance.js";
 import { canRollbackLastStage } from "../domain/correctionOperations.js";
 import { SampleResidualPanel } from "../components/SampleResidualPanel.jsx";
 import { predictionExplanations } from "../domain/predictionExplanation.js";
+import { AdditionCoachBar } from "../components/addition/AdditionCoachBar.jsx";
 
-export function Dashboard({ state, heat, locale, t, selectHeat, saveStatus, storageMeta, recoveryPointCount = 0, canWrite = true, onAction, onAdvance, onEditInitial, onNewHeat, onOpenTimeline, onOpenCorrection, onRollback }) {
+export function Dashboard({ state, heat, locale, t, selectHeat, saveStatus, storageMeta, recoveryPointCount = 0, canWrite = true, onAction, onAdvance, onEditInitial, onNewHeat, onOpenTimeline, onOpenCorrection, onRollback, onRefreshAddition, onSaveAdditionPlan, onAdditionDecision, onSetAdditionHidden }) {
   // 조업값 저장으로 다시 렌더링되는 바로 그 시점의 계산 시각을 남긴다.
   // 상단 시계의 저빈도 갱신값을 재사용하면 방금 입력한 공정 시각보다 계산 시각이 과거로 보일 수 있다.
   const calculation = calculateEndpoint(heat, state.settings, new Date().toISOString());
@@ -27,6 +28,7 @@ export function Dashboard({ state, heat, locale, t, selectHeat, saveStatus, stor
         <main className="dashboard-main">
           <div className="dashboard-title-row"><h1>{heat.stage} {locale === "ko" ? heat.stageLabelKo : heat.stageLabelEn} {t("summary")}</h1><div className="dashboard-title-actions"><span>{locale === "ko" ? "입력 → 확인 → 단계 전환" : "Enter → verify → advance"}</span>{canRollbackLastStage(heat) && <button type="button" className="stage-undo-button" disabled={!canWrite} onClick={onRollback}>{locale === "ko" ? "마지막 단계 전환 취소" : "Undo last stage"}</button>}</div></div>
           <WorkflowPanel heat={heat} locale={locale} rows={rows} t={t} onAction={onAction} onAdvance={onAdvance} onEditInitial={onEditInitial} writeLocked={!canWrite} />
+          <AdditionCoachBar heat={heat} settings={state.settings} endpoint={calculation} locale={locale} canWrite={canWrite} onRefresh={onRefreshAddition} onSavePlan={onSaveAdditionPlan} onDecision={onAdditionDecision} onSetHidden={onSetAdditionHidden} />
           <QualityPanel rows={rows} explanations={explanations} locale={locale} t={t} />
           <SampleResidualPanel heat={heat} settings={state.settings} calculation={calculation} locale={locale} />
           <AnalysisTable heat={heat} t={t} locale={locale} onCorrection={onOpenCorrection} onOpenTimeline={onOpenTimeline} />

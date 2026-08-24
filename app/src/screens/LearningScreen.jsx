@@ -4,6 +4,7 @@ import { buildResidualLedger } from "../calibration/residualLedger.js";
 import { buildStateCalibrationRecommendations } from "../calibration/stateRecommendations.js";
 import { learningEligibilitySummary } from "../calibration/trainingRun.js";
 import { TrainingRunTable } from "../components/TrainingRunTable.jsx";
+import { AdditionLearningPanel } from "../components/addition/AdditionLearningPanel.jsx";
 
 const STAGE_LABELS = {
   synthetic_only: ["DEMO 전용 · 현장 적용 금지", "DEMO only · not field eligible"],
@@ -33,7 +34,7 @@ function elementLabel(element, locale) {
   return element;
 }
 
-export function LearningScreen({ state, locale, canWrite, onBringCandidate, onOpenRecoveryCard }) {
+export function LearningScreen({ state, locale, canWrite, onBringCandidate, onBringAdditionCandidate, onOpenRecoveryCard, onOpenAdditionRecoveryCard }) {
   const [elementFilter, setElementFilter] = useState("all");
   const ledger = useMemo(() => buildResidualLedger(state), [state]);
   const recommendations = useMemo(() => buildStateCalibrationRecommendations(state, ledger), [state, ledger]);
@@ -65,5 +66,6 @@ export function LearningScreen({ state, locale, canWrite, onBringCandidate, onOp
       <section className="panel residual-panel"><div className="panel-title"><h2>{ko ? "종점 오차 대장" : "Endpoint residual ledger"}</h2><select value={elementFilter} onChange={(event) => setElementFilter(event.target.value)}><option value="all">{ko ? "전체 성분" : "All elements"}</option>{["C", "temperature", "P", "Mn", "Si", "S"].map((key) => <option key={key} value={key}>{elementLabel(key, locale)}</option>)}</select></div><div className="table-scroll"><table><thead><tr><th>{ko ? "차지" : "Heat"}</th><th>{ko ? "성분" : "Item"}</th><th>{ko ? "예상" : "Predicted"}</th><th>{ko ? "실측" : "Actual"}</th><th>{ko ? "오차(실측-예상)" : "Residual (actual-predicted)"}</th><th>{ko ? "계수 버전" : "Coefficient version"}</th></tr></thead><tbody>{visibleRows.slice(-200).reverse().map((row) => <tr key={row.id}><td>{row.heatId}{row.synthetic && <small>DEMO</small>}</td><td>{elementLabel(row.element, locale)}</td><td>{format(row.predicted, row.element)}</td><td>{format(row.actual, row.element)}</td><td className={row.residual > 0 ? "positive-residual" : row.residual < 0 ? "negative-residual" : ""}>{format(row.residual, row.element)} {row.unit}</td><td>{row.coefficientVersionId}</td></tr>)}{!visibleRows.length && <tr><td colSpan="6">{ko ? "기록 없음" : "No records"}</td></tr>}</tbody></table></div></section>
     </div>
     <TrainingRunTable runs={state.trainingRuns ?? []} locale={locale} />
+    <AdditionLearningPanel state={state} locale={locale} canWrite={canWrite} onBringCandidate={onBringAdditionCandidate} onOpenRecoveryCard={onOpenAdditionRecoveryCard} />
   </main>;
 }

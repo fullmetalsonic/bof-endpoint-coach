@@ -12,6 +12,9 @@ function summaryRows(summary, locale) {
     [locale === "ko" ? "조업 이벤트" : "Process events", summary.eventCount],
     [locale === "ko" ? "확정 오차 행" : "Residual rows", summary.residualCount],
     [locale === "ko" ? "학습 실행" : "Training runs", summary.trainingRunCount],
+    [locale === "ko" ? "투입 계획 / 코치안" : "Addition plans / proposals", `${summary.additionPlanCount ?? 0} / ${summary.additionProposalCount ?? 0}`],
+    [locale === "ko" ? "투입 효과 근거" : "Addition evidence", summary.additionEvidenceCount ?? 0],
+    [locale === "ko" ? "투입계수 버전" : "Addition-model versions", summary.additionModelVersionCount ?? 0],
     [locale === "ko" ? "복구점" : "Recovery points", summary.recoveryPointCount],
   ];
 }

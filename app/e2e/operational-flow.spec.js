@@ -351,7 +351,10 @@ test("출강 이후에는 출강 시각 정정과 종점 실제값 지정이 별
   const originalTap = state.heats[0].tappedAt;
   await page.locator(".analysis-table").getByRole("button", { name: "전체 이력·정정" }).click();
   await page.getByRole("button", { name: "출강 기록 정정" }).click();
-  const correctedDate = new Date(new Date(originalTap).getTime() - 1_000);
+  let correctedDate = new Date(new Date(originalTap).getTime() - 1_000);
+  // Chrome's datetime-local fill rejects the full-seconds form when it lands exactly on :00.
+  // Keep seconds in the value for time-regression validation, but avoid that serialization edge.
+  if (correctedDate.getSeconds() === 0) correctedDate = new Date(correctedDate.getTime() - 1_000);
   const localDate = new Date(correctedDate.getTime() - correctedDate.getTimezoneOffset() * 60_000).toISOString().slice(0, 19);
   await page.getByLabel("실제 발생 시각").fill(localDate);
   await page.getByLabel("정정·취소 사유").fill("출강 시작 시각 재확인");

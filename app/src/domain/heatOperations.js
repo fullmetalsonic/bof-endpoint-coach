@@ -67,6 +67,7 @@ export function createHeatFromForm(form, operatorProfile, recordedAt = new Date(
     correctionBase: { ...selection, initial: structuredClone(initial), process: structuredClone(process), expectedTapAt, replayInitial: true, replayProcess: true, legacy: false },
     referenceSnapshot: settings ? captureHeatReferenceSnapshot(settings, selection, recordedAt) : null,
     predictionSnapshots: [],
+    additionCoach: { hidden: false, operatorPlans: [], proposals: [], decisions: [] },
     correctionLog: [],
     actualEndpointAnalysisId: null,
     samples: [],

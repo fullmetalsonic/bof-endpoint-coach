@@ -2,7 +2,7 @@ import { createReferenceSettings } from "./referenceSettings.js";
 import { normalizeSampleAnalyses } from "../domain/analysisRecords.js";
 import { captureHeatReferenceSnapshot } from "../domain/referenceSnapshot.js";
 
-export const APP_VERSION = "0.6.1";
+export const APP_VERSION = "0.7.2";
 export const BACKUP_SCHEMA_VERSION = "0.6.0";
 export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", "0.2.0", "0.2.1", "0.3.0", "0.4.0", BACKUP_SCHEMA_VERSION];
 
@@ -16,7 +16,10 @@ export function createEmptyState({ locale = "ko", operatorProfile = { displayNam
     settings: createReferenceSettings(),
     heats: [],
     operationLog: [],
-    modelRegistry: [{ id: "BOF-REF-CALC 0.3.0", type: "literature_hybrid", status: "reference", source: "public_literature", createdAt: "2026-08-23T00:00:00.000Z" }],
+    modelRegistry: [
+      { id: "BOF-REF-CALC 0.3.0", type: "literature_hybrid", status: "reference", source: "public_literature", createdAt: "2026-08-23T00:00:00.000Z" },
+      { id: "BOF-ADD-REF 0.7.2", type: "literature_addition_with_reviewed_residual_correction", status: "reference", source: "public_literature", createdAt: "2026-08-24T00:00:00.000Z" },
+    ],
     trainingRuns: [],
     restoreMetadata: null,
     lastSavedAt: null,
@@ -115,6 +118,7 @@ export function createDemoState(operatorProfile = { displayName: "" }) {
         correctionBase: { ...selection, initial: structuredClone(heat.initial), process: { ...structuredClone(heat.process), cumulativeOxygenNm3: 0 }, expectedTapAt: heat.expectedTapAt, replayInitial: true, replayProcess: true, legacy: false },
         referenceSnapshot: captureHeatReferenceSnapshot(demo.settings, selection, heat.startedAt),
         predictionSnapshots: [],
+        additionCoach: { hidden: false, operatorPlans: [], proposals: [], decisions: [] },
         correctionLog: [],
         actualEndpointAnalysisId: null,
       };

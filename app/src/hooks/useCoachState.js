@@ -10,6 +10,8 @@ import { prepareSettingsRevision } from "../domain/settingsRevision.js";
 import { buildTrainingRuns } from "../calibration/trainingRun.js";
 import { listRecoveryPoints, makeRecoveryPoint, removeRecoveryPoint as removeStoredRecoveryPoint, replaceRecoveryPoints, retainRecoveryPoints, saveRecoveryPoint, setRecoveryPointProtected as protectStoredRecoveryPoint } from "../storage/recoveryStore.js";
 import { validatePortableRecoveryPoint } from "../domain/jsonBackupSchema.js";
+import { appendAdditionProposal, appendExistingAdditionProposal, createAdditionProposalSnapshot } from "../domain/addition/proposal.js";
+import { addOperatorPlan, recordAdditionDecision as applyAdditionDecision } from "../domain/addition/operatorPlan.js";
 
 function withLog(state, type, payload = {}) {
   const at = new Date().toISOString();
@@ -21,6 +23,11 @@ function withLog(state, type, payload = {}) {
 
 function withPrediction(heat, settings, trigger) {
   return capturePredictionSnapshot(heat, settings, trigger);
+}
+
+function withDerivedSnapshots(heat, settings, trigger, operatorProfile = null, calculatedAt = new Date().toISOString()) {
+  const predicted = capturePredictionSnapshot(heat, settings, trigger, calculatedAt);
+  return appendAdditionProposal(predicted, settings, trigger, { calculatedAt, mode: "shadow", operatorProfile });
 }
 
 export function useCoachState() {
@@ -212,9 +219,14 @@ export function useCoachState() {
     const updater = (previous) => {
       const heats = previous.heats.map((heat) => {
         if (heat.id !== previous.currentHeatId) return heat;
-        const updated = applyHeatEvent(heat, type, form, previous.operatorProfile);
+        const beforeProposal = ["material", "reblow"].includes(type) ? createAdditionProposalSnapshot(heat, previous.settings, { type: `before_${type}`, id: null }, { calculatedAt: form.occurredAt, mode: "shadow", operatorProfile: previous.operatorProfile }) : null;
+        let updated = applyHeatEvent(heat, type, form, previous.operatorProfile);
         const triggerId = updated.events.at(-1)?.id;
-        return withPrediction(updated, previous.settings, { type, id: triggerId });
+        if (beforeProposal) {
+          updated = appendExistingAdditionProposal(updated, beforeProposal, triggerId);
+          return withPrediction(updated, previous.settings, { type, id: triggerId });
+        }
+        return withDerivedSnapshots(updated, previous.settings, { type, id: triggerId }, previous.operatorProfile);
       });
       return withLog({ ...previous, heats }, `event_${type}`, { heatId: previous.currentHeatId, operator: previous.operatorProfile?.displayName ?? "" });
     };
@@ -231,7 +243,7 @@ export function useCoachState() {
       const heats = previous.heats.map((heat) => {
         if (heat.id !== previous.currentHeatId) return heat;
         const updated = advanceHeat(heat, form, previous.operatorProfile);
-        return withPrediction(updated, previous.settings, { type: "stage", id: updated.stageHistory.at(-1)?.id });
+        return withDerivedSnapshots(updated, previous.settings, { type: "stage", id: updated.stageHistory.at(-1)?.id }, previous.operatorProfile);
       });
       return withLog({ ...previous, heats }, "stage_advanced", { heatId: previous.currentHeatId, to: heats.find((heat) => heat.id === previous.currentHeatId)?.stage });
     }), [mutateWithRecovery]);
@@ -253,12 +265,48 @@ export function useCoachState() {
   }), [mutateWithRecovery]);
   const recordOperation = useCallback((type, payload = {}) => setState((previous) => withLog(previous, type, payload)), []);
 
+  const saveAdditionPlan = useCallback((form) => {
+    setState((previous) => {
+      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? addOperatorPlan(heat, form, previous.operatorProfile) : heat);
+      return withLog({ ...previous, heats }, "addition_plan_created", { heatId: previous.currentHeatId, operationType: form.operationType, materialCode: form.materialCode ?? null });
+    });
+    return Promise.resolve(true);
+  }, []);
+
+  const refreshAdditionProposal = useCallback((mode = "viewed") => {
+    setState((previous) => {
+      const heats = previous.heats.map((heat) => {
+        if (heat.id !== previous.currentHeatId) return heat;
+        const proposal = createAdditionProposalSnapshot(heat, previous.settings, { type: mode, id: null }, { mode, operatorProfile: previous.operatorProfile });
+        return appendExistingAdditionProposal(heat, proposal);
+      });
+      return withLog({ ...previous, heats }, "addition_proposal_refreshed", { heatId: previous.currentHeatId, mode });
+    });
+    return true;
+  }, []);
+
+  const recordAdditionDecision = useCallback((proposalId, decision) => {
+    setState((previous) => {
+      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? applyAdditionDecision(heat, proposalId, decision, previous.operatorProfile) : heat);
+      return withLog({ ...previous, heats }, "addition_decision_recorded", { heatId: previous.currentHeatId, proposalId, decision });
+    });
+    return true;
+  }, []);
+
+  const setAdditionCoachHidden = useCallback((hidden) => {
+    setState((previous) => {
+      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? { ...heat, additionCoach: { hidden: Boolean(hidden), operatorPlans: structuredClone(heat.additionCoach?.operatorPlans ?? []), proposals: structuredClone(heat.additionCoach?.proposals ?? []), decisions: structuredClone(heat.additionCoach?.decisions ?? []) } } : heat);
+      return withLog({ ...previous, heats }, hidden ? "addition_coach_hidden" : "addition_coach_shown", { heatId: previous.currentHeatId });
+    });
+    return true;
+  }, []);
+
   const createHeat = useCallback((form) => {
     setState((previous) => {
       const heatId = form.id?.trim();
       if (previous.heats.some((item) => item.id === heatId)) return previous;
       const created = createHeatFromForm(form, previous.operatorProfile, new Date().toISOString(), previous.settings);
-      const heat = withPrediction(created, previous.settings, { type: "heat_created", id: created.events[0]?.id });
+      const heat = withDerivedSnapshots(created, previous.settings, { type: "heat_created", id: created.events[0]?.id }, previous.operatorProfile);
       return withLog({ ...previous, heats: [...previous.heats, heat], currentHeatId: heat.id }, "heat_created", { heatId: heat.id });
     });
   }, []);
@@ -268,7 +316,7 @@ export function useCoachState() {
       const heats = previous.heats.map((heat) => {
         if (heat.id !== previous.currentHeatId) return heat;
         const updated = updateHeatInputs(heat, form, previous.operatorProfile, new Date().toISOString(), previous.settings);
-        return withPrediction(updated, previous.settings, { type: "initial_updated", id: updated.events.at(-1)?.id });
+        return withDerivedSnapshots(updated, previous.settings, { type: "initial_updated", id: updated.events.at(-1)?.id }, previous.operatorProfile);
       });
       return withLog({ ...previous, heats }, "initial_inputs_updated", { heatId: previous.currentHeatId, operator: previous.operatorProfile?.displayName ?? "" });
     });
@@ -355,7 +403,7 @@ export function useCoachState() {
       const corrected = targetKind === "analysis"
         ? correctAnalysisRecord(heat, targetId, changes, reason, previous.operatorProfile)
         : correctEventRecord(heat, targetId, changes, reason, previous.operatorProfile);
-      return withPrediction(corrected, previous.settings, { type: "correction", id: corrected.correctionLog.at(-1)?.id });
+      return withDerivedSnapshots(corrected, previous.settings, { type: "correction", id: corrected.correctionLog.at(-1)?.id }, previous.operatorProfile);
     });
     return withLog({ ...previous, heats }, "record_corrected", { heatId, targetKind, targetId, reason });
   }), []);
@@ -366,7 +414,7 @@ export function useCoachState() {
       const corrected = targetKind === "analysis"
         ? invalidateAnalysisRecord(heat, targetId, reason, previous.operatorProfile)
         : invalidateEventRecord(heat, targetId, reason, previous.operatorProfile);
-      return withPrediction(corrected, previous.settings, { type: "invalidation", id: corrected.correctionLog.at(-1)?.id });
+      return withDerivedSnapshots(corrected, previous.settings, { type: "invalidation", id: corrected.correctionLog.at(-1)?.id }, previous.operatorProfile);
     });
     return withLog({ ...previous, heats }, "record_voided", { heatId, targetKind, targetId, reason });
   }), []);
@@ -375,7 +423,7 @@ export function useCoachState() {
     const heats = previous.heats.map((heat) => {
       if (heat.id !== heatId) return heat;
       const corrected = rollbackLastStage(heat, reason, previous.operatorProfile);
-      return withPrediction(corrected, previous.settings, { type: "stage_rollback", id: corrected.correctionLog.at(-1)?.id });
+      return withDerivedSnapshots(corrected, previous.settings, { type: "stage_rollback", id: corrected.correctionLog.at(-1)?.id }, previous.operatorProfile);
     });
     return withLog({ ...previous, heats }, "stage_rolled_back", { heatId, reason });
   }), []);
@@ -388,7 +436,7 @@ export function useCoachState() {
     const heats = previous.heats.map((heat) => {
       if (heat.id !== heatId) return heat;
       const corrected = correctTapRecord(heat, occurredAt, reason, previous.operatorProfile);
-      return withPrediction(corrected, previous.settings, { type: "tap_correction", id: corrected.correctionLog.at(-1)?.id });
+      return withDerivedSnapshots(corrected, previous.settings, { type: "tap_correction", id: corrected.correctionLog.at(-1)?.id }, previous.operatorProfile);
     });
     return withLog({ ...previous, heats }, "tap_corrected", { heatId, occurredAt, reason });
   }), [mutateWithRecovery]);
@@ -397,7 +445,7 @@ export function useCoachState() {
     const heats = previous.heats.map((heat) => {
       if (heat.id !== heatId) return heat;
       const corrected = adoptAnalysisRecord(heat, analysisId, reason, previous.operatorProfile);
-      return withPrediction(corrected, previous.settings, { type: "analysis_adopted", id: analysisId });
+      return withDerivedSnapshots(corrected, previous.settings, { type: "analysis_adopted", id: analysisId }, previous.operatorProfile);
     });
     return withLog({ ...previous, heats }, "analysis_adopted", { heatId, analysisId, reason });
   }), []);
@@ -566,5 +614,5 @@ export function useCoachState() {
   }, []);
   const canWrite = Boolean(state) && !["loading", "load_error", "error", "conflict", "stale"].includes(saveStatus);
 
-  return { state, currentHeat, recovery, recoveryPoints, recoveryError, storageMeta, saveStatus, loadError, canWrite, retryLoad, reloadFromStorage, retrySave, selectHeat, addEvent, advanceCurrentStage, createHeat, updateCurrentHeatInputs, updateSettings, recordOperation, replaceState, restoreJsonBackup, resetWorkspace, restoreRecovery, restoreRecoveryPoint, undoLastJsonRestore, createManualRecoveryPoint, setRecoveryPointProtected, removeRecoveryPoint, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, correctRecord, invalidateRecord, rollbackStage, correctTap, adoptAnalysis, selectActualEndpoint, setLocale };
+  return { state, currentHeat, recovery, recoveryPoints, recoveryError, storageMeta, saveStatus, loadError, canWrite, retryLoad, reloadFromStorage, retrySave, selectHeat, addEvent, advanceCurrentStage, createHeat, updateCurrentHeatInputs, updateSettings, recordOperation, saveAdditionPlan, refreshAdditionProposal, recordAdditionDecision, setAdditionCoachHidden, replaceState, restoreJsonBackup, resetWorkspace, restoreRecovery, restoreRecoveryPoint, undoLastJsonRestore, createManualRecoveryPoint, setRecoveryPointProtected, removeRecoveryPoint, completeOnboarding, updateOperator, deleteHeat, changeHeatLifecycle, correctRecord, invalidateRecord, rollbackStage, correctTap, adoptAnalysis, selectActualEndpoint, setLocale };
 }

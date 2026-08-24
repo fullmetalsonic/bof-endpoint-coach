@@ -1,6 +1,6 @@
 {
   "name": "bof-endpoint-coach",
-  "version": "0.6.1",
+  "version": "0.7.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,13 +12,18 @@
     "build:detailed-guide": "node scripts/prepare-detailed-guide.mjs",
     "build:presentation-guide": "node scripts/prepare-presentation-guide.mjs",
     "capture:v061-recovery": "node scripts/capture-v061-recovery-screenshots.mjs",
+    "capture:v072-addition": "node scripts/capture-v072-addition-screenshots.mjs",
     "build:single": "vite build --config vite.single.config.mjs && node scripts/prepare-standalone.mjs",
     "check": "npm run lint && npm run test && npm run build && npm run build:single && npm run test:sites",
     "lint": "eslint src tests e2e scripts playwright.config.mjs vite.config.mjs vite.single.config.mjs",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e:preflight": "node scripts/verify-e2e-preflight.mjs",
+    "pretest:e2e": "npm run test:e2e:preflight",
     "test:e2e": "playwright test --project=chromium",
+    "pretest:e2e:chrome": "npm run test:e2e:preflight",
     "test:e2e:chrome": "playwright test --project=chrome",
+    "pretest:e2e:edge": "npm run test:e2e:preflight",
     "test:e2e:edge": "playwright test --project=msedge",
     "test:watch": "vitest",
     "test:sites": "node --test tests/sites-worker.test.mjs"

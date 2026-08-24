@@ -3,12 +3,13 @@ import { BACKUP_SCHEMA_VERSION } from "./demoState.js";
 import { getStageDefinition } from "../domain/processStages.js";
 import { normalizeSampleAnalyses } from "../domain/analysisRecords.js";
 import { captureHeatReferenceSnapshot } from "../domain/referenceSnapshot.js";
+import { normalizeAdditionProfile } from "../calculation/addition/additionProfile.js";
 
 export function normalizeCoachState(state) {
   if (!state?.settings) return state;
   const migratedProfileIds = (state.settings.coefficientProfiles ?? []).filter((profile) => !profile?.literatureValues).map((profile) => profile.id);
   const coefficientProfiles = (state.settings.coefficientProfiles ?? []).map(normalizeCoefficientProfile);
-  const normalizedSettings = { ...state.settings, coefficientProfiles, revisionHistory: state.settings.revisionHistory ?? [], lastRevision: state.settings.lastRevision ?? null };
+  const normalizedSettings = { ...state.settings, coefficientProfiles, additionModelProfiles: (state.settings.additionModelProfiles?.length ? state.settings.additionModelProfiles : [null]).map(normalizeAdditionProfile), revisionHistory: state.settings.revisionHistory ?? [], lastRevision: state.settings.lastRevision ?? null };
   return {
     ...state,
     schemaVersion: BACKUP_SCHEMA_VERSION,
@@ -42,6 +43,12 @@ export function normalizeCoachState(state) {
         },
         referenceSnapshot: heat.referenceSnapshot ?? captureHeatReferenceSnapshot(normalizedSettings, selection, heat.startedAt),
         predictionSnapshots: heat.predictionSnapshots ?? [],
+        additionCoach: {
+          hidden: Boolean(heat.additionCoach?.hidden),
+          operatorPlans: structuredClone(heat.additionCoach?.operatorPlans ?? []),
+          proposals: structuredClone(heat.additionCoach?.proposals ?? []),
+          decisions: structuredClone(heat.additionCoach?.decisions ?? []),
+        },
         correctionLog: heat.correctionLog ?? [],
         actualEndpointAnalysisId: heat.actualEndpointAnalysisId ?? null,
       };

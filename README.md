@@ -2,15 +2,26 @@
 
 [한국어](#한국어) · [English](#english)
 
-작업자가 오프라인 회사 PC에서 조업·샘플·종점 데이터를 직접 입력하면, 공개 문헌 시나리오에서 시작해 사업소·설비별 오차를 안전하게 누적하고 **C·온도·P·Mn·Si·S 종점 참고예상과 설명을 개선하는 단일 HTML 보조도구**입니다.
+작업자가 오프라인 회사 PC에서 조업·샘플·종점·실제 투입 데이터를 직접 입력하면, 공개 문헌 시나리오에서 시작해 사업소·설비별 오차를 안전하게 누적하고 **C·온도·P·Mn·Si·S 종점 참고예상과 선택형 투입량·시점 참고안을 개선하는 단일 HTML 보조도구**입니다.
 
 > **안전·품질 고지:** 현재 공개 버전은 합성 DEMO와 공개 문헌 시나리오만 포함합니다. 실제 BOF 정확도와 현장 적합성은 검증되지 않았습니다. 설비 제어, 인터록, 표준작업, 실험실 분석, 출강 승인 또는 취련사의 판단을 대체하지 않습니다.
 
-![취련 코치 v0.6.1 G6 대시보드](docs/manual/screenshots/v0.6.0/03-dashboard-g6.png)
+![취련 코치 v0.7.2 G6 대시보드와 투입 코치](docs/manual/screenshots/v0.7.2/01-dashboard-addition-coach.png)
 
 ## 한국어
 
-### v0.6.1 핵심 변화
+### v0.7.2 핵심 변화
+
+- **선택형 투입 코치:** Flux·냉각재·합금·가탄재·추가 산소의 참고량과 시점을 한 줄로 표시하며 사용하지 않아도 G단계 진행 가능
+- **작업자 계획 비교:** 수기 예상량·예정시각과 코치안을 나란히 비교하되 계획·권고·실제 투입을 별도 원장으로 보존
+- **문헌 모델에서 현장 보정으로:** 공개 문헌 시험계수로 즉시 계산하고 실제 투입 전·후 효과 오차가 쌓이면 검토용 투입계수 후보 생성
+- **독립 학습 관문:** 10/30/50/70건, 최신 20건 독립검증, 10일·작업자 3명·투입량 3구간·시점 3구간을 확인하며 자동 적용 금지
+- **투입계수 비상복구 카드:** 양·시점·효과 핵심 6개를 `BOFARC1` 문자열·화면·인쇄·수기로 기록하고 검증 후 설정 초안으로 복구
+- **전체 데이터 연계:** IndexedDB 자동저장, 단일 JSON, CSV·Excel, 설정·모델·후보 버전 이력에 투입 코치 자료 포함
+
+![작업자 계획과 코치 참고안 비교](docs/manual/screenshots/v0.7.2/02-addition-plan-comparison.png)
+
+### v0.6.1 기반 기능
 
 - **보정계수 비상복구 카드:** 현재 적용 중인 C·온도·P·Mn·Si·S 핵심 6개와 선택 학습 실행의 상세 18개를 화면·인쇄·복구문자열로 기록
 - **수동 비상복구:** 프로필·계수버전·계산식·기준지문·확인코드를 검사하고 현재값 비교 후 설정 초안으로만 반영
@@ -38,16 +49,18 @@
 
 ### 바로 사용하기
 
-1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.6.1.html`을 받습니다.
+1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.7.2.html`을 받습니다.
 2. 회사 PC의 고정 폴더에 저장하고 Edge 또는 Chrome에서 엽니다.
 3. 작업자 표시 이름을 입력하고 합성 `DEMO로 체험` 또는 `빈 작업으로 시작`을 선택합니다.
 4. 실제 사용 전 `기준 정보`에서 강종·재료·관리게이트·단위·설비·계수를 확인합니다.
 5. `신규 차지`에서 실제 G0 값과 실제 시각을 입력합니다.
 6. 중앙 `현재 해야 할 일`의 큰 파란 버튼을 따라 조업·샘플·분석·체크포인트·재취련·출강을 기록합니다.
-7. 현재 계수의 최후 수기 복구본이 필요하면 `학습 · 계수 > 보정계수 비상복구 카드`에서 핵심 6개를 기록합니다.
-8. 교대·브라우저 정리·PC 이동·계수 변경 전 `분석 · 리포트 > 전체 데이터 JSON으로 저장`을 실행합니다.
+7. 투입량·시점 참고가 필요하면 대시보드 `투입 코치 > 비교 보기`에서 자신의 계획과 비교합니다. 사용하지 않아도 됩니다.
+8. 실제 투입은 하단 `자재 투입 기록` 또는 `재송풍 기록`으로 별도 저장합니다.
+9. 현재 계수의 최후 수기 복구본이 필요하면 `학습 · 계수`에서 종점계수·투입계수 복구 카드를 각각 기록합니다.
+10. 교대·브라우저 정리·PC 이동·계수 변경 전 `분석 · 리포트 > 전체 데이터 JSON으로 저장`을 실행합니다.
 
-요약 절차는 [한영 사용 설명서](docs/user-guide.md), 모든 명칭·단위·입력 예·오류조건은 [v0.6.1 상세 설명서](docs/manual/취련코치_상세_설명서_v0.6.1.md), 사람에게 소개할 때는 [발표용 설명서](docs/manual/취련코치_발표용_설명서_v0.6.1.md), 검증 결과는 [v0.6.1 감사](docs/audits/v0.6.1_비상복구카드_기능_UI_UX_회귀감사_2026-08-23.md)에 있습니다.
+요약 절차는 [한영 사용 설명서](docs/user-guide.md), 모든 명칭·단위·입력 예·오류조건은 [v0.7.2 상세 설명서](docs/manual/취련코치_상세_설명서_v0.7.2.md), 사람에게 소개할 때는 [발표용 설명서](docs/manual/취련코치_발표용_설명서_v0.7.2.md), 검증 결과는 [v0.7.2 감사](docs/audits/v0.7.2_투입코치_기능_UI_UX_데이터_회귀감사_2026-08-24.md)에 있습니다.
 
 ### 종점 참고예상
 
@@ -108,7 +121,7 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check`는 lint, 137개 단위·통합 시험, 일반 빌드, 단일 HTML 빌드, Sites worker 시험을 실행합니다. 26개 브라우저 E2E는 공정입력, 다중차지, 정정·출강, JSON 전체복원·취소, 오프라인 단일파일, 다중 창 충돌, 비상복구 카드, 반응형과 문서 5종 렌더링을 확인합니다. Chromium과 이 개발 PC에 설치된 Chrome·Edge 채널을 검사했으며 실제 회사 PC 정책은 별도 환경 검증이 필요합니다.
+`npm run check`는 lint, 165개 단위·통합 시험, 일반 빌드, 단일 HTML 빌드, Sites worker 시험을 실행합니다. Chromium 29개 E2E는 공정입력, 다중차지, 정정·출강, JSON 전체복원·취소, 오프라인 단일파일, 다중 창 충돌, 두 종류의 비상복구 카드, 투입계획 비교·학습, 반응형과 문서 렌더링을 확인합니다. 브라우저 시험은 구형 개발 서버를 재사용하지 않으며 현재 작업공간·버전·필수 소스·5173 포트를 사전검사합니다. 실제 회사 PC 정책은 별도 환경 검증이 필요합니다.
 
 ### 공개 저장소 보안 원칙
 
@@ -121,9 +134,20 @@ npm run test:e2e
 
 ## English
 
-BOF Endpoint Coach v0.6.1 is a single-file, offline desktop assistant. Operators manually enter heat, process, sample, and confirmed endpoint data. The tool starts with transparent public-literature scenarios and preserves plant/equipment-specific residual evidence so reviewed endpoint estimates can improve over time.
+BOF Endpoint Coach v0.7.2 is a single-file, offline desktop assistant. Operators manually enter heat, process, sample, confirmed endpoint, and actual-addition data. The tool starts with transparent public-literature scenarios and preserves separate endpoint and addition-effect residual evidence so reviewed estimates can improve over time.
 
-### What v0.6.1 adds
+### What v0.7.2 adds
+
+- Optional one-line addition coach for fluxes, coolants, alloys, carburizers, and additional oxygen; stage progression never depends on using it
+- Side-by-side operator-plan versus coach-reference comparison while plans, proposals, and actual events remain separate records
+- Literature-test amount/timing models followed by actual pre/post-effect residual evidence and human-reviewed addition-coefficient candidates
+- 10/30/50/70 row gates plus a latest-20 holdout, ten days, three operators, three amount bands, and three timing bands; no automatic application
+- BOFARC1 emergency card for six applied amount, timing, and effect corrections; verified restores enter a settings draft only
+- IndexedDB, canonical JSON, CSV/Excel, version history, and migration coverage for all addition-coach data
+
+![Addition coach learning](docs/manual/screenshots/v0.7.2/03-addition-learning.png)
+
+### v0.6.1 foundation
 
 - Emergency recovery card for the six applied C, temperature, P, Mn, Si, and S offsets
 - Optional 18-value learning detail view: value at run, recommended delta, and candidate for each target
@@ -146,7 +170,7 @@ BOF Endpoint Coach v0.6.1 is a single-file, offline desktop assistant. Operators
 
 ### Quick start
 
-1. Download `BOF_Endpoint_Coach_v0.6.1.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
+1. Download `BOF_Endpoint_Coach_v0.7.2.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
 2. Open it in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
 3. Set a local operator display name, then choose synthetic DEMO or an empty workspace.
 4. Review grade, material, gate, unit, equipment, and coefficient settings.

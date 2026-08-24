@@ -20,7 +20,9 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- --host 127.0.0.1",
     url: "http://127.0.0.1:5173",
-    reuseExistingServer: !process.env.CI,
+    // A server left running from another checkout can silently serve obsolete source.
+    // Release and audit tests must always own the server they validate.
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

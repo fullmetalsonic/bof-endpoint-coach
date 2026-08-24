@@ -1,13 +1,16 @@
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { expect, test } from "@playwright/test";
 
+const { version } = JSON.parse(readFileSync(path.resolve("package.json"), "utf8"));
+const versionHeading = new RegExp(`v${version.replaceAll(".", "\\.")}`);
 const documents = [
-  ["사용 설명서", "BOF_Endpoint_Coach_USER_GUIDE_v0.6.1.html", /v0\.6\.1/],
-  ["상세 설명서", "BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.6.1.html", /v0\.6\.1/],
-  ["발표용 설명서", "BOF_Endpoint_Coach_PRESENTATION_GUIDE_v0.6.1.html", /v0\.6\.1/],
-  ["GitHub형 README", "BOF_Endpoint_Coach_README_v0.6.1.html", /BOF Endpoint Coach/],
-  ["메일 미리보기", "BOF_Endpoint_Coach_EMAIL_PREVIEW_v0.6.1.html", /BOF Endpoint Coach/],
+  ["사용 설명서", `BOF_Endpoint_Coach_USER_GUIDE_v${version}.html`, versionHeading],
+  ["상세 설명서", `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v${version}.html`, versionHeading],
+  ["발표용 설명서", `BOF_Endpoint_Coach_PRESENTATION_GUIDE_v${version}.html`, versionHeading],
+  ["GitHub형 README", `BOF_Endpoint_Coach_README_v${version}.html`, /BOF Endpoint Coach/],
+  ["메일 미리보기", `BOF_Endpoint_Coach_EMAIL_PREVIEW_v${version}.html`, /BOF Endpoint Coach/],
 ];
 
 for (const [label, filename, heading] of documents) {

@@ -11,11 +11,13 @@ const emailBodyPath = resolve(projectRoot, `work/email/BOF_Endpoint_Coach_EMAIL_
 const previewPath = resolve(projectRoot, `release/BOF_Endpoint_Coach_EMAIL_PREVIEW_v${version}.html`);
 
 const images = [
-  { path: "docs/manual/screenshots/v0.6.0/03-dashboard-g6.png", cid: "bof-dashboard-g6" },
+  { path: "docs/manual/screenshots/v0.7.2/01-dashboard-addition-coach.png", cid: "bof-v072-addition-dashboard" },
+  { path: "docs/manual/screenshots/v0.7.2/02-addition-plan-comparison.png", cid: "bof-v072-addition-comparison" },
   { path: "docs/manual/screenshots/v0.6.1/02-recovery-card-core.png", cid: "bof-recovery-card-core" },
   { path: "docs/manual/screenshots/v0.6.0/01-storage-recovery.png", cid: "bof-storage-recovery" },
   { path: "docs/manual/screenshots/v0.6.0/04-prediction-explanation.png", cid: "bof-prediction-explanation" },
   { path: "docs/manual/screenshots/v0.6.0/05-learning-coefficient-runs.png", cid: "bof-learning-runs" },
+  { path: "docs/manual/screenshots/v0.7.2/03-addition-learning.png", cid: "bof-v072-addition-learning" },
 ];
 
 const renderedReadme = execFileSync(
@@ -95,7 +97,7 @@ function wrapEmail(articleHtml) {
         <table role="presentation" width="960" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:960px;border-collapse:collapse;">
           <tr>
             <td style="padding:14px 18px;border:1px solid #d1d9e0;border-radius:6px 6px 0 0;background:#fff8c5;color:#633c01;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif;font-size:14px;line-height:1.5;">
-              <strong style="font-weight:700;">v${version} 배포 안내:</strong> 단일 JSON 전체 백업·복원, 중요 작업 전 복구점, 7일 복원 취소, 재현 가능한 학습 실행, 종점예상 근거 설명을 추가했습니다. GitHub README 전체와 최신 화면을 본문에서 바로 볼 수 있습니다.
+              <strong style="font-weight:700;">v${version} 배포 안내:</strong> 선택형 투입량·시점 코치, 작업자 계획 비교, 독립 투입효과 오차학습과 투입계수 비상복구 카드를 추가했습니다. GitHub README 전체와 최신 화면을 본문에서 바로 볼 수 있습니다.
             </td>
           </tr>
           <tr>

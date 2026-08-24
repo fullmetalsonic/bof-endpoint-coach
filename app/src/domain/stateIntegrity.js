@@ -5,6 +5,7 @@ import { findAnalysisResult, getAnalysisResults } from "./analysisRecords.js";
 const statuses = new Set(["in_progress", "tapped", "completed", "cancelled", "archived"]);
 const chemistryKeys = new Set(["C", "P", "Mn", "Si", "S"]);
 const recordStatuses = new Set(["active", "superseded", "voided"]);
+const additionDecisions = new Set(["keep_operator_plan", "copy_coach_to_plan", "defer_until_sample", "dismiss_for_heat"]);
 
 function uniqueNonBlank(values) {
   return values.every((value) => typeof value === "string" && value.trim()) && new Set(values).size === values.length;
@@ -59,7 +60,7 @@ function correctionTargetExists(heat, entry) {
 }
 
 export function validateOperationalState(state) {
-  if (!state || !state.settings || !Array.isArray(state.heats) || !Array.isArray(state.settings.gradeProfiles) || !Array.isArray(state.settings.materials) || !Array.isArray(state.settings.equipmentProfiles) || !Array.isArray(state.settings.coefficientProfiles)) return "state_shape_invalid";
+  if (!state || !state.settings || !Array.isArray(state.heats) || !Array.isArray(state.settings.gradeProfiles) || !Array.isArray(state.settings.materials) || !Array.isArray(state.settings.equipmentProfiles) || !Array.isArray(state.settings.coefficientProfiles) || !Array.isArray(state.settings.additionModelProfiles)) return "state_shape_invalid";
   if (!Array.isArray(state.operationLog) || (state.currentHeatId !== null && !state.heats.some((heat) => heat.id === state.currentHeatId))) return "state_reference_integrity_failed";
   if (!uniqueNonBlank(state.heats.map((heat) => heat.id))) return "heat_id_integrity_failed";
   for (const heat of state.heats) {
@@ -97,6 +98,14 @@ export function validateOperationalState(state) {
       if (!match || (match.analysis.status ?? "active") !== "active" || (match.sample.status ?? "active") !== "active" || !["G7", "G8"].includes(heat.stage)) return "state_reference_integrity_failed";
     }
     if (heat.predictionSnapshots && (!Array.isArray(heat.predictionSnapshots) || !uniqueNonBlank(heat.predictionSnapshots.map((item) => item.id)) || heat.predictionSnapshots.some((item) => !validDate(item.calculatedAt) || !isKnownStage(item.stage)))) return "prediction_snapshot_integrity_failed";
+    const coach = heat.additionCoach ?? { operatorPlans: [], proposals: [], decisions: [] };
+    if (![coach.operatorPlans, coach.proposals, coach.decisions].every(Array.isArray)) return "addition_coach_integrity_failed";
+    if (!uniqueNonBlank([...coach.operatorPlans, ...coach.proposals, ...coach.decisions].map((item) => item.id))) return "addition_coach_integrity_failed";
+    if ([...coach.operatorPlans, ...coach.proposals, ...coach.decisions].some((item) => !validDate(item.createdAt ?? item.recordedAt ?? item.calculatedAt))) return "addition_coach_integrity_failed";
+    if (coach.operatorPlans.some((plan) => !recordStatuses.has(plan.status ?? "active") || plan.heatId !== heat.id || !isKnownStage(plan.stage) || !["material", "oxygen"].includes(plan.operationType) || !validOptionalNumber(plan.amount) || Number(plan.amount) <= 0 || (plan.operationType === "material" && !plan.materialCode?.trim()))) return "addition_coach_integrity_failed";
+    const proposalIds = new Set(coach.proposals.map((proposal) => proposal.id));
+    if (coach.proposals.some((proposal) => !recordStatuses.has(proposal.status ?? "active") || proposal.heatId !== heat.id || !isKnownStage(proposal.stage) || !proposal.result || !Array.isArray(proposal.result.recommendations ?? []) || (proposal.result.recommendations ?? []).some((recommendation) => !recommendation.model || !recommendation.operationType || !validOptionalNumber(recommendation.amount?.midpoint) || Number(recommendation.amount?.midpoint) <= 0))) return "addition_coach_integrity_failed";
+    if (coach.decisions.some((decision) => !proposalIds.has(decision.proposalId) || !additionDecisions.has(decision.decision))) return "addition_coach_integrity_failed";
     if (heat.correctionLog && (!Array.isArray(heat.correctionLog) || !uniqueNonBlank(heat.correctionLog.map((item) => item.id)) || heat.correctionLog.some((item) => !validDate(item.recordedAt) || !item.reason?.trim() || !correctionTargetExists(heat, item)))) return "correction_log_integrity_failed";
   }
   return null;

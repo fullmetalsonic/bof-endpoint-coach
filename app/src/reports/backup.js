@@ -58,6 +58,7 @@ function buildCsvFiles(state) {
     correction_base_json: json(heat.correctionBase ?? null),
     reference_snapshot_json: json(heat.referenceSnapshot ?? null),
     prediction_snapshots_json: json(heat.predictionSnapshots ?? []),
+    addition_coach_json: json(heat.additionCoach ?? { hidden: false, operatorPlans: [], proposals: [], decisions: [] }),
     correction_log_json: json(heat.correctionLog ?? []),
     actual_endpoint_analysis_id: heat.actualEndpointAnalysisId ?? "",
     lifecycle_json: json({ tappedAt: heat.tappedAt ?? null, completedAt: heat.completedAt ?? null, cancelledAt: heat.cancelledAt ?? null, cancellationReason: heat.cancellationReason ?? null, archivedAt: heat.archivedAt ?? null, lifecycleRecordedBy: heat.lifecycleRecordedBy ?? null }),
@@ -83,7 +84,7 @@ function buildCsvFiles(state) {
     residual_id: row.id, heat_id: row.heatId, element: row.element, unit: row.unit, predicted: row.predicted, actual: row.actual, residual: row.residual, predicted_at: row.predictedAt, actual_at: row.actualAt, grade_code: row.gradeCode, equipment_profile_id: row.equipmentProfileId, formula_version: row.formulaVersion, coefficient_id: row.coefficientId, coefficient_version_id: row.coefficientVersionId, reference_mode: row.referenceMode, synthetic: row.synthetic ? "true" : "false",
   }));
   return {
-    "heats.csv": encodeCsv(heats, ["heat_id", "grade_code", "equipment_profile_id", "coefficient_profile_id", "status", "stage", "stage_label_ko", "stage_label_en", "started_at", "expected_tap_at", "demo", "initial_json", "process_json", "stage_history_json", "correction_base_json", "reference_snapshot_json", "prediction_snapshots_json", "correction_log_json", "actual_endpoint_analysis_id", "lifecycle_json"]),
+    "heats.csv": encodeCsv(heats, ["heat_id", "grade_code", "equipment_profile_id", "coefficient_profile_id", "status", "stage", "stage_label_ko", "stage_label_en", "started_at", "expected_tap_at", "demo", "initial_json", "process_json", "stage_history_json", "correction_base_json", "reference_snapshot_json", "prediction_snapshots_json", "addition_coach_json", "correction_log_json", "actual_endpoint_analysis_id", "lifecycle_json"]),
     "events.csv": encodeCsv(events, ["heat_id", "event_id", "type", "occurred_at", "payload_json"]),
     "samples.csv": encodeCsv(samples, ["heat_id", "sample_id", "status", "sampled_at", "recorded_at", "recorded_by_json", "stage", "adopted", "adopted_analysis_id", "process_snapshot_json"]),
     "analysis_results.csv": encodeCsv(analysisResults, ["heat_id", "analysis_id", "sample_id", "status", "method", "occurred_at", "recorded_at", "recorded_by_json", "correction_of", "process_snapshot_json"]),
@@ -166,6 +167,7 @@ export async function restoreBackup(file) {
       correctionBase: row.correction_base_json ? JSON.parse(row.correction_base_json) : undefined,
       referenceSnapshot: row.reference_snapshot_json ? JSON.parse(row.reference_snapshot_json) : undefined,
       predictionSnapshots: row.prediction_snapshots_json ? JSON.parse(row.prediction_snapshots_json) : [],
+      additionCoach: row.addition_coach_json ? JSON.parse(row.addition_coach_json) : { hidden: false, operatorPlans: [], proposals: [], decisions: [] },
       correctionLog: row.correction_log_json ? JSON.parse(row.correction_log_json) : [],
       actualEndpointAnalysisId: row.actual_endpoint_analysis_id || null,
       samples,

@@ -1,4 +1,5 @@
 import { COEFFICIENT_FIELDS, coefficientValueErrors } from "../calculation/coefficientProfile.js";
+import { resolveAdditionProfile } from "../calculation/addition/additionProfile.js";
 
 const coefficientFieldKeys = new Set(COEFFICIENT_FIELDS.map((field) => field.key));
 const calibrationFieldKeys = new Set(["C", "temperature", "P", "Mn", "Si", "S"]);
@@ -43,22 +44,39 @@ function manualRecoverySourceValid(source, calibrationOffsets) {
     && Math.abs(Number(row.currentOffset) + Number(row.recommendedDelta) - Number(row.candidateOffset)) < 1e-8);
 }
 
+function additionManualRecoverySourceValid(source, corrections) {
+  if (source === undefined || source === null) return true;
+  if (!source || typeof source !== "object" || Array.isArray(source)) return false;
+  if (source.cardVersion !== "BOFARC1"
+    || !source.sourceProfileVersionId?.trim()
+    || !/^[A-F0-9]{12}$/.test(source.baseFingerprint ?? "")
+    || !/^[A-F0-9]{8}$/.test(source.checkCode ?? "")
+    || !Number.isFinite(new Date(source.enteredAt).getTime())
+    || !source.enteredBy?.trim()
+    || String(source.reason ?? "").trim().length < 3
+    || source.evidenceRestored !== false) return false;
+  return corrections && typeof corrections === "object";
+}
+
 export function validateSettings(settings, locale = "ko") {
   const errors = [];
-  if (!settings.gradeProfiles.length || !settings.materials.length || !settings.equipmentProfiles.length || !settings.coefficientProfiles.length) {
-    errors.push(locale === "ko" ? "강종·재료·설비·계수 프로필은 각각 하나 이상 필요합니다." : "At least one grade, material, equipment, and coefficient profile is required.");
+  if (!settings.gradeProfiles.length || !settings.materials.length || !settings.equipmentProfiles.length || !settings.coefficientProfiles.length || !settings.additionModelProfiles?.length) {
+    errors.push(locale === "ko" ? "강종·재료·설비·종점계수·투입모델 프로필은 각각 하나 이상 필요합니다." : "At least one grade, material, equipment, endpoint coefficient, and addition model profile is required.");
   }
-  if (duplicates(settings.gradeProfiles.map((item) => item.code.trim())).length) {
+  if (duplicates(settings.gradeProfiles.map((item) => typeof item?.code === "string" ? item.code.trim() : "")).length) {
     errors.push(locale === "ko" ? "강종 코드는 비어 있거나 중복될 수 없습니다." : "Grade codes cannot be blank or duplicated.");
   }
-  if (duplicates(settings.materials.map((item) => item.code.trim())).length) {
+  if (duplicates(settings.materials.map((item) => typeof item?.code === "string" ? item.code.trim() : "")).length) {
     errors.push(locale === "ko" ? "재료 코드는 비어 있거나 중복될 수 없습니다." : "Material codes cannot be blank or duplicated.");
   }
-  if (duplicates(settings.coefficientProfiles.map((item) => item.id.trim())).length) {
+  if (duplicates(settings.coefficientProfiles.map((item) => typeof item?.id === "string" ? item.id.trim() : "")).length) {
     errors.push(locale === "ko" ? "계수 프로필 ID는 비어 있거나 중복될 수 없습니다." : "Coefficient profile IDs cannot be blank or duplicated.");
   }
-  if (duplicates(settings.equipmentProfiles.map((item) => item.id.trim())).length) {
+  if (duplicates(settings.equipmentProfiles.map((item) => typeof item?.id === "string" ? item.id.trim() : "")).length) {
     errors.push(locale === "ko" ? "설비 프로필 ID는 비어 있거나 중복될 수 없습니다." : "Equipment profile IDs cannot be blank or duplicated.");
+  }
+  if (duplicates((settings.additionModelProfiles ?? []).map((item) => typeof item?.id === "string" ? item.id.trim() : "")).length) {
+    errors.push(locale === "ko" ? "투입모델 프로필 ID는 비어 있거나 중복될 수 없습니다." : "Addition model profile IDs cannot be blank or duplicated.");
   }
   const units = settings.unitPolicy ?? {};
   if (!massUnits.has(units.mass) || units.oxygen !== "Nm³" || units.temperature !== "°C" || !chemistryUnits.has(units.chemistry)) {
@@ -120,6 +138,14 @@ export function validateSettings(settings, locale = "ko") {
     if (!manualRecoverySourceValid(profile.manualRecoverySource, offsets)) {
       errors.push(locale === "ko" ? `${profile.id} 비상 수동복구 출처의 형식과 확인코드를 확인하십시오.` : `Check ${profile.id} emergency manual-recovery source metadata.`);
     }
+  });
+  (settings.additionModelProfiles ?? []).forEach((profile) => {
+    const resolved = resolveAdditionProfile(profile);
+    if (resolved.validationErrors.length) errors.push(locale === "ko" ? `${profile.id} 투입모델 계수·범위·단계 설정을 확인하십시오.` : `Check ${profile.id} addition-model coefficients, limits, and stages.`);
+    if (profile.status === "site_approved" && (!profile.approval?.approvedBy?.trim() || !profile.approval?.reason?.trim() || !profile.approval?.approvedAt)) {
+      errors.push(locale === "ko" ? `${profile.id} 현장 승인에는 승인자·근거·시각이 필요합니다.` : `${profile.id} site approval requires approver, reason, and time.`);
+    }
+    if (!additionManualRecoverySourceValid(profile.manualRecoverySource, profile.corrections)) errors.push(locale === "ko" ? `${profile.id} 투입계수 수동복구 출처를 확인하십시오.` : `Check ${profile.id} addition manual-recovery source metadata.`);
   });
   return errors;
 }

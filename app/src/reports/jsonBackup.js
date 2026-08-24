@@ -4,6 +4,7 @@ import { buildResidualLedger } from "../calibration/residualLedger.js";
 import { JSON_BACKUP_FORMAT, JSON_BACKUP_MAX_BYTES, JSON_BACKUP_SCHEMA_VERSION, assertSafeJsonTree, validateJsonBackupContent, validatePortableRecoveryPoint } from "../domain/jsonBackupSchema.js";
 import { retainRecoveryPoints } from "../storage/recoveryStore.js";
 import { canonicalStringify, sha256Hex } from "./canonicalJson.js";
+import { buildAdditionEvidenceLedger } from "../calibration/additionEvidence.js";
 
 function workspaceForExport(state) {
   const workspace = structuredClone(state);
@@ -24,6 +25,10 @@ export function jsonBackupSummary(state, recoveryPoints = []) {
     sampleCount: heats.reduce((count, heat) => count + (heat.samples?.length ?? 0), 0),
     analysisCount: heats.reduce((count, heat) => count + (heat.samples ?? []).reduce((subtotal, sample) => subtotal + getAnalysisResults(sample).length, 0), 0),
     coefficientVersionCount: (state.settings?.coefficientProfiles ?? []).reduce((count, profile) => count + 1 + (profile.versionHistory?.length ?? 0), 0),
+    additionModelVersionCount: (state.settings?.additionModelProfiles ?? []).reduce((count, profile) => count + 1 + (profile.versionHistory?.length ?? 0), 0),
+    additionProposalCount: heats.reduce((count, heat) => count + (heat.additionCoach?.proposals?.length ?? 0), 0),
+    additionPlanCount: heats.reduce((count, heat) => count + (heat.additionCoach?.operatorPlans?.length ?? 0), 0),
+    additionEvidenceCount: buildAdditionEvidenceLedger(state).length,
     residualCount: buildResidualLedger(state).length,
     trainingRunCount: state.trainingRuns?.length ?? 0,
     recoveryPointCount: recoveryPoints.length,

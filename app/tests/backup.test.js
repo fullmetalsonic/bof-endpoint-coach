@@ -8,8 +8,8 @@ import { correctAnalysisRecord, setActualEndpointAnalysis } from "../src/domain/
 import { capturePredictionSnapshot } from "../src/domain/predictionHistory.js";
 
 describe("backup package", () => {
-  it("uses app v0.6.1 while keeping the offline-learning v0.6.0 backup schema", () => {
-    expect(APP_VERSION).toBe("0.6.1");
+  it("uses app v0.7.2 while keeping the offline-learning v0.6.0 backup schema", () => {
+    expect(APP_VERSION).toBe("0.7.2");
     expect(BACKUP_SCHEMA_VERSION).toBe("0.6.0");
     expect(createDemoState().schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
   });
@@ -69,6 +69,20 @@ describe("backup package", () => {
     expect(restoredHeat.predictionSnapshots).toHaveLength(2);
     expect(restoredHeat.actualEndpointAnalysisId).toBe(restoredHeat.samples.at(-1).adoptedAnalysisId);
     expect(restoredHeat.referenceSnapshot.coefficientProfile.id).toBe("COEF-LIT-001");
+  });
+
+  it("round-trips addition plans, shadow proposals, and decisions through the compatibility CSV package", async () => {
+    const source = createDemoState();
+    source.heats[0].additionCoach = {
+      hidden: false,
+      operatorPlans: [{ id: "ADDPLAN-BACKUP", status: "active", createdAt: new Date().toISOString(), heatId: source.heats[0].id, stage: source.heats[0].stage, operationType: "material", materialCode: "LIME-DEMO", amount: 120, unit: "kg" }],
+      proposals: [{ id: "ADDPROP-BACKUP", status: "active", createdAt: new Date().toISOString(), heatId: source.heats[0].id, stage: source.heats[0].stage, result: { available: true, recommendations: [] } }],
+      decisions: [{ id: "ADDDEC-BACKUP", createdAt: new Date().toISOString(), proposalId: "ADDPROP-BACKUP", decision: "keep_operator_plan" }],
+    };
+    const restored = await restoreBackup(await (await createBackupBlob(source)).arrayBuffer());
+    expect(restored.heats[0].additionCoach.operatorPlans[0].id).toBe("ADDPLAN-BACKUP");
+    expect(restored.heats[0].additionCoach.proposals[0].id).toBe("ADDPROP-BACKUP");
+    expect(restored.heats[0].additionCoach.decisions[0].proposalId).toBe("ADDPROP-BACKUP");
   });
 
   it("rejects a backup with an unsupported manifest schema", async () => {

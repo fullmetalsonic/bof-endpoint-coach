@@ -8,7 +8,8 @@ describe("Excel report", () => {
     const sheets = buildExcelSheets(createDemoState());
     expect(sheets.map((sheet) => sheet.name)).toEqual([
       "Heat summary", "Events", "Analysis", "Corrections", "Predictions",
-      "Residual ledger", "Calibration candidates", "Coefficient versions", "Read me",
+      "Residual ledger", "Calibration candidates", "Coefficient versions",
+      "Addition plans", "Addition proposals", "Addition evidence", "Addition candidates", "Addition versions", "Read me",
     ]);
     expect(sheets[0].rows.length).toBeGreaterThan(1);
   });
@@ -28,5 +29,6 @@ describe("Excel report", () => {
     const workbook = await zip.file("xl/workbook.xml").async("text");
     expect(workbook).toContain('name="Heat summary"');
     expect(workbook).toContain('name="Read me"');
+    expect(workbook).toContain('name="Addition evidence"');
   });
 });

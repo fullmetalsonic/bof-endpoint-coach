@@ -1,4 +1,5 @@
 import { createLiteratureCoefficientProfile } from "../calculation/coefficientProfile.js";
+import { createLiteratureAdditionProfile } from "../calculation/addition/additionProfile.js";
 
 export function createReferenceSettings() {
   return {
@@ -36,6 +37,7 @@ export function createReferenceSettings() {
       },
     ],
     coefficientProfiles: [createLiteratureCoefficientProfile()],
+    additionModelProfiles: [createLiteratureAdditionProfile()],
     gates: ["G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"],
     unitPolicy: { mass: "kg", oxygen: "Nm³", temperature: "°C", chemistry: "%" },
     version: "DEMO-REF-001",

@@ -27,11 +27,13 @@ function imageDataUri(relativePath) {
 
 let articleHtml = renderedReadme;
 for (const imagePath of [
-  "docs/manual/screenshots/v0.6.0/03-dashboard-g6.png",
+  "docs/manual/screenshots/v0.7.2/01-dashboard-addition-coach.png",
+  "docs/manual/screenshots/v0.7.2/02-addition-plan-comparison.png",
   "docs/manual/screenshots/v0.6.1/02-recovery-card-core.png",
   "docs/manual/screenshots/v0.6.0/01-storage-recovery.png",
   "docs/manual/screenshots/v0.6.0/04-prediction-explanation.png",
   "docs/manual/screenshots/v0.6.0/05-learning-coefficient-runs.png",
+  "docs/manual/screenshots/v0.7.2/03-addition-learning.png",
 ]) {
   articleHtml = articleHtml.replaceAll(
     `src="${imagePath}"`,

@@ -1,6 +1,6 @@
-# 취련 코치 v0.6.1 사용 설명서 / BOF Endpoint Coach v0.6.1 User Guide
+# 취련 코치 v0.7.2 사용 설명서 / BOF Endpoint Coach v0.7.2 User Guide
 
-이 문서는 현장에서 작업 순서를 빠르게 확인하는 한영 요약 설명서입니다. 모든 필드·단위·입력 예·오류 조건·정정·학습·비상복구 카드·JSON 복구 설명은 [상세 설명서](manual/취련코치_상세_설명서_v0.6.1.md)를 사용하십시오. 사람에게 제품을 소개할 때는 [발표용 설명서](manual/취련코치_발표용_설명서_v0.6.1.md)를 사용하십시오. 이미지가 포함된 오프라인 문서는 `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.6.1.html`과 `BOF_Endpoint_Coach_PRESENTATION_GUIDE_v0.6.1.html`입니다.
+이 문서는 현장에서 작업 순서를 빠르게 확인하는 한영 요약 설명서입니다. 모든 필드·단위·입력 예·오류 조건·정정·종점·투입 학습·비상복구 카드·JSON 복구 설명은 [상세 설명서](manual/취련코치_상세_설명서_v0.7.2.md)를 사용하십시오. 사람에게 제품을 소개할 때는 [발표용 설명서](manual/취련코치_발표용_설명서_v0.7.2.md)를 사용하십시오. 이미지가 포함된 오프라인 문서는 `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.7.2.html`과 `BOF_Endpoint_Coach_PRESENTATION_GUIDE_v0.7.2.html`입니다.
 
 > **안전·품질 경계:** C·온도·P·Mn·Si·S는 공개 문헌 시나리오와 수동 입력으로 계산한 참고예상입니다. 실제 BOF 정확도는 아직 검증되지 않았습니다. 설비 제어, 인터록, 표준작업, 실험실 분석, 출강 승인, 취련사의 판단을 대체하지 않습니다.
 
@@ -8,7 +8,7 @@
 
 ### 1. 실행 전 준비
 
-1. `BOF_Endpoint_Coach_v0.6.1.html`을 회사 PC의 고정 작업 폴더에 저장합니다.
+1. `BOF_Endpoint_Coach_v0.7.2.html`을 회사 PC의 고정 작업 폴더에 저장합니다.
 2. Microsoft Edge 또는 Google Chrome에서 파일을 엽니다. 설치·서버·인터넷 연결은 필요하지 않습니다.
 3. 1920×1080, 브라우저 배율 100%를 권장합니다.
 4. 첫 화면에서 기록에 표시할 작업자 이름을 입력합니다. 로그인 계정이나 조직명이 아닙니다.
@@ -106,7 +106,22 @@
 
 ![비상복구 값 검증](manual/screenshots/v0.6.1/05-recovery-card-validated-comparison.png)
 
-### 9. 자동저장·JSON·복구점
+### 9. 선택형 투입 코치
+
+![대시보드 투입 코치](manual/screenshots/v0.7.2/01-dashboard-addition-coach.png)
+
+- 대시보드 한 줄에서 Flux·냉각재·합금·가탄재·추가 산소의 문헌 시험 참고량과 시점을 확인합니다.
+- 사용하지 않거나 `이번 차지에서 접기`를 눌러도 G단계 진행은 막히지 않습니다.
+- `비교 보기`에서 작업자의 예상량·예정시각과 코치안을 비교할 수 있습니다. 계획과 코치안은 실제 투입이 아닙니다.
+- 실제 투입은 기존 `자재 투입 기록` 또는 `재송풍 기록`에서 별도로 저장합니다.
+- 실제 투입 전·후 분석이 연결되면 `실제 변화 − 모델 예상 변화`를 투입효과 오차로 축적합니다.
+- 투입계수 후보는 최소건수·최신 20건 독립검증·기간·작업자·투입량·시점 분포를 통과해도 자동 적용되지 않습니다.
+
+![투입계수 비상복구 카드](manual/screenshots/v0.7.2/04-addition-recovery-card.png)
+
+투입계수 핵심 6개는 `Flux·냉각재·합금/가탄재·산소량 보정`, `권장 시점 이동`, `예상 효과 보정`입니다. `배` 1.0000은 무보정, `분` 0은 이동 없음입니다. `BOFARC1` 복구문자열은 검증 후 설정 초안으로만 들어가며 학습 근거를 복원하지 않습니다.
+
+### 10. 자동저장·JSON·복구점
 
 ![저장·복구·보고서](manual/screenshots/v0.6.0/01-storage-recovery.png)
 
@@ -121,7 +136,7 @@
 
 JSON 불러오기는 자동 병합하지 않고 전체 교체합니다. 현재/백업 요약과 해시를 비교하고 확인 체크를 해야 적용됩니다. 적용 직전 현재 상태를 보호 복구점으로 만들며 7일 동안 `마지막 불러오기 취소`를 사용할 수 있습니다.
 
-### 10. 데이터와 보안
+### 11. 데이터와 보안
 
 - 네트워크 전송과 PLC·HMI·SCC·MES·LIMS 연동은 없습니다.
 - 자동저장은 같은 브라우저 안의 편의 기능일 뿐 외부 백업이 아닙니다.
@@ -132,7 +147,7 @@ JSON 불러오기는 자동 병합하지 않고 전체 교체합니다. 현재/�
 
 ## English quick guide
 
-1. Open `BOF_Endpoint_Coach_v0.6.1.html` in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
+1. Open `BOF_Endpoint_Coach_v0.7.2.html` in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
 2. Enter a local operator display name. It is not a login or a fixed department label.
 3. Choose synthetic **DEMO** for practice or an empty workspace for manual field entry.
 4. Review grade, material, equipment, gate, unit, and coefficient settings before creating a heat.
@@ -143,7 +158,9 @@ JSON 불러오기는 자동 병합하지 않고 전체 교체합니다. 현재/�
 9. After tapping, explicitly mark a confirmed analysis as the actual endpoint before it can enter learning.
 10. Review reproducible learning runs and coefficient candidates. No candidate is applied automatically.
 11. Keep the emergency recovery card when a screenshot, print, or handwritten copy of the six applied offsets is needed. The optional 18 details do not recreate lost training evidence.
-12. Routine work is autosaved to IndexedDB. Export the full integrity-checked JSON before handover, settings changes, browser cleanup, or PC transfer.
-13. JSON restore is a verified full replacement, not a merge. A protected pre-restore point enables a seven-day undo.
+12. The optional addition coach compares your plan with a literature/field-corrected reference for amount and timing. A proposal or plan never creates an actual addition event.
+13. Record actual material or additional oxygen separately. Valid pre/post results accumulate an independent addition-effect residual ledger and reviewed coefficient candidates.
+14. Routine work is autosaved to IndexedDB. Export the full integrity-checked JSON before handover, settings changes, browser cleanup, or PC transfer.
+15. JSON restore is a verified full replacement, not a merge. A protected pre-restore point enables a seven-day undo.
 
 **Field limits:** all six endpoint values remain unvalidated public-literature reference estimates. Scenario ranges are not confidence intervals. Always prioritize plant standards, laboratory results, interlocks, tap authorization, and operator judgment.

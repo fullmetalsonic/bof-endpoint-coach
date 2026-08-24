@@ -11,7 +11,7 @@ import { buildTrainingRuns } from "../calibration/trainingRun.js";
 import { listRecoveryPoints, makeRecoveryPoint, removeRecoveryPoint as removeStoredRecoveryPoint, replaceRecoveryPoints, retainRecoveryPoints, saveRecoveryPoint, setRecoveryPointProtected as protectStoredRecoveryPoint } from "../storage/recoveryStore.js";
 import { validatePortableRecoveryPoint } from "../domain/jsonBackupSchema.js";
 import { appendAdditionProposal, appendExistingAdditionProposal, createAdditionProposalSnapshot } from "../domain/addition/proposal.js";
-import { addOperatorPlan, recordAdditionDecision as applyAdditionDecision } from "../domain/addition/operatorPlan.js";
+import { addOperatorPlan, recordAdditionDecision as applyAdditionDecision, validateOperatorPlanInput } from "../domain/addition/operatorPlan.js";
 
 function withLog(state, type, payload = {}) {
   const at = new Date().toISOString();
@@ -266,9 +266,20 @@ export function useCoachState() {
   const recordOperation = useCallback((type, payload = {}) => setState((previous) => withLog(previous, type, payload)), []);
 
   const saveAdditionPlan = useCallback((form) => {
+    const snapshot = stateRef.current;
+    const targetHeatId = snapshot?.currentHeatId;
+    const heat = snapshot?.heats.find((item) => item.id === targetHeatId);
+    if (!validateOperatorPlanInput(heat, form).ok) return Promise.resolve(false);
     setState((previous) => {
-      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? addOperatorPlan(heat, form, previous.operatorProfile) : heat);
-      return withLog({ ...previous, heats }, "addition_plan_created", { heatId: previous.currentHeatId, operationType: form.operationType, materialCode: form.materialCode ?? null });
+      let changed = false;
+      const heats = previous.heats.map((item) => {
+        if (item.id !== targetHeatId) return item;
+        if (!validateOperatorPlanInput(item, form).ok) return item;
+        changed = true;
+        return addOperatorPlan(item, form, previous.operatorProfile);
+      });
+      if (!changed) return previous;
+      return withLog({ ...previous, heats }, "addition_plan_created", { heatId: targetHeatId, operationType: form.operationType, materialCode: form.materialCode ?? null });
     });
     return Promise.resolve(true);
   }, []);
@@ -286,9 +297,29 @@ export function useCoachState() {
   }, []);
 
   const recordAdditionDecision = useCallback((proposalId, decision) => {
+    const snapshot = stateRef.current;
+    const targetHeatId = snapshot?.currentHeatId;
+    const heat = snapshot?.heats.find((item) => item.id === targetHeatId);
+    try {
+      applyAdditionDecision(heat, proposalId, decision, snapshot?.operatorProfile);
+    } catch {
+      return false;
+    }
     setState((previous) => {
-      const heats = previous.heats.map((heat) => heat.id === previous.currentHeatId ? applyAdditionDecision(heat, proposalId, decision, previous.operatorProfile) : heat);
-      return withLog({ ...previous, heats }, "addition_decision_recorded", { heatId: previous.currentHeatId, proposalId, decision });
+      let changed = false;
+      const heats = previous.heats.map((heat) => {
+        if (heat.id !== targetHeatId) return heat;
+        let updated;
+        try {
+          updated = applyAdditionDecision(heat, proposalId, decision, previous.operatorProfile);
+        } catch {
+          return heat;
+        }
+        if (updated !== heat) changed = true;
+        return updated;
+      });
+      if (!changed) return previous;
+      return withLog({ ...previous, heats }, "addition_decision_recorded", { heatId: targetHeatId, proposalId, decision });
     });
     return true;
   }, []);

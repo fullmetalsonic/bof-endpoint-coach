@@ -71,6 +71,7 @@ export function voidOperatorPlan(heat, planId, reason, operatorProfile, recorded
 export function recordAdditionDecision(heat, proposalId, decision, operatorProfile, recordedAt = new Date().toISOString()) {
   if (!heat.additionCoach?.proposals?.some((proposal) => proposal.id === proposalId)) throw new Error("proposal_missing");
   if (!["keep_operator_plan", "copy_coach_to_plan", "defer_until_sample", "dismiss_for_heat"].includes(decision)) throw new Error("decision_invalid");
+  if ((heat.additionCoach.decisions ?? []).some((entry) => entry.proposalId === proposalId && entry.decision === decision)) return heat;
   const entry = { id: `ADDDEC-${crypto.randomUUID()}`, proposalId, decision, createdAt: recordedAt, recordedAt, recordedBy: operatorSnapshot(operatorProfile) };
   return { ...heat, additionCoach: { ...structuredClone(heat.additionCoach), hidden: decision === "dismiss_for_heat" ? true : Boolean(heat.additionCoach.hidden), decisions: [...(heat.additionCoach.decisions ?? []), entry] } };
 }

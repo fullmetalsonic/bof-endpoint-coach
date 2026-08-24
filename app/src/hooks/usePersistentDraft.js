@@ -22,8 +22,10 @@ export function usePersistentDraft(keyOrOptions, baseVersionArg, defaultsArg) {
     else clearDraft(key);
   }, [baseVersion, dirty, key, value]);
 
-  function commit() {
-    const snapshot = JSON.stringify(value);
+  function commit(nextValue = value) {
+    const committedValue = copy(nextValue);
+    const snapshot = JSON.stringify(committedValue);
+    setValue(committedValue);
     setCommittedSnapshot(snapshot);
     clearDraft(key);
   }

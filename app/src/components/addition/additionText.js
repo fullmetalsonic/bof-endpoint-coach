@@ -42,6 +42,20 @@ const REASONS = Object.freeze({
 const MODELS = Object.freeze({ flux: ["조재", "Flux"], coolant: ["냉각재·광석", "Coolant / ore"], alloy: ["합금철·가탄재", "Alloy / carburizer"], oxygen: ["추가 산소", "Additional oxygen"] });
 const TIMING_MODES = Object.freeze({ now: ["지금", "Now"], local_time: ["로컬 시각", "Local time"], elapsed: ["취련 경과시간 기준", "Elapsed time"], oxygen: ["누적 산소량 기준", "Cumulative oxygen"] });
 
+const PLAN_VALIDATION_MESSAGES = Object.freeze({
+  plan_operation_invalid: ["조작 종류를 선택하십시오.", "Select an action type."],
+  plan_amount_invalid: ["예상량은 0보다 큰 수치여야 합니다.", "Planned amount must be greater than zero."],
+  plan_timing_mode_invalid: ["예정 기준을 선택하십시오.", "Select a timing basis."],
+  plan_material_missing: ["투입할 재료를 선택하십시오.", "Select a material."],
+  plan_time_invalid: ["예정 시각은 차지 시작 이후의 유효한 시각이어야 합니다.", "Planned time must be valid and after the heat start."],
+  plan_elapsed_invalid: ["취련 경과시간을 0분 이상으로 입력하십시오.", "Enter an elapsed time of zero minutes or more."],
+  plan_oxygen_invalid: ["누적 산소량을 0 Nm³ 이상으로 입력하십시오.", "Enter cumulative oxygen of zero Nm³ or more."],
+  plan_record_time_invalid: ["계획 기록 시각을 확인하십시오.", "Check the plan record time."],
+  plan_save_failed: ["계획을 저장하지 못했습니다. 저장 상태와 입력값을 확인하십시오.", "The plan could not be saved. Check storage status and inputs."],
+  plan_decision_failed: ["계획 판단을 기록하지 못했습니다. 저장 상태를 확인하십시오.", "The plan decision could not be recorded. Check storage status."],
+  plan_saved_decision_failed: ["내 계획은 저장했지만 비교 판단 이력은 기록하지 못했습니다. 저장된 계획은 그대로 유지됩니다.", "The operator plan was saved, but the comparison decision was not recorded. The saved plan remains available."],
+});
+
 function pick(entry, locale) {
   return entry?.[locale === "ko" ? 0 : 1];
 }
@@ -67,4 +81,8 @@ export function modelLabel(model, locale) {
 
 export function timingModeLabel(mode, locale) {
   return pick(TIMING_MODES[mode], locale) ?? mode ?? "–";
+}
+
+export function planValidationMessage(reason, locale) {
+  return pick(PLAN_VALIDATION_MESSAGES[reason], locale) ?? reason ?? "–";
 }

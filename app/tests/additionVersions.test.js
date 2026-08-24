@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createLiteratureAdditionProfile } from "../src/calculation/addition/additionProfile.js";
 import { restoreAdditionVersion, versionAdditionProfiles } from "../src/domain/addition/additionVersions.js";
-import { addOperatorPlan } from "../src/domain/addition/operatorPlan.js";
+import { addOperatorPlan, recordAdditionDecision } from "../src/domain/addition/operatorPlan.js";
 
 describe("addition model version history", () => {
   it("archives an applied profile and preserves a restorable snapshot", () => {
@@ -26,5 +26,13 @@ describe("operator addition-plan history", () => {
     const second = addOperatorPlan(first, { ...input, amount: 120 }, { displayName: "A" }, "2026-08-24T00:11:00.000Z");
     expect(second.additionCoach.operatorPlans.map((plan) => plan.status)).toEqual(["superseded", "active"]);
     expect(second.additionCoach.operatorPlans[1].correctionOf).toBe(second.additionCoach.operatorPlans[0].id);
+  });
+
+  it("does not duplicate the same decision for one proposal", () => {
+    const heat = { id: "H-1", stage: "G6", additionCoach: { hidden: false, operatorPlans: [], proposals: [{ id: "P-1" }], decisions: [] } };
+    const first = recordAdditionDecision(heat, "P-1", "keep_operator_plan", { displayName: "A" }, "2026-08-24T00:10:00.000Z");
+    const second = recordAdditionDecision(first, "P-1", "keep_operator_plan", { displayName: "A" }, "2026-08-24T00:11:00.000Z");
+    expect(second).toBe(first);
+    expect(second.additionCoach.decisions).toHaveLength(1);
   });
 });

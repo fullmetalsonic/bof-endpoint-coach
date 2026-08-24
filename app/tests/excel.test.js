@@ -12,6 +12,9 @@ describe("Excel report", () => {
       "Addition plans", "Addition proposals", "Addition evidence", "Addition candidates", "Addition versions", "Read me",
     ]);
     expect(sheets[0].rows.length).toBeGreaterThan(1);
+    const analysis = sheets.find((sheet) => sheet.name === "Analysis");
+    expect(analysis.rows[0]).toEqual(expect.arrayContaining(["Dissolved oxygen status", "Dissolved oxygen [O] (ppm)", "Dissolved oxygen source", "Dissolved oxygen note"]));
+    expect(analysis.rows.flat()).toContain(520);
   });
 
   it("packages a valid Open XML workbook structure", async () => {

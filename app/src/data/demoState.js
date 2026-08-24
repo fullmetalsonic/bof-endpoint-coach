@@ -2,7 +2,7 @@ import { createReferenceSettings } from "./referenceSettings.js";
 import { normalizeSampleAnalyses } from "../domain/analysisRecords.js";
 import { captureHeatReferenceSnapshot } from "../domain/referenceSnapshot.js";
 
-export const APP_VERSION = "0.7.2";
+export const APP_VERSION = "0.7.3";
 export const BACKUP_SCHEMA_VERSION = "0.6.0";
 export const SUPPORTED_BACKUP_SCHEMA_VERSIONS = ["0.1.0", "0.2.0", "0.2.1", "0.3.0", "0.4.0", BACKUP_SCHEMA_VERSION];
 
@@ -74,7 +74,7 @@ export function createDemoState(operatorProfile = { displayName: "" }) {
         samples: [
           { id: "S-DEMO-01", sampledAt: atMinutes(-24), stage: "G3", method: "OES", adopted: false, processSnapshot: { cumulativeOxygenNm3: 4000 }, values: { C: 2.9, Si: 0.2, Mn: 0.036, P: 0.1, S: 0.017, temperature: 1465 } },
           { id: "S-DEMO-02", sampledAt: atMinutes(-17), stage: "G4", method: "OES", adopted: false, processSnapshot: { cumulativeOxygenNm3: 9000 }, values: { C: 1.4, Si: 0.07, Mn: 0.034, P: 0.045, S: 0.009, temperature: 1605 } },
-          { id: "S-DEMO-03", sampledAt: atMinutes(-6), stage: "G5", method: "OES", adopted: true, processSnapshot: { cumulativeOxygenNm3: 12970 }, values: { C: 0.074, Si: 0.01, Mn: 0.032, P: 0.017, S: 0.005, temperature: 1654 } },
+          { id: "S-DEMO-03", sampledAt: atMinutes(-6), stage: "G5", method: "OES", adopted: true, processSnapshot: { cumulativeOxygenNm3: 12970 }, dissolvedOxygen: { recordStatus: "recorded", valuePpm: 520, source: "oxygen_probe", note: "합성 DEMO 선택값" }, values: { C: 0.074, Si: 0.01, Mn: 0.032, P: 0.017, S: 0.005, temperature: 1654 } },
         ],
         events: [
           { id: "EV-DEMO-01", type: "charge", occurredAt: atMinutes(-42), summaryKo: "가상 장입 완료", summaryEn: "Synthetic charge complete" },

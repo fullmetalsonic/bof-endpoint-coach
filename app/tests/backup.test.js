@@ -8,8 +8,8 @@ import { correctAnalysisRecord, setActualEndpointAnalysis } from "../src/domain/
 import { capturePredictionSnapshot } from "../src/domain/predictionHistory.js";
 
 describe("backup package", () => {
-  it("uses app v0.7.2 while keeping the offline-learning v0.6.0 backup schema", () => {
-    expect(APP_VERSION).toBe("0.7.2");
+  it("uses app v0.7.3 while keeping the offline-learning v0.6.0 backup schema", () => {
+    expect(APP_VERSION).toBe("0.7.3");
     expect(BACKUP_SCHEMA_VERSION).toBe("0.6.0");
     expect(createDemoState().schemaVersion).toBe(BACKUP_SCHEMA_VERSION);
   });
@@ -36,6 +36,10 @@ describe("backup package", () => {
     expect(restored.operatorProfile).toEqual(source.operatorProfile);
     expect(restored.heats[0].samples[0].analysisResults[0].occurredAt).toBe(sourceAnalysis.occurredAt);
     expect(restored.heats[0].samples[0].analysisResults[0].processSnapshot.cumulativeOxygenNm3).toBe(4100);
+    expect(restored.heats[0].samples.at(-1).analysisResults[0].dissolvedOxygen).toMatchObject({ recordStatus: "recorded", valuePpm: 520, source: "oxygen_probe" });
+    expect(restored.heats[1].samples[0].analysisResults[0].dissolvedOxygen).toEqual({ recordStatus: "not_recorded", valuePpm: null, source: null, note: null });
+    const analysisCsv = await zip.file("analysis_results.csv").async("text");
+    expect(analysisCsv).toContain("dissolved_oxygen_status,dissolved_oxygen_ppm,dissolved_oxygen_source,dissolved_oxygen_note");
   });
 
   it("continues to restore a v0.1 manifest and migrates it to the current schema", async () => {

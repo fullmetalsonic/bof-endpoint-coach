@@ -47,6 +47,12 @@ describe("restored operational state integrity", () => {
     expect(validateOperationalState(state)).toBe("heat_value_integrity_failed");
   });
 
+  it("rejects malformed dissolved-oxygen records in restored analysis data", () => {
+    const state = createDemoState();
+    state.heats[0].samples.at(-1).analysisResults[0].dissolvedOxygen = { recordStatus: "recorded", valuePpm: -1, source: "oxygen_probe", note: null };
+    expect(validateOperationalState(state)).toBe("analysis_value_integrity_failed");
+  });
+
   it("rejects a decreasing cumulative oxygen timeline", () => {
     const state = createDemoState();
     state.heats[0].events.find((event) => event.type === "checkpoint").payload.cumulativeOxygenNm3 = 12000;

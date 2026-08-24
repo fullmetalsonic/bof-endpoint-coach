@@ -6,6 +6,7 @@ export const E2E_PORT = 5173;
 
 const VERSION_SOURCE_MARKERS = {
   "0.7.2": ["additionModelProfiles", "createLiteratureAdditionProfile"],
+  "0.7.3": ["additionModelProfiles", "createLiteratureAdditionProfile", "OptionalDissolvedOxygenSection", "not_recorded"],
 };
 
 export function validateSourceContract({ cwd, expectedRoot, packageJson, referenceSource }) {

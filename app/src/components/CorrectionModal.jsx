@@ -5,6 +5,8 @@ import { validateCorrectionRequest } from "../domain/correctionValidation.js";
 import { validationMessage } from "../domain/operationalValidation.js";
 import { usePersistentDraft } from "../hooks/usePersistentDraft.js";
 import { useDialogFocus } from "../hooks/useDialogFocus.js";
+import { createDissolvedOxygenRecord, normalizeDissolvedOxygenRecord } from "../domain/measurements/dissolvedOxygen.js";
+import { OptionalDissolvedOxygenSection } from "./measurements/OptionalDissolvedOxygenSection.jsx";
 
 function localDateTimeValue(value) {
   const date = value ? new Date(value) : new Date();
@@ -40,6 +42,7 @@ export function CorrectionModal({ heat, target, mode, locale, onClose, onConfirm
   const ko = locale === "ko";
   const payload = useMemo(() => target?.payload ?? {}, [target]);
   const sourceValues = useMemo(() => target?.kind === "analysis" ? payload.values ?? {} : {}, [payload, target?.kind]);
+  const sourceDissolvedOxygen = useMemo(() => normalizeDissolvedOxygenRecord(target?.kind === "analysis" ? payload.dissolvedOxygen : null), [payload.dissolvedOxygen, target?.kind]);
   const defaults = useMemo(() => ({
     occurredAt: localDateTimeValue(target?.occurredAt),
     reason: "",
@@ -54,10 +57,16 @@ export function CorrectionModal({ heat, target, mode, locale, onClose, onConfirm
     method: payload.method ?? "OES",
     C: numberOrBlank(sourceValues.C), P: numberOrBlank(sourceValues.P), Mn: numberOrBlank(sourceValues.Mn), Si: numberOrBlank(sourceValues.Si), S: numberOrBlank(sourceValues.S),
     temperature: numberOrBlank(sourceValues.temperature),
-  }), [payload, sourceValues, target?.occurredAt, target?.sampleId]);
+    dissolvedOxygenPpm: sourceDissolvedOxygen.recordStatus === "recorded" ? numberOrBlank(sourceDissolvedOxygen.valuePpm) : "",
+    dissolvedOxygenSource: sourceDissolvedOxygen.source ?? "",
+    dissolvedOxygenNote: sourceDissolvedOxygen.note ?? "",
+  }), [payload, sourceDissolvedOxygen, sourceValues, target?.occurredAt, target?.sampleId]);
   const { value: form, setValue: setForm, dirty, restored, commit, discard } = usePersistentDraft({ key: `heat-${heat.id}-correction-${mode}-${target?.id ?? target?.occurredAt ?? "record"}`, baseVersion: `${heat.events?.length ?? 0}:${heat.samples?.length ?? 0}:${heat.stageHistory?.length ?? 0}`, defaults });
   const dialogRef = useDialogFocus({ onClose });
   const set = (key, value) => setForm((previous) => ({ ...previous, [key]: value }));
+  const setDissolvedOxygen = (key, value) => setForm((previous) => key === "valuePpm" && value === ""
+    ? { ...previous, dissolvedOxygenPpm: "", dissolvedOxygenSource: "", dissolvedOxygenNote: "" }
+    : { ...previous, [key === "valuePpm" ? "dissolvedOxygenPpm" : key === "source" ? "dissolvedOxygenSource" : "dissolvedOxygenNote"]: value });
   const impact = useMemo(() => target ? correctionImpact(heat, target, mode) : { laterEvents: 0, laterSamples: 0, laterStages: 0, predictionSnapshots: 0, total: 0 }, [heat, mode, target]);
   const type = mode === "rollback" ? "stage" : mode === "tap" ? "tap" : target?.type;
   function changes() {
@@ -66,7 +75,7 @@ export function CorrectionModal({ heat, target, mode, locale, onClose, onConfirm
     if (type === "material") return { occurredAt, amountKg: Number(form.amountKg) };
     if (type === "checkpoint") return { occurredAt, cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3), lanceHeightM: form.lanceHeightM === "" ? "" : Number(form.lanceHeightM), oxygenFlowNm3PerMinute: form.oxygenFlowNm3PerMinute === "" ? "" : Number(form.oxygenFlowNm3PerMinute), remainingMinutes: form.remainingMinutes === "" ? "" : Number(form.remainingMinutes) };
     if (type === "reblow") return { occurredAt, additionalOxygenNm3: Number(form.additionalOxygenNm3), durationMinutes: form.durationMinutes === "" ? "" : Number(form.durationMinutes) };
-    if (type === "analysis") return { occurredAt, method: form.method.trim() || "OES", processSnapshot: { cumulativeOxygenNm3: form.cumulativeOxygenNm3 === "" ? null : Number(form.cumulativeOxygenNm3) }, values: Object.fromEntries(["C", "P", "Mn", "Si", "S", "temperature"].filter((key) => form[key] !== "").map((key) => [key, Number(form[key])])) };
+    if (type === "analysis") return { occurredAt, method: form.method.trim() || "OES", processSnapshot: { cumulativeOxygenNm3: form.cumulativeOxygenNm3 === "" ? null : Number(form.cumulativeOxygenNm3) }, values: Object.fromEntries(["C", "P", "Mn", "Si", "S", "temperature"].filter((key) => form[key] !== "").map((key) => [key, Number(form[key])])), dissolvedOxygen: createDissolvedOxygenRecord({ valuePpm: form.dissolvedOxygenPpm, source: form.dissolvedOxygenSource, note: form.dissolvedOxygenNote }) };
     return { occurredAt };
   }
 
@@ -106,7 +115,7 @@ export function CorrectionModal({ heat, target, mode, locale, onClose, onConfirm
           {type === "material" && <label><span>{ko ? "투입량" : "Amount"} (kg)</span><input type="number" min="0.001" step="0.001" value={form.amountKg} onChange={(event) => set("amountKg", event.target.value)} required /></label>}
           {type === "checkpoint" && <><label><span>{ko ? "누적 산소" : "Cumulative oxygen"} (Nm³)</span><input type="number" min="0" value={form.cumulativeOxygenNm3} onChange={(event) => set("cumulativeOxygenNm3", event.target.value)} required /></label><label><span>{ko ? "랜스 높이" : "Lance height"} (m)</span><input type="number" min="0" step="0.1" value={form.lanceHeightM} onChange={(event) => set("lanceHeightM", event.target.value)} /></label><label><span>{ko ? "산소 유량" : "Oxygen flow"} (Nm³/min)</span><input type="number" min="0" value={form.oxygenFlowNm3PerMinute} onChange={(event) => set("oxygenFlowNm3PerMinute", event.target.value)} /></label><label><span>{ko ? "잔여시간" : "Remaining time"} (min)</span><input type="number" min="0" value={form.remainingMinutes} onChange={(event) => set("remainingMinutes", event.target.value)} /></label></>}
           {type === "reblow" && <><label><span>{ko ? "추가 산소" : "Additional oxygen"} (Nm³)</span><input type="number" min="0.001" value={form.additionalOxygenNm3} onChange={(event) => set("additionalOxygenNm3", event.target.value)} required /></label><label><span>{ko ? "지속시간" : "Duration"} (min)</span><input type="number" min="0" value={form.durationMinutes} onChange={(event) => set("durationMinutes", event.target.value)} /></label></>}
-          {type === "analysis" && <><label><span>{ko ? "분석 방법" : "Method"}</span><input value={form.method} onChange={(event) => set("method", event.target.value)} /></label><label><span>{ko ? "샘플 시점 누적 산소" : "Oxygen at sample"} (Nm³)</span><input type="number" min="0" value={form.cumulativeOxygenNm3} onChange={(event) => set("cumulativeOxygenNm3", event.target.value)} /></label>{["C", "P", "Mn", "Si", "S"].map((key) => <label key={key}><span>{key} (%)</span><input type="number" min="0" max="100" step="0.001" value={form[key]} onChange={(event) => set(key, event.target.value)} /></label>)}<label><span>T (°C)</span><input type="number" min="0" max="2500" value={form.temperature} onChange={(event) => set("temperature", event.target.value)} /></label></>}
+          {type === "analysis" && <><label><span>{ko ? "분석 방법" : "Method"}</span><input value={form.method} onChange={(event) => set("method", event.target.value)} /></label><label><span>{ko ? "샘플 시점 누적 산소" : "Oxygen at sample"} (Nm³)</span><input type="number" min="0" value={form.cumulativeOxygenNm3} onChange={(event) => set("cumulativeOxygenNm3", event.target.value)} /></label>{["C", "P", "Mn", "Si", "S"].map((key) => <label key={key}><span>{key} (%)</span><input type="number" min="0" max="100" step="0.001" value={form[key]} onChange={(event) => set(key, event.target.value)} /></label>)}<label><span>T (°C)</span><input type="number" min="0" max="2500" value={form.temperature} onChange={(event) => set("temperature", event.target.value)} /></label><OptionalDissolvedOxygenSection locale={locale} valuePpm={form.dissolvedOxygenPpm} source={form.dissolvedOxygenSource} note={form.dissolvedOxygenNote} onChange={setDissolvedOxygen} /></>}
         </div> : <p className="correction-warning">{mode === "rollback" ? (ko ? "현재 단계에서 만든 기록은 삭제하지 않고 무효 상태로 보존한 뒤 이전 단계로 돌아갑니다." : "Records created in the current stage will be kept as voided before returning to the previous stage.") : mode === "adopt" ? (ko ? "선택한 분석 결과가 현재 종점 참고예상에 사용됩니다. 다른 샘플의 채택 상태는 해제됩니다." : "The selected result will be used for the current endpoint estimate and other adopted samples will be cleared.") : mode === "actual" ? (ko ? "선택한 분석 결과를 예상 정확도 검증에 사용하는 실제 종점값으로 지정합니다." : "The selected result will be used as the actual endpoint value for prediction validation.") : (ko ? "원본 기록은 삭제하지 않고 무효 상태와 사유를 보존합니다." : "The original record will be preserved with a void status and reason.")}</p>}
         <label className="correction-standard-reason"><span>{ko ? "표준 사유" : "Standard reason"}</span><select value={standardReasons[ko ? "ko" : "en"].includes(form.reason) ? form.reason : ""} onChange={(event) => set("reason", event.target.value)}><option value="">{ko ? "직접 입력" : "Type a custom reason"}</option>{standardReasons[ko ? "ko" : "en"].map((reason) => <option key={reason} value={reason}>{reason}</option>)}</select></label><label className="correction-reason"><span>{ko ? "정정·취소 사유" : "Correction reason"}</span><textarea value={form.reason} onChange={(event) => set("reason", event.target.value)} required /></label>
         {!validation.ok && <p className="field-error" role="alert">{validationMessage(validation.reason, locale)}</p>}

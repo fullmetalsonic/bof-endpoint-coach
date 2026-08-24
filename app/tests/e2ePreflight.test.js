@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { validateSourceContract } from "../scripts/e2e-preflight-lib.mjs";
 
-const packageJson = { name: "bof-endpoint-coach", version: "0.7.2" };
-const referenceSource = "createLiteratureAdditionProfile additionModelProfiles";
+const packageJson = { name: "bof-endpoint-coach", version: "0.7.3" };
+const referenceSource = "createLiteratureAdditionProfile additionModelProfiles OptionalDissolvedOxygenSection not_recorded";
 
 describe("E2E source preflight", () => {
   it("accepts the current workspace and version markers", () => {
     expect(
       validateSourceContract({ cwd: "C:/project/app", expectedRoot: "C:/project/app", packageJson, referenceSource }),
-    ).toMatchObject({ version: "0.7.2" });
+    ).toMatchObject({ version: "0.7.3" });
   });
 
   it("blocks a different workspace", () => {

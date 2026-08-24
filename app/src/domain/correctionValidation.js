@@ -1,5 +1,6 @@
 import { getActionAvailability } from "./processStages.js";
 import { getStageAtTime } from "./operationalValidation.js";
+import { dissolvedOxygenValidationReason, isDissolvedOxygenRecorded } from "./measurements/dissolvedOxygen.js";
 
 const chemistryKeys = ["C", "P", "Mn", "Si", "S"];
 const FUTURE_TOLERANCE_MS = 60_000;
@@ -91,7 +92,9 @@ export function validateCorrectionRequest(heat, target, mode, changes = {}, reas
     if (!sample) return result("sample_required");
     if (time(occurredAt) < time(sample.sampledAt)) return result("analysis_before_sample");
     const values = changes.values ?? {};
-    if (![...chemistryKeys, "temperature"].some((key) => hasNumber(values[key]))) return result("analysis_value_required");
+    const dissolvedOxygenReason = dissolvedOxygenValidationReason(changes.dissolvedOxygen);
+    if (dissolvedOxygenReason) return result(dissolvedOxygenReason);
+    if (![...chemistryKeys, "temperature"].some((key) => hasNumber(values[key])) && !isDissolvedOxygenRecorded(changes.dissolvedOxygen)) return result("analysis_value_required");
     if (chemistryKeys.some((key) => invalidNumber(values[key], { max: 100 }))) return result("chemistry_out_of_range");
     if (invalidNumber(values.temperature, { max: 2500 })) return result("temperature_out_of_range");
     if (invalidNumber(changes.processSnapshot?.cumulativeOxygenNm3)) return result("nonnegative_number_required");

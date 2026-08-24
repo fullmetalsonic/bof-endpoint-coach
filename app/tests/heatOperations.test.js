@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { advanceHeat, applyHeatEvent, archiveHeat, canDeleteHeat, cancelHeat, createHeatFromForm, updateHeatInputs } from "../src/domain/heatOperations.js";
+import { createDemoState } from "../src/data/demoState.js";
+import { calculateEndpoint } from "../src/calculation/endpoint.js";
 
 const operator = { displayName: "김작업" };
 const baseForm = {
@@ -72,6 +74,45 @@ describe("heat operations", () => {
     heat = applyHeatEvent(heat, "analysis", { sampleId: "S-1", occurredAt: "2026-08-22T01:05:00.000Z", method: "OES", cumulativeOxygenNm3: "5000", values: { C: "0.2" } }, operator);
     expect(heat.samples[0].sampledAt).toBe("2026-08-22T01:03:00.000Z");
     expect(heat.samples[0].analyzedAt).toBe("2026-08-22T01:05:00.000Z");
+  });
+
+  it("records dissolved oxygen as an optional ppm measurement without satisfying the C-temperature endpoint gate", () => {
+    let heat = { ...createHeatFromForm(baseForm, operator), stage: "G3", stageLabelKo: "용해 중기", stageLabelEn: "Mid blow" };
+    heat = applyHeatEvent(heat, "sample", { sampleId: "S-O-1", occurredAt: "2026-08-22T01:03:00.000Z" }, operator);
+    heat = applyHeatEvent(heat, "analysis", { sampleId: "S-O-1", occurredAt: "2026-08-22T01:05:00.000Z", method: "Probe", cumulativeOxygenNm3: "5000", values: {}, dissolvedOxygen: { recordStatus: "recorded", valuePpm: 480, source: "oxygen_probe", note: null } }, operator);
+    expect(heat.samples[0].analysisResults[0].dissolvedOxygen).toEqual({ recordStatus: "recorded", valuePpm: 480, source: "oxygen_probe", note: null });
+    expect(heat.samples[0].values).toEqual({});
+    expect(heat.samples[0].adopted).toBe(false);
+    expect(heat.events.at(-1).payload.dissolvedOxygen.valuePpm).toBe(480);
+  });
+
+  it("keeps an omitted dissolved-oxygen field as not recorded while saving ordinary chemistry", () => {
+    let heat = { ...createHeatFromForm(baseForm, operator), stage: "G3", stageLabelKo: "용해 중기", stageLabelEn: "Mid blow" };
+    heat = applyHeatEvent(heat, "sample", { sampleId: "S-O-2", occurredAt: "2026-08-22T01:03:00.000Z" }, operator);
+    heat = applyHeatEvent(heat, "analysis", { sampleId: "S-O-2", occurredAt: "2026-08-22T01:05:00.000Z", method: "OES", cumulativeOxygenNm3: "5000", values: { C: 0.2 }, dissolvedOxygen: { recordStatus: "not_recorded", valuePpm: null, source: null, note: null } }, operator);
+    expect(heat.samples[0].analysisResults[0].dissolvedOxygen).toEqual({ recordStatus: "not_recorded", valuePpm: null, source: null, note: null });
+  });
+
+  it("keeps endpoint estimates unchanged when an oxygen-only result is recorded", () => {
+    const state = createDemoState();
+    const heat = state.heats[0];
+    const sample = heat.samples.find((item) => item.adopted);
+    const calculatedAt = "2026-08-24T00:00:00.000Z";
+    const baseline = calculateEndpoint(heat, state.settings, calculatedAt);
+    const next = applyHeatEvent(heat, "analysis", {
+      sampleId: sample.id,
+      occurredAt: new Date(new Date(sample.sampledAt).getTime() + 1000).toISOString(),
+      method: "Probe",
+      cumulativeOxygenNm3: String(sample.processSnapshot.cumulativeOxygenNm3),
+      values: {},
+      dissolvedOxygen: { recordStatus: "recorded", valuePpm: 510, source: "oxygen_probe", note: null },
+    }, operator);
+    const after = calculateEndpoint(next, state.settings, calculatedAt);
+    expect(next.samples.find((item) => item.id === sample.id).adoptedAnalysisId).toBe(sample.adoptedAnalysisId);
+    for (const key of ["carbon", "temperature", "phosphorus", "manganese", "silicon", "sulfur"]) expect(after[key]).toEqual(baseline[key]);
+    expect(after.scenarioResults).toEqual(baseline.scenarioResults);
+    expect(after.oxygenRemaining).toBe(baseline.oxygenRemaining);
+    expect(after.projectedRemainingMinutes).toBe(baseline.projectedRemainingMinutes);
   });
 
   it("supports delete eligibility, cancellation, and archival", () => {

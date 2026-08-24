@@ -68,6 +68,19 @@ describe("correction ledger operations", () => {
     expect(voided.correctionLog).toHaveLength(2);
   });
 
+  it("preserves dissolved-oxygen correction history and allows clearing it to not recorded", () => {
+    const state = createDemoState();
+    const heat = structuredClone(state.heats[0]);
+    const original = heat.samples.at(-1).analysisResults[0];
+    expect(original.dissolvedOxygen.valuePpm).toBe(520);
+    const corrected = correctAnalysisRecord(heat, original.id, { dissolvedOxygen: { recordStatus: "recorded", valuePpm: 480, source: "laboratory", note: "재확인" } }, "용존산소 정정", operator);
+    const firstReplacement = corrected.samples.at(-1).analysisResults.at(-1);
+    expect(firstReplacement.dissolvedOxygen).toMatchObject({ recordStatus: "recorded", valuePpm: 480, source: "laboratory" });
+    const cleared = correctAnalysisRecord(corrected, firstReplacement.id, { dissolvedOxygen: { recordStatus: "not_recorded", valuePpm: null, source: null, note: null } }, "용존산소 미측정 정정", operator);
+    expect(cleared.samples.at(-1).analysisResults.at(-1).dissolvedOxygen).toEqual({ recordStatus: "not_recorded", valuePpm: null, source: null, note: null });
+    expect(cleared.correctionLog.filter((entry) => entry.type === "analysis_corrected")).toHaveLength(2);
+  });
+
   it("recalculates material projection after correction and invalidation", () => {
     const state = createDemoState();
     const heat = newHeat(state);

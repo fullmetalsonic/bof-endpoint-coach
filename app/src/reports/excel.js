@@ -7,6 +7,7 @@ import { buildResidualLedger } from "../calibration/residualLedger.js";
 import { buildStateCalibrationRecommendations } from "../calibration/stateRecommendations.js";
 import { buildAdditionEvidenceLedger } from "../calibration/additionEvidence.js";
 import { buildAdditionCorrectionRecommendations } from "../calibration/additionRecommendations.js";
+import { normalizeDissolvedOxygenRecord } from "../domain/measurements/dissolvedOxygen.js";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -105,20 +106,27 @@ export function buildExcelSheets(state) {
     "Occurred at": event.occurredAt,
     Summary: event.summaryKo ?? event.summaryEn ?? "",
   })));
-  const analyses = state.heats.flatMap((heat) => heat.samples.flatMap((sample) => getAnalysisResults(sample).map((analysis) => ({
-    "Heat ID": heat.id,
-    "Sample ID": sample.id,
-    "Analysis ID": analysis.id,
-    "Sampled at": sample.sampledAt,
-    "Analyzed at": analysis.occurredAt,
-    Stage: sample.stage,
-    Status: analysis.status ?? "active",
-    Method: analysis.method,
-    Adopted: sample.adopted && sample.adoptedAnalysisId === analysis.id,
-    "Actual endpoint": heat.actualEndpointAnalysisId === analysis.id,
-    "Oxygen at analysis (Nm3)": analysis.processSnapshot?.cumulativeOxygenNm3 ?? "",
-    ...analysis.values,
-  }))));
+  const analyses = state.heats.flatMap((heat) => heat.samples.flatMap((sample) => getAnalysisResults(sample).map((analysis) => {
+    const dissolvedOxygen = normalizeDissolvedOxygenRecord(analysis.dissolvedOxygen);
+    return {
+      "Heat ID": heat.id,
+      "Sample ID": sample.id,
+      "Analysis ID": analysis.id,
+      "Sampled at": sample.sampledAt,
+      "Analyzed at": analysis.occurredAt,
+      Stage: sample.stage,
+      Status: analysis.status ?? "active",
+      Method: analysis.method,
+      Adopted: sample.adopted && sample.adoptedAnalysisId === analysis.id,
+      "Actual endpoint": heat.actualEndpointAnalysisId === analysis.id,
+      "Oxygen at analysis (Nm3)": analysis.processSnapshot?.cumulativeOxygenNm3 ?? "",
+      "Dissolved oxygen status": dissolvedOxygen.recordStatus,
+      "Dissolved oxygen [O] (ppm)": dissolvedOxygen.valuePpm ?? "",
+      "Dissolved oxygen source": dissolvedOxygen.source ?? "",
+      "Dissolved oxygen note": dissolvedOxygen.note ?? "",
+      ...analysis.values,
+    };
+  })));
   const corrections = state.heats.flatMap((heat) => (heat.correctionLog ?? []).map((entry) => ({ "Heat ID": heat.id, "Correction ID": entry.id, Type: entry.type, "Target kind": entry.targetKind, "Target ID": entry.targetId, Reason: entry.reason, "Recorded at": entry.recordedAt, Operator: entry.recordedBy?.displayName ?? "" })));
   const predictions = state.heats.flatMap((heat) => (heat.predictionSnapshots ?? []).map((entry) => ({ "Heat ID": heat.id, "Prediction ID": entry.id, Trigger: entry.triggerType, Stage: entry.stage, "Calculated at": entry.calculatedAt, "C estimate (%)": entry.carbon?.available ? entry.carbon.value : "Unavailable", "Temperature estimate (°C)": entry.temperature?.available ? entry.temperature.value : "Unavailable", "P estimate (%)": entry.phosphorus?.available ? entry.phosphorus.value : "Unavailable", "Mn estimate (%)": entry.manganese?.available ? entry.manganese.value : "Unavailable", "Si estimate (%)": entry.silicon?.available ? entry.silicon.value : "Unavailable", "S estimate (%)": entry.sulfur?.available ? entry.sulfur.value : "Unavailable", "Sample ID": entry.sampleId ?? "", "Formula version": entry.formulaVersion ?? "", "Coefficient version": entry.coefficientVersionId ?? "", "Settings version": entry.settingsVersion ?? "" })));
   const residuals = buildResidualLedger(state);

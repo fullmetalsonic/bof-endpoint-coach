@@ -27,6 +27,8 @@ function imageDataUri(relativePath) {
 
 let articleHtml = renderedReadme;
 for (const imagePath of [
+  "docs/manual/screenshots/v0.7.3/03-analysis-optional-filled.png",
+  "docs/manual/screenshots/v0.7.3/01-analysis-optional-collapsed.png",
   "docs/manual/screenshots/v0.7.2/01-dashboard-addition-coach.png",
   "docs/manual/screenshots/v0.7.2/02-addition-plan-comparison.png",
   "docs/manual/screenshots/v0.6.1/02-recovery-card-core.png",

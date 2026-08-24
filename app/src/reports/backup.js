@@ -6,6 +6,7 @@ import { validateSettings } from "../domain/settingsValidation.js";
 import { validateOperationalState } from "../domain/stateIntegrity.js";
 import { getAnalysisResults, normalizeSampleAnalyses } from "../domain/analysisRecords.js";
 import { buildResidualLedger } from "../calibration/residualLedger.js";
+import { createDissolvedOxygenRecord, normalizeDissolvedOxygenRecord } from "../domain/measurements/dissolvedOxygen.js";
 
 const BASE_REQUIRED_FILES = ["heats.csv", "events.csv", "samples.csv", "analysis_results.csv", "analysis_values.csv", "reference_values.csv", "operation_log.csv"];
 const V040_REQUIRED_FILES = [...BASE_REQUIRED_FILES, "coefficient_versions.csv", "calibration_residuals.csv"];
@@ -65,7 +66,10 @@ function buildCsvFiles(state) {
   }));
   const events = state.heats.flatMap((heat) => heat.events.map((event) => ({ heat_id: heat.id, event_id: event.id, type: event.type, occurred_at: event.occurredAt, payload_json: json(event) })));
   const samples = state.heats.flatMap((heat) => heat.samples.map((sample) => ({ heat_id: heat.id, sample_id: sample.id, status: sample.status ?? "active", sampled_at: sample.sampledAt, recorded_at: sample.recordedAt ?? sample.sampledAt, recorded_by_json: json(sample.recordedBy ?? null), stage: sample.stage, adopted: sample.adopted ? "true" : "false", adopted_analysis_id: sample.adoptedAnalysisId ?? "", process_snapshot_json: json(sample.processSnapshot) })));
-  const analysisResults = state.heats.flatMap((heat) => heat.samples.flatMap((sample) => getAnalysisResults(sample).map((analysis) => ({ heat_id: heat.id, analysis_id: analysis.id, sample_id: sample.id, status: analysis.status ?? "active", method: analysis.method, occurred_at: analysis.occurredAt, recorded_at: analysis.recordedAt ?? analysis.occurredAt, recorded_by_json: json(analysis.recordedBy ?? null), correction_of: analysis.correctionOf ?? "", process_snapshot_json: json(analysis.processSnapshot) }))));
+  const analysisResults = state.heats.flatMap((heat) => heat.samples.flatMap((sample) => getAnalysisResults(sample).map((analysis) => {
+    const dissolvedOxygen = normalizeDissolvedOxygenRecord(analysis.dissolvedOxygen);
+    return { heat_id: heat.id, analysis_id: analysis.id, sample_id: sample.id, status: analysis.status ?? "active", method: analysis.method, occurred_at: analysis.occurredAt, recorded_at: analysis.recordedAt ?? analysis.occurredAt, recorded_by_json: json(analysis.recordedBy ?? null), correction_of: analysis.correctionOf ?? "", process_snapshot_json: json(analysis.processSnapshot), dissolved_oxygen_status: dissolvedOxygen.recordStatus, dissolved_oxygen_ppm: dissolvedOxygen.valuePpm ?? "", dissolved_oxygen_source: dissolvedOxygen.source ?? "", dissolved_oxygen_note: dissolvedOxygen.note ?? "" };
+  })));
   const analysisValues = state.heats.flatMap((heat) => heat.samples.flatMap((sample) => getAnalysisResults(sample).flatMap((analysis) => Object.entries(analysis.values ?? {}).map(([item, value]) => ({ heat_id: heat.id, analysis_id: analysis.id, item, value, unit: item === "temperature" ? "°C" : "%" })))));
   const referenceValues = [
     { scope: "application", key: "locale", value_json: json(state.locale) },
@@ -87,7 +91,7 @@ function buildCsvFiles(state) {
     "heats.csv": encodeCsv(heats, ["heat_id", "grade_code", "equipment_profile_id", "coefficient_profile_id", "status", "stage", "stage_label_ko", "stage_label_en", "started_at", "expected_tap_at", "demo", "initial_json", "process_json", "stage_history_json", "correction_base_json", "reference_snapshot_json", "prediction_snapshots_json", "addition_coach_json", "correction_log_json", "actual_endpoint_analysis_id", "lifecycle_json"]),
     "events.csv": encodeCsv(events, ["heat_id", "event_id", "type", "occurred_at", "payload_json"]),
     "samples.csv": encodeCsv(samples, ["heat_id", "sample_id", "status", "sampled_at", "recorded_at", "recorded_by_json", "stage", "adopted", "adopted_analysis_id", "process_snapshot_json"]),
-    "analysis_results.csv": encodeCsv(analysisResults, ["heat_id", "analysis_id", "sample_id", "status", "method", "occurred_at", "recorded_at", "recorded_by_json", "correction_of", "process_snapshot_json"]),
+    "analysis_results.csv": encodeCsv(analysisResults, ["heat_id", "analysis_id", "sample_id", "status", "method", "occurred_at", "recorded_at", "recorded_by_json", "correction_of", "process_snapshot_json", "dissolved_oxygen_status", "dissolved_oxygen_ppm", "dissolved_oxygen_source", "dissolved_oxygen_note"]),
     "analysis_values.csv": encodeCsv(analysisValues, ["heat_id", "analysis_id", "item", "value", "unit"]),
     "reference_values.csv": encodeCsv(referenceValues, ["scope", "key", "value_json"]),
     "operation_log.csv": encodeCsv(operationLog, ["log_id", "type", "at", "payload_json"]),
@@ -142,6 +146,9 @@ export async function restoreBackup(file) {
         recordedBy: analysis.recorded_by_json ? JSON.parse(analysis.recorded_by_json) : { displayName: "미입력" },
         correctionOf: analysis.correction_of || undefined,
         processSnapshot: analysis.process_snapshot_json ? JSON.parse(analysis.process_snapshot_json) : (sample.analysis_process_snapshot_json ? JSON.parse(sample.analysis_process_snapshot_json) : undefined),
+        dissolvedOxygen: analysis.dissolved_oxygen_status === "recorded"
+          ? createDissolvedOxygenRecord({ valuePpm: analysis.dissolved_oxygen_ppm, source: analysis.dissolved_oxygen_source, note: analysis.dissolved_oxygen_note })
+          : createDissolvedOxygenRecord(),
         values: Object.fromEntries(analysisValueRows.filter((value) => value.heat_id === row.heat_id && value.analysis_id === analysis.analysis_id).map((value) => [value.item, Number(value.value)])),
       }));
       const adoptedAnalysisId = sample.adopted_analysis_id || (sample.adopted === "true" ? analysisResults.at(-1)?.id : null) || null;

@@ -3,6 +3,7 @@ import { getStageAtTime } from "./operationalValidation.js";
 import { findAnalysisResult, getAnalysisResults, normalizeSampleAnalyses, syncSampleAnalysisProjection } from "./analysisRecords.js";
 import { summarizeHeatEvent } from "./heatOperations.js";
 import { assertCorrectionRequest } from "./correctionValidation.js";
+import { normalizeDissolvedOxygenRecord } from "./measurements/dissolvedOxygen.js";
 
 const correctableEventTypes = new Set(["material", "sample", "checkpoint", "reblow"]);
 
@@ -147,6 +148,7 @@ export function timelineRecords(heat) {
     summaryKo: `샘플 ${sample.id} 분석 결과`,
     summaryEn: `Analysis result for ${sample.id}`,
     payload: analysis,
+    dissolvedOxygen: structuredClone(analysis.dissolvedOxygen),
     adopted: sample.adoptedAnalysisId === analysis.id && sample.adopted,
     actual: heat.actualEndpointAnalysisId === analysis.id,
     correctable: isActive(analysis),
@@ -271,6 +273,7 @@ export function correctAnalysisRecord(heat, analysisId, changes, reason, operato
     occurredAt: changes.occurredAt ?? match.analysis.occurredAt,
     values: { ...structuredClone(match.analysis.values ?? {}), ...structuredClone(changes.values ?? {}) },
     processSnapshot: { ...structuredClone(match.analysis.processSnapshot ?? {}), ...structuredClone(changes.processSnapshot ?? {}) },
+    dissolvedOxygen: normalizeDissolvedOxygenRecord(changes.dissolvedOxygen ?? match.analysis.dissolvedOxygen),
   };
   assertCorrectionRequest(heat, { kind: "analysis", type: "analysis", id: analysisId, sampleId: match.sample.id, occurredAt: match.analysis.occurredAt, payload: match.analysis }, "correct", candidate, reason, recordedAt);
   const replacementId = id("AN");
@@ -286,6 +289,7 @@ export function correctAnalysisRecord(heat, analysisId, changes, reason, operato
     recordedBy: operatorSnapshot(operatorProfile),
     values: candidate.values,
     processSnapshot: candidate.processSnapshot,
+    dissolvedOxygen: candidate.dissolvedOxygen,
   };
   const wasAdopted = match.sample.adopted && match.sample.adoptedAnalysisId === analysisId;
   const samples = heat.samples.map((sample) => sample.id !== match.sample.id ? sample : syncSampleAnalysisProjection({
@@ -304,7 +308,7 @@ export function correctAnalysisRecord(heat, analysisId, changes, reason, operato
     occurredAt: replacement.occurredAt,
     recordedAt,
     recordedBy: operatorSnapshot(operatorProfile),
-    payload: { ...structuredClone(originalEvent.payload ?? {}), sampleId: match.sample.id, method: replacement.method, values: structuredClone(replacement.values), cumulativeOxygenNm3: replacement.processSnapshot?.cumulativeOxygenNm3, occurredAt: replacement.occurredAt },
+    payload: { ...structuredClone(originalEvent.payload ?? {}), sampleId: match.sample.id, method: replacement.method, values: structuredClone(replacement.values), dissolvedOxygen: structuredClone(replacement.dissolvedOxygen), cumulativeOxygenNm3: replacement.processSnapshot?.cumulativeOxygenNm3, occurredAt: replacement.occurredAt },
     ...summarizeHeatEvent("analysis", { sampleId: match.sample.id }),
   });
   const entry = correctionEntry("analysis_corrected", { kind: "analysis", id: analysisId }, reason, operatorProfile, recordedAt, { replacementId });

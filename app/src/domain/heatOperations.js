@@ -1,6 +1,7 @@
 import { getNextStage, getStageDefinition, validateStageAdvance } from "./processStages.js";
 import { getStageAtTime, validateHeatEventInput, validateNewHeatInput, validateStageTransitionInput } from "./operationalValidation.js";
 import { getAnalysisResults, syncSampleAnalysisProjection } from "./analysisRecords.js";
+import { normalizeDissolvedOxygenRecord } from "./measurements/dissolvedOxygen.js";
 import { captureHeatReferenceSnapshot } from "./referenceSnapshot.js";
 
 function id(prefix) {
@@ -158,7 +159,8 @@ export function applyHeatEvent(heat, type, form, operatorProfile, recordedAt = n
   const summary = summarizeHeatEvent(type, form);
   const eventStage = getStageAtTime(heat, form.occurredAt);
   const analysisId = type === "analysis" ? id("AN") : null;
-  const event = { id: id("EV"), type, status: "active", stage: eventStage, occurredAt: form.occurredAt, recordedAt, recordedBy, ...summary, payload: form, ...(analysisId ? { analysisId } : {}) };
+  const eventPayload = type === "analysis" ? { ...form, dissolvedOxygen: normalizeDissolvedOxygenRecord(form.dissolvedOxygen) } : form;
+  const event = { id: id("EV"), type, status: "active", stage: eventStage, occurredAt: form.occurredAt, recordedAt, recordedBy, ...summary, payload: eventPayload, ...(analysisId ? { analysisId } : {}) };
   let next = { ...heat, events: [...(heat.events ?? []), event] };
   if (type === "checkpoint") next.process = { ...heat.process, cumulativeOxygenNm3: Number(form.cumulativeOxygenNm3), lanceHeightM: optionalNumber(form.lanceHeightM), oxygenFlowNm3PerMinute: optionalNumber(form.oxygenFlowNm3PerMinute), remainingMinutes: optionalNumber(form.remainingMinutes), plannedValuesIncluded: false };
   if (type === "reblow") next.process = { ...heat.process, cumulativeOxygenNm3: Number(heat.process?.cumulativeOxygenNm3 ?? 0) + Number(form.additionalOxygenNm3), remainingMinutes: optionalNumber(form.durationMinutes) };
@@ -171,10 +173,11 @@ export function applyHeatEvent(heat, type, form, operatorProfile, recordedAt = n
     const sampleId = form.sampleId;
     if (!sampleId || !(heat.samples ?? []).some((sample) => sample.id === sampleId)) throw new Error("sample_required");
     const values = Object.fromEntries(Object.entries(form.values ?? {}).filter(([, value]) => value !== "").map(([key, value]) => [key, Number(value)]));
-    const analysis = { id: analysisId, sampleId, status: "active", occurredAt: form.occurredAt, recordedAt, recordedBy, method: form.method || "OES", values, originalValues: structuredClone(form.originalValues ?? {}), processSnapshot: { cumulativeOxygenNm3: optionalNumber(form.cumulativeOxygenNm3) } };
+    const adoptsForPrediction = Object.keys(values).length > 0;
+    const analysis = { id: analysisId, sampleId, status: "active", occurredAt: form.occurredAt, recordedAt, recordedBy, method: form.method || "OES", values, originalValues: structuredClone(form.originalValues ?? {}), dissolvedOxygen: normalizeDissolvedOxygenRecord(form.dissolvedOxygen), processSnapshot: { cumulativeOxygenNm3: optionalNumber(form.cumulativeOxygenNm3) } };
     next.samples = heat.samples.map((sample) => sample.id === sampleId
-      ? syncSampleAnalysisProjection({ ...sample, adopted: true, analysisResults: [...getAnalysisResults(sample), analysis] }, analysisId)
-      : syncSampleAnalysisProjection({ ...sample, adopted: false }, null));
+      ? syncSampleAnalysisProjection({ ...sample, analysisResults: [...getAnalysisResults(sample), analysis] }, adoptsForPrediction ? analysisId : sample.adoptedAnalysisId)
+      : adoptsForPrediction ? syncSampleAnalysisProjection({ ...sample, adopted: false }, null) : syncSampleAnalysisProjection(sample));
   }
   if (type === "tap") {
     const stage = getStageDefinition("G7");

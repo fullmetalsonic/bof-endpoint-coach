@@ -1,4 +1,5 @@
 import { getActionAvailability, PROCESS_STAGES } from "./processStages.js";
+import { dissolvedOxygenValidationReason, isDissolvedOxygenRecorded } from "./measurements/dissolvedOxygen.js";
 
 const FUTURE_TOLERANCE_MS = 60_000;
 const chemistryKeys = ["C", "P", "Mn", "Si", "S"];
@@ -99,7 +100,9 @@ export function validateHeatEventInput(heat, type, form, recordedAt = new Date()
     if (!sample) return result("sample_required");
     if (timeValue(form.occurredAt) < timeValue(sample.sampledAt)) return result("analysis_before_sample");
     const values = form.values ?? {};
-    if (![...chemistryKeys, "temperature"].some((key) => hasNumericValue(values[key]))) return result("analysis_value_required");
+    const dissolvedOxygenReason = dissolvedOxygenValidationReason(form.dissolvedOxygen);
+    if (dissolvedOxygenReason) return result(dissolvedOxygenReason);
+    if (![...chemistryKeys, "temperature"].some((key) => hasNumericValue(values[key])) && !isDissolvedOxygenRecorded(form.dissolvedOxygen)) return result("analysis_value_required");
     if (chemistryKeys.some((key) => invalidOptionalNumber(values[key], { max: 100 }))) return result("chemistry_out_of_range");
     if (invalidOptionalNumber(values.temperature, { max: 2500 })) return result("temperature_out_of_range");
     if (invalidOptionalNumber(form.cumulativeOxygenNm3)) return result("nonnegative_number_required");
@@ -139,6 +142,10 @@ export function validationMessage(reason, locale = "ko") {
     sample_required: ["분석 대상 샘플을 선택하십시오.", "Select a sample for analysis."],
     analysis_before_sample: ["분석 시각은 샘플 채취 시각보다 빠를 수 없습니다.", "Analysis time cannot precede sampling."],
     analysis_value_required: ["분석값을 하나 이상 입력하십시오.", "Enter at least one analysis value."],
+    dissolved_oxygen_invalid: ["용존산소에는 0 이상의 유효한 ppm 값을 입력하거나 빈칸으로 두십시오.", "Enter a valid non-negative dissolved-oxygen value in ppm, or leave it blank."],
+    dissolved_oxygen_status_invalid: ["용존산소 기록 상태를 확인하십시오.", "Check the dissolved-oxygen record status."],
+    dissolved_oxygen_source_invalid: ["지원하는 용존산소 측정 출처를 선택하십시오.", "Select a supported dissolved-oxygen measurement source."],
+    dissolved_oxygen_note_too_long: ["용존산소 메모는 200자 이하여야 합니다.", "The dissolved-oxygen note must be 200 characters or fewer."],
     action_not_available: ["현재 단계에서는 이 입력을 저장할 수 없습니다.", "This entry is not available at the current stage."],
     action_not_available_at_time: ["입력한 실제 시각의 공정 단계에서는 이 항목을 기록할 수 없습니다.", "This entry is not available at the stage corresponding to the entered time."],
     correction_reason_required: ["정정·취소 사유를 입력하십시오.", "Enter a correction or cancellation reason."],

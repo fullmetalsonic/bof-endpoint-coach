@@ -76,6 +76,40 @@ test("현재 작업 안내가 G0 기초값부터 G3 샘플·분석·체크포인
   await expect(workflow.locator("li.done")).toHaveCount(3);
 });
 
+test("용존산소 선택값은 빈칸 저장과 ppm 단독 기록이 가능하고 기존 종점 채택값을 바꾸지 않는다", async ({ page }) => {
+  await page.getByLabel("작업자 이름").fill("용존산소 검증자");
+  await page.getByRole("button", { name: "DEMO로 체험" }).click();
+
+  await page.getByRole("button", { name: "분석 결과 입력", exact: true }).click();
+  const optional = page.locator(".optional-measurement-section");
+  await expect(optional).toContainText("값이 있을 때만 입력");
+  await expect(optional).toContainText("미측정");
+  await expect(optional).not.toHaveAttribute("open", "");
+  await page.getByRole("spinbutton", { name: /^C / }).fill("0.073");
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+
+  let state = await waitForState(page, (stored) => stored.heats[0].samples.at(-1).analysisResults.length === 2);
+  let sample = state.heats[0].samples.at(-1);
+  expect(sample.analysisResults.at(-1).dissolvedOxygen).toEqual({ recordStatus: "not_recorded", valuePpm: null, source: null, note: null });
+  const adoptedBeforeOxygenOnly = sample.adoptedAnalysisId;
+
+  await page.getByRole("button", { name: "분석 결과 입력", exact: true }).click();
+  const oxygenSection = page.locator(".optional-measurement-section");
+  await oxygenSection.locator("summary").click();
+  await expect(oxygenSection).toContainText("현재 종점예상·투입 코치·단계 진행에는 사용하지 않습니다");
+  await oxygenSection.getByRole("spinbutton").fill("480.5");
+  await oxygenSection.getByRole("combobox").selectOption("oxygen_probe");
+  await oxygenSection.getByRole("textbox").fill("E2E Probe A");
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+
+  state = await waitForState(page, (stored) => stored.heats[0].samples.at(-1).analysisResults.length === 3);
+  sample = state.heats[0].samples.at(-1);
+  expect(sample.analysisResults.at(-1).values).toEqual({});
+  expect(sample.analysisResults.at(-1).dissolvedOxygen).toEqual({ recordStatus: "recorded", valuePpm: 480.5, source: "oxygen_probe", note: "E2E Probe A" });
+  expect(sample.adoptedAnalysisId).toBe(adoptedBeforeOxygenOnly);
+  await expect(page.locator(".analysis-table")).toContainText("0.073");
+});
+
 test("수동 단위 환산부터 G8 완료까지 실제 입력 흐름과 재실행 저장이 이어진다", async ({ page }) => {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));

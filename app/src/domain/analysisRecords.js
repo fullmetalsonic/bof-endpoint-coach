@@ -1,3 +1,5 @@
+import { normalizeDissolvedOxygenRecord } from "./measurements/dissolvedOxygen.js";
+
 function legacyAnalysisId(sample) {
   return `AN-LEGACY-${sample.id}`;
 }
@@ -18,6 +20,7 @@ export function getAnalysisResults(sample) {
     recordedBy: { displayName: "미입력" },
     method: sample.method || "OES",
     values: structuredClone(sample.values ?? {}),
+    dissolvedOxygen: normalizeDissolvedOxygenRecord(sample.dissolvedOxygen),
     processSnapshot: structuredClone(sample.analysisProcessSnapshot ?? sample.processSnapshot ?? null),
   }];
 }
@@ -56,6 +59,7 @@ export function normalizeSampleAnalyses(sample) {
     recordedAt: result.recordedAt ?? result.occurredAt,
     recordedBy: result.recordedBy ?? { displayName: "미입력" },
     values: structuredClone(result.values ?? {}),
+    dissolvedOxygen: normalizeDissolvedOxygenRecord(result.dissolvedOxygen),
   }));
   const adoptedAnalysisId = sample.adoptedAnalysisId
     ?? (sample.adopted ? results.filter((result) => result.status === "active").at(-1)?.id : null)

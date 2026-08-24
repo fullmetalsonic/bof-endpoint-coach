@@ -18,6 +18,8 @@ const screenshotPaths = [
   "docs/manual/screenshots/v0.6.1/05-recovery-card-validated-comparison.png",
   "docs/manual/screenshots/v0.7.2/01-dashboard-addition-coach.png",
   "docs/manual/screenshots/v0.7.2/04-addition-recovery-card.png",
+  "docs/manual/screenshots/v0.7.3/03-analysis-optional-filled.png",
+  "docs/manual/screenshots/v0.7.3/04-analysis-recorded-history.png",
   "docs/manual/screenshots/v0.6.0/01-storage-recovery.png",
   "docs/manual/screenshots/v0.6.0/02-json-restore-compare.png",
 ];

@@ -7,10 +7,13 @@ const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(scriptDirectory, "..");
 
 async function main() {
-  const [packageText, referenceSource] = await Promise.all([
+  const [packageText, referenceSettingsSource, eventModalSource, dissolvedOxygenSource] = await Promise.all([
     fs.readFile(path.join(appRoot, "package.json"), "utf8"),
     fs.readFile(path.join(appRoot, "src", "data", "referenceSettings.js"), "utf8"),
+    fs.readFile(path.join(appRoot, "src", "components", "EventModal.jsx"), "utf8"),
+    fs.readFile(path.join(appRoot, "src", "domain", "measurements", "dissolvedOxygen.js"), "utf8"),
   ]);
+  const referenceSource = [referenceSettingsSource, eventModalSource, dissolvedOxygenSource].join("\n");
   const contract = validateSourceContract({
     cwd: process.cwd(),
     expectedRoot: appRoot,

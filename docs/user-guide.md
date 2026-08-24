@@ -1,6 +1,6 @@
-# 취련 코치 v0.7.2 사용 설명서 / BOF Endpoint Coach v0.7.2 User Guide
+# 취련 코치 v0.7.3 사용 설명서 / BOF Endpoint Coach v0.7.3 User Guide
 
-이 문서는 현장에서 작업 순서를 빠르게 확인하는 한영 요약 설명서입니다. 모든 필드·단위·입력 예·오류 조건·정정·종점·투입 학습·비상복구 카드·JSON 복구 설명은 [상세 설명서](manual/취련코치_상세_설명서_v0.7.2.md)를 사용하십시오. 사람에게 제품을 소개할 때는 [발표용 설명서](manual/취련코치_발표용_설명서_v0.7.2.md)를 사용하십시오. 이미지가 포함된 오프라인 문서는 `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.7.2.html`과 `BOF_Endpoint_Coach_PRESENTATION_GUIDE_v0.7.2.html`입니다.
+이 문서는 현장에서 작업 순서를 빠르게 확인하는 한영 요약 설명서입니다. 모든 필드·단위·입력 예·오류 조건·정정·종점·투입 학습·비상복구 카드·JSON 복구 설명은 [상세 설명서](manual/취련코치_상세_설명서_v0.7.3.md)를 사용하십시오. 사람에게 제품을 소개할 때는 [v0.7.2 발표용 설명서](manual/취련코치_발표용_설명서_v0.7.2.md)를 사용하십시오. 이미지가 포함된 최신 오프라인 상세 문서는 `BOF_Endpoint_Coach_DETAILED_USER_GUIDE_v0.7.3.html`입니다.
 
 > **안전·품질 경계:** C·온도·P·Mn·Si·S는 공개 문헌 시나리오와 수동 입력으로 계산한 참고예상입니다. 실제 BOF 정확도는 아직 검증되지 않았습니다. 설비 제어, 인터록, 표준작업, 실험실 분석, 출강 승인, 취련사의 판단을 대체하지 않습니다.
 
@@ -8,7 +8,7 @@
 
 ### 1. 실행 전 준비
 
-1. `BOF_Endpoint_Coach_v0.7.2.html`을 회사 PC의 고정 작업 폴더에 저장합니다.
+1. `BOF_Endpoint_Coach_v0.7.3.html`을 회사 PC의 고정 작업 폴더에 저장합니다.
 2. Microsoft Edge 또는 Google Chrome에서 파일을 엽니다. 설치·서버·인터넷 연결은 필요하지 않습니다.
 3. 1920×1080, 브라우저 배율 100%를 권장합니다.
 4. 첫 화면에서 기록에 표시할 작업자 이름을 입력합니다. 로그인 계정이나 조직명이 아닙니다.
@@ -55,6 +55,18 @@
 5. 최신 채택 분석 하나가 현재 종점예상을 다시 고정합니다. 이전 샘플은 비교 이력에 남습니다.
 6. 실제 공정이 바뀐 뒤에만 단계 전환을 기록합니다.
 7. 재취련은 이번 추가 산소량, 출강은 이미 실행된 출강 사실과 시각을 기록합니다.
+
+### 4.1 선택형 용존산소 기록
+
+![선택형 용존산소 입력](manual/screenshots/v0.7.3/03-analysis-optional-filled.png)
+
+- 분석 결과 창의 `추가 측정값`은 기본적으로 접혀 있고 사용하지 않아도 저장·단계 진행이 가능합니다.
+- 값이 있을 때만 펼쳐 용존산소 `[O]`를 `ppm`으로 입력합니다. 이는 용강에 녹아 있는 산소 농도이며 공급 누적 산소 `Nm³`와 다른 값입니다.
+- 선택 출처는 `산소 프로브`, `분석실`, `기타`이며 메모는 장비명이나 특이사항이 있을 때만 씁니다.
+- 빈칸은 `미측정`, 숫자 0은 `0 ppm 측정값`으로 서로 다르게 보존됩니다.
+- 현재 버전에서는 기록·정정·백업·통계 준비용이며 종점예상, 투입 코치, 단계 진행, 학습계수에는 사용하지 않습니다.
+
+![용존산소 전체 이력](manual/screenshots/v0.7.3/04-analysis-recorded-history.png)
 
 ### 5. 종점예상 근거
 
@@ -147,7 +159,7 @@ JSON 불러오기는 자동 병합하지 않고 전체 교체합니다. 현재/�
 
 ## English quick guide
 
-1. Open `BOF_Endpoint_Coach_v0.7.2.html` in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
+1. Open `BOF_Endpoint_Coach_v0.7.3.html` in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
 2. Enter a local operator display name. It is not a login or a fixed department label.
 3. Choose synthetic **DEMO** for practice or an empty workspace for manual field entry.
 4. Review grade, material, equipment, gate, unit, and coefficient settings before creating a heat.
@@ -161,6 +173,7 @@ JSON 불러오기는 자동 병합하지 않고 전체 교체합니다. 현재/�
 12. The optional addition coach compares your plan with a literature/field-corrected reference for amount and timing. A proposal or plan never creates an actual addition event.
 13. Record actual material or additional oxygen separately. Valid pre/post results accumulate an independent addition-effect residual ledger and reviewed coefficient candidates.
 14. Routine work is autosaved to IndexedDB. Export the full integrity-checked JSON before handover, settings changes, browser cleanup, or PC transfer.
-15. JSON restore is a verified full replacement, not a merge. A protected pre-restore point enables a seven-day undo.
+15. Dissolved oxygen `[O]` is an optional ppm record in the analysis dialog. Blank means not measured; it currently does not affect estimates, stage progression, or learning coefficients.
+16. JSON restore is a verified full replacement, not a merge. A protected pre-restore point enables a seven-day undo.
 
 **Field limits:** all six endpoint values remain unvalidated public-literature reference estimates. Scenario ranges are not confidence intervals. Always prioritize plant standards, laboratory results, interlocks, tap authorization, and operator judgment.

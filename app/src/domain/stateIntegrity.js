@@ -1,6 +1,7 @@
 import { getStageAtTime, isKnownStage } from "./operationalValidation.js";
 import { PROCESS_STAGES } from "./processStages.js";
 import { findAnalysisResult, getAnalysisResults } from "./analysisRecords.js";
+import { dissolvedOxygenValidationReason } from "./measurements/dissolvedOxygen.js";
 
 const statuses = new Set(["in_progress", "tapped", "completed", "cancelled", "archived"]);
 const chemistryKeys = new Set(["C", "P", "Mn", "Si", "S"]);
@@ -86,6 +87,7 @@ export function validateOperationalState(state) {
       for (const analysis of analyses) for (const [key, value] of Object.entries(analysis.values ?? {})) {
         if (!validOptionalNumber(value, chemistryKeys.has(key) ? 100 : key === "temperature" ? 2500 : Infinity)) return "analysis_value_integrity_failed";
       }
+      if (analyses.some((analysis) => dissolvedOxygenValidationReason(analysis.dissolvedOxygen))) return "analysis_value_integrity_failed";
       if (sample.adopted && !analyses.some((analysis) => analysis.id === sample.adoptedAnalysisId && (analysis.status ?? "active") === "active")) return "sample_state_integrity_failed";
       if (!validOptionalNumber(sample.processSnapshot?.cumulativeOxygenNm3) || !validOptionalNumber(sample.analysisProcessSnapshot?.cumulativeOxygenNm3)) return "analysis_value_integrity_failed";
     }

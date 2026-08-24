@@ -6,11 +6,21 @@
 
 > **안전·품질 고지:** 현재 공개 버전은 합성 DEMO와 공개 문헌 시나리오만 포함합니다. 실제 BOF 정확도와 현장 적합성은 검증되지 않았습니다. 설비 제어, 인터록, 표준작업, 실험실 분석, 출강 승인 또는 취련사의 판단을 대체하지 않습니다.
 
-![취련 코치 v0.7.2 G6 대시보드와 투입 코치](docs/manual/screenshots/v0.7.2/01-dashboard-addition-coach.png)
+![취련 코치 v0.7.3 선택형 용존산소 입력](docs/manual/screenshots/v0.7.3/03-analysis-optional-filled.png)
 
 ## 한국어
 
-### v0.7.2 핵심 변화
+### v0.7.3 핵심 변화
+
+- **선택형 용존산소 기록:** 분석 결과의 `추가 측정값`을 펼쳐 용강 내 용존산소 `[O]`를 ppm으로 기록
+- **미측정 명시:** 값이 없으면 공란으로 저장하며 내부에는 `미측정` 상태를 보존해 0 ppm과 구분
+- **계산과 분리:** 현재 종점예상·투입 코치·단계 진행·학습계수에는 사용하지 않는 기록 전용 데이터
+- **원장·정정·내보내기:** 전체 이력에서 기록 여부를 확인하고 수정·무효 처리하며 JSON·CSV·Excel에 함께 보존
+- **하위 호환:** v0.7.2 이하 JSON은 용존산소 미측정으로 복원되고, 값만 있는 분석 기록도 기존 채택 분석을 자동 교체하지 않음
+
+![접혀 있는 선택 입력](docs/manual/screenshots/v0.7.3/01-analysis-optional-collapsed.png)
+
+### v0.7.2 기반 기능
 
 - **선택형 투입 코치:** Flux·냉각재·합금·가탄재·추가 산소의 참고량과 시점을 한 줄로 표시하며 사용하지 않아도 G단계 진행 가능
 - **작업자 계획 비교:** 수기 예상량·예정시각과 코치안을 나란히 비교하되 계획·권고·실제 투입을 별도 원장으로 보존
@@ -52,7 +62,7 @@
 
 ### 바로 사용하기
 
-1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.7.2.html`을 받습니다.
+1. [Releases](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest)에서 `BOF_Endpoint_Coach_v0.7.3.html`을 받습니다.
 2. 회사 PC의 고정 폴더에 저장하고 Edge 또는 Chrome에서 엽니다.
 3. 작업자 표시 이름을 입력하고 합성 `DEMO로 체험` 또는 `빈 작업으로 시작`을 선택합니다.
 4. 실제 사용 전 `기준 정보`에서 강종·재료·관리게이트·단위·설비·계수를 확인합니다.
@@ -63,7 +73,7 @@
 9. 현재 계수의 최후 수기 복구본이 필요하면 `학습 · 계수`에서 종점계수·투입계수 복구 카드를 각각 기록합니다.
 10. 교대·브라우저 정리·PC 이동·계수 변경 전 `분석 · 리포트 > 전체 데이터 JSON으로 저장`을 실행합니다.
 
-요약 절차는 [한영 사용 설명서](docs/user-guide.md), 모든 명칭·단위·입력 예·오류조건은 [v0.7.2 상세 설명서](docs/manual/취련코치_상세_설명서_v0.7.2.md), 기술 발표에는 [발표용 설명서](docs/manual/취련코치_발표용_설명서_v0.7.2.md), 처음 보는 사용자에게 말로 소개할 때는 [구두 기능 소개서](docs/manual/취련코치_구두_기능소개_v0.7.2.md), 검증 결과는 [v0.7.2 종합감사](docs/audits/v0.7.2_투입코치_기능_UI_UX_데이터_회귀감사_2026-08-24.md)와 [게시 전 재감사](docs/audits/v0.7.2_게시전_인지보행_오류유도_감사_2026-08-24.md)에 있습니다.
+요약 절차는 [한영 사용 설명서](docs/user-guide.md), 모든 명칭·단위·입력 예·오류조건은 [v0.7.3 상세 설명서](docs/manual/취련코치_상세_설명서_v0.7.3.md), 기술 발표에는 [v0.7.2 발표용 설명서](docs/manual/취련코치_발표용_설명서_v0.7.2.md), 처음 보는 사용자에게 말로 소개할 때는 [v0.7.2 구두 기능 소개서](docs/manual/취련코치_구두_기능소개_v0.7.2.md), 이번 변경의 검증 결과는 [v0.7.3 종합감사](docs/audits/v0.7.3_선택형_용존산소_기능_UI_UX_데이터_회귀감사_2026-08-24.md)에 있습니다.
 
 ### 종점 참고예상
 
@@ -124,7 +134,7 @@ npm run check
 npm run test:e2e
 ```
 
-`npm run check`는 lint, 174개 단위·통합 시험, 일반 빌드, 단일 HTML 빌드, Sites worker 시험을 실행합니다. Chromium 29개 E2E는 공정입력, 다중차지, 정정·출강, JSON 전체복원·취소, 오프라인 단일파일, 다중 창 충돌, 두 종류의 비상복구 카드, 투입계획 비교·학습, 반응형과 문서 렌더링을 확인합니다. 브라우저 시험은 구형 개발 서버를 재사용하지 않으며 현재 작업공간·버전·필수 소스·5173 포트를 사전검사합니다. 실제 회사 PC 정책은 별도 환경 검증이 필요합니다.
+`npm run check`는 lint, 182개 단위·통합 시험, 일반 빌드, 단일 HTML 빌드, Sites worker 시험을 실행합니다. Chromium·Chrome·Edge 각각 31개 E2E는 공정입력, 선택형 용존산소, 다중차지, 정정·출강, JSON 전체복원·취소, 오프라인 단일파일, 다중 창 충돌, 두 종류의 비상복구 카드, 투입계획 비교·학습, 반응형과 문서 렌더링을 확인합니다. 브라우저 시험은 구형 개발 서버를 재사용하지 않으며 현재 작업공간·버전·필수 소스·5173 포트를 사전검사합니다. 실제 회사 PC 정책은 별도 환경 검증이 필요합니다.
 
 ### 공개 저장소 보안 원칙
 
@@ -137,9 +147,16 @@ npm run test:e2e
 
 ## English
 
-BOF Endpoint Coach v0.7.2 is a single-file, offline desktop assistant. Operators manually enter heat, process, sample, confirmed endpoint, and actual-addition data. The tool starts with transparent public-literature scenarios and preserves separate endpoint and addition-effect residual evidence so reviewed estimates can improve over time.
+BOF Endpoint Coach v0.7.3 is a single-file, offline desktop assistant. Operators manually enter heat, process, sample, confirmed endpoint, actual-addition, and optional dissolved-oxygen data. The tool starts with transparent public-literature scenarios and preserves separate endpoint and addition-effect residual evidence so reviewed estimates can improve over time.
 
-### What v0.7.2 adds
+### What v0.7.3 adds
+
+- An optional collapsed `[O]` field records dissolved oxygen in ppm only when a measurement is available.
+- Blank means **not measured**, which remains distinct from a measured value of 0 ppm.
+- The value, source, and note are record-only and do not affect endpoint estimates, addition coaching, stage gates, or current learning coefficients.
+- Timeline correction, JSON, CSV, and Excel retain the optional record; pre-v0.7.3 backups migrate as not measured.
+
+### v0.7.2 foundation
 
 - Optional one-line addition coach for fluxes, coolants, alloys, carburizers, and additional oxygen; stage progression never depends on using it
 - Side-by-side operator-plan versus coach-reference comparison while plans, proposals, and actual events remain separate records
@@ -173,7 +190,7 @@ BOF Endpoint Coach v0.7.2 is a single-file, offline desktop assistant. Operators
 
 ### Quick start
 
-1. Download `BOF_Endpoint_Coach_v0.7.2.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
+1. Download `BOF_Endpoint_Coach_v0.7.3.html` from the [latest release](https://github.com/fullmetalsonic/bof-endpoint-coach/releases/latest).
 2. Open it in Microsoft Edge or Google Chrome at 100% zoom; 1920×1080 is recommended.
 3. Set a local operator display name, then choose synthetic DEMO or an empty workspace.
 4. Review grade, material, gate, unit, equipment, and coefficient settings.

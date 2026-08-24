@@ -15,6 +15,7 @@ const manifestPath = resolve(projectRoot, `work/email/BOF_Endpoint_Coach_ORAL_EM
 
 const images = [
   { markdownPath: "screenshots/v0.7.2/01-dashboard-addition-coach.png", filePath: "docs/manual/screenshots/v0.7.2/01-dashboard-addition-coach.png", cid: "bof-oral-dashboard" },
+  { markdownPath: "screenshots/v0.7.3/03-analysis-optional-filled.png", filePath: "docs/manual/screenshots/v0.7.3/03-analysis-optional-filled.png", cid: "bof-oral-dissolved-oxygen" },
   { markdownPath: "screenshots/v0.6.0/04-prediction-explanation.png", filePath: "docs/manual/screenshots/v0.6.0/04-prediction-explanation.png", cid: "bof-oral-prediction" },
   { markdownPath: "screenshots/v0.7.2/03-addition-learning.png", filePath: "docs/manual/screenshots/v0.7.2/03-addition-learning.png", cid: "bof-oral-learning" },
   { markdownPath: "screenshots/v0.6.0/01-storage-recovery.png", filePath: "docs/manual/screenshots/v0.6.0/01-storage-recovery.png", cid: "bof-oral-storage" },
@@ -121,6 +122,7 @@ function validateGeneratedHtml() {
     if (opening !== closing) throw new Error(`Unbalanced ${tag} tags: ${opening}/${closing}`);
   }
   if (countMatches(emailBody, /src="cid:/g) !== images.length) throw new Error("Email body does not reference every CID image.");
+  if (/src="screenshots\//i.test(emailBody)) throw new Error("Email body contains an unmapped local screenshot reference.");
   if (countMatches(previewBody, /data:image\/png;base64,/g) !== images.length) throw new Error("Email preview does not embed every image.");
   if (/<script(?=\s|>)/i.test(emailBody) || /<script(?=\s|>)/i.test(previewBody)) throw new Error("Email HTML must not contain scripts.");
   if (/src="https?:/i.test(emailBody)) throw new Error("Email body must not load external images.");
